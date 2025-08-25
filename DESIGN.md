@@ -149,7 +149,7 @@ This section outlines an incremental development process for building the Dots g
 - [x] Add game over screen with winner announcement
 - [x] Implement restart functionality
 - [x] Add move history/undo capability
-- [ ] Create settings menu for board size configuration
+- [ ] Create settings page/scene for board size configuration, with room for future settings
 - [ ] Add sound effects for moves and explosions
 - [ ] Implement responsive design for different screen sizes
 - [ ] Create level set and level data structures and level definitions
