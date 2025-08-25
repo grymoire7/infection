@@ -30,6 +30,7 @@ blue.
 The default board is a 5x5 grid:
 
 
+```text
 |-------|-------|-------|-------|-------|
 |       |       |       |       |       |
 |       |       |       |       |       |
@@ -52,6 +53,8 @@ The default board is a 5x5 grid:
 |       |       |       |       |       |
 |-------|-------|-------|-------|-------|
 
+```
+
 
 The board size is configuralbe (up to 9x9) and the design can be changed to
 create different gameplay experiences. For example, the following board has
@@ -59,6 +62,7 @@ some cells that act as solid blocks. These cells cannot be played in or
 owned by either player.
 
 
+```text
 |-------|-------|-------|-------|-------|
 |XXXXXXX|       |       |       |XXXXXXX|
 |XXXXXXX|       |       |       |XXXXXXX|
@@ -81,6 +85,7 @@ owned by either player.
 |XXXXXXX|       |       |       |XXXXXXX|
 |-------|-------|-------|-------|-------|
  
+```
 
 
 ## User interface
@@ -109,4 +114,56 @@ The computer opponent can be set to different difficulty levels:
 - Medium: The computer uses a basic strategy in either low capacity free ceels or in a cell that will cause an explosion.
 - Hard: The computer employs advanced strategies.
 - Expert: The computer uses all strategies at its disposal to challenge the player.
+
+
+## Game plan
+This section outlines an incremental development process for building the Dots game:
+
+### Phase 1: Basic Grid and Interaction
+- [x] Create a 5x5 grid display with clickable cells
+- [ ] Add visual feedback for cell hover states
+- [ ] Implement basic dot placement (single dot per cell)
+- [ ] Add player turn system (red vs blue)
+- [ ] Display current player indicator
+
+### Phase 2: Core Game Mechanics
+- [ ] Implement cell capacity calculation based on adjacent cells
+- [ ] Add multiple dots per cell (visual representation)
+- [ ] Implement cell ownership (red/blue coloring)
+- [ ] Add dot explosion logic when capacity is exceeded
+- [ ] Handle chain reactions from explosions
+- [ ] Implement win condition detection
+
+### Phase 3: Game Flow and UI
+- [ ] Add game over screen with winner announcement
+- [ ] Implement restart functionality
+- [ ] Add move history/undo capability
+- [ ] Create settings menu for board size configuration
+- [ ] Add sound effects for moves and explosions
+- [ ] Implement responsive design for different screen sizes
+
+### Phase 4: AI Opponent
+- [ ] Implement Easy AI (random valid moves)
+- [ ] Add Medium AI (basic strategy)
+- [ ] Develop Hard AI (advanced strategies)
+- [ ] Create Expert AI (optimal play)
+- [ ] Add AI difficulty selection in settings
+
+### Phase 5: Advanced Features
+- [ ] Implement custom board designs with blocked cells
+- [ ] Add board size options (3x3 to 9x9)
+- [ ] Create board template system
+- [ ] Add game statistics tracking
+- [ ] Implement save/load game functionality
+- [ ] Add animations for explosions and dot placement
+
+### Phase 6: Polish and Accessibility
+- [ ] Add keyboard controls for accessibility
+- [ ] Implement screen reader support
+- [ ] Add background music and enhanced sound effects
+- [ ] Create tutorial/help system
+- [ ] Add visual themes and customization options
+- [ ] Performance optimization and testing
+
+Each phase builds upon the previous one, allowing for incremental testing and refinement of game mechanics.
 
