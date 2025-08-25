@@ -62,13 +62,19 @@ export class Game extends Scene
                 
                 // Add hover effects
                 cell.on('pointerover', () => {
-                    cell.setFillStyle(0x555555);
+                    const cellState = this.gameState[row][col];
+                    if (cellState.owner === 'red') {
+                        cell.setFillStyle(0x775555);
+                    } else if (cellState.owner === 'blue') {
+                        cell.setFillStyle(0x555577);
+                    } else {
+                        cell.setFillStyle(0x555555);
+                    }
                     cell.setStrokeStyle(2, 0x888888);
                 });
                 
                 cell.on('pointerout', () => {
-                    cell.setFillStyle(0x444444);
-                    cell.setStrokeStyle(2, 0x666666);
+                    this.updateCellOwnership(row, col);
                 });
                 
                 // Add click handler for dot placement
@@ -164,6 +170,9 @@ export class Game extends Scene
             // Arrange all dots in this cell visually
             this.arrangeDots(row, col);
             
+            // Update cell ownership visual
+            this.updateCellOwnership(row, col);
+            
             console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col} (${cellState.dotCount}/${cellState.capacity})`);
             
             // Switch to the other player
@@ -225,6 +234,26 @@ export class Game extends Scene
         // Hide any dots beyond the 6th one (they still exist in the array for game logic)
         for (let i = 6; i < cellDots.length; i++) {
             cellDots[i].setVisible(false);
+        }
+    }
+
+    updateCellOwnership(row: number, col: number)
+    {
+        const cellState = this.gameState[row][col];
+        const cell = this.grid[row][col];
+        
+        if (cellState.owner === 'red') {
+            // Light red background for red-owned cells
+            cell.setFillStyle(0x664444);
+            cell.setStrokeStyle(2, 0x888888);
+        } else if (cellState.owner === 'blue') {
+            // Light blue background for blue-owned cells
+            cell.setFillStyle(0x444466);
+            cell.setStrokeStyle(2, 0x888888);
+        } else {
+            // Default gray for unowned cells
+            cell.setFillStyle(0x444444);
+            cell.setStrokeStyle(2, 0x666666);
         }
     }
 
