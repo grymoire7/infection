@@ -132,11 +132,11 @@ This section outlines an incremental development process for building the Dots g
 - [x] Implement cell ownership (red/blue coloring)
 - [x] Add dot explosion logic when capacity is exceeded
 - [x] Handle chain reactions from explosions
-- [ ] Implement win condition detection
+- [x] Implement win condition detection
 
 ### Phase 3: Game Flow and UI
-- [ ] Add game over screen with winner announcement
-- [ ] Implement restart functionality
+- [x] Add game over screen with winner announcement
+- [x] Implement restart functionality
 - [ ] Add move history/undo capability
 - [ ] Create settings menu for board size configuration
 - [ ] Add sound effects for moves and explosions

@@ -178,6 +178,14 @@ export class Game extends Scene
             // Check for explosions after placing the dot
             await this.checkAndHandleExplosions();
 
+            // Check for win condition
+            const winner = this.checkWinCondition();
+            if (winner) {
+                console.log(`Game Over! ${winner} wins!`);
+                this.handleGameOver(winner);
+                return;
+            }
+
             // Switch to the other player
             this.currentPlayer = this.currentPlayer === 'red' ? 'blue' : 'red';
             this.updatePlayerIndicator();
@@ -280,8 +288,16 @@ export class Game extends Scene
                 }
             }
 
-            // Add delay between explosion waves to show chain reaction
+            // Check for win condition after each explosion wave
             if (explosionOccurred) {
+                const winner = this.checkWinCondition();
+                if (winner) {
+                    console.log(`Game Over during chain reaction! ${winner} wins!`);
+                    this.handleGameOver(winner);
+                    return; // Stop the chain reaction
+                }
+
+                // Add delay between explosion waves to show chain reaction
                 await new Promise(resolve => setTimeout(resolve, 300));
             }
         }
@@ -365,6 +381,79 @@ export class Game extends Scene
         dot.setStrokeStyle(2, 0x000000);
 
         this.dots[row][col].push(dot);
+    }
+
+    checkWinCondition(): string | null
+    {
+        let redCells = 0;
+        let blueCells = 0;
+        let emptyCells = 0;
+
+        // Count cells owned by each player
+        for (let row = 0; row < this.gridSize; row++) {
+            for (let col = 0; col < this.gridSize; col++) {
+                const cellState = this.gameState[row][col];
+                
+                if (cellState.owner === 'red') {
+                    redCells++;
+                } else if (cellState.owner === 'blue') {
+                    blueCells++;
+                } else {
+                    emptyCells++;
+                }
+            }
+        }
+
+        // Win condition: one player owns all cells (no empty cells and opponent has 0 cells)
+        if (emptyCells === 0) {
+            if (redCells > 0 && blueCells === 0) {
+                return 'Red';
+            } else if (blueCells > 0 && redCells === 0) {
+                return 'Blue';
+            }
+        }
+
+        return null; // No winner yet
+    }
+
+    handleGameOver(winner: string)
+    {
+        // Disable all cell interactions
+        for (let row = 0; row < this.gridSize; row++) {
+            for (let col = 0; col < this.gridSize; col++) {
+                this.grid[row][col].removeInteractive();
+            }
+        }
+
+        // Display winner message
+        const winnerColor = winner === 'Red' ? '#ff0000' : '#0000ff';
+        this.add.text(512, 300, `${winner} Player Wins!`, {
+            fontFamily: 'Arial Black', 
+            fontSize: 48, 
+            color: winnerColor
+        }).setOrigin(0.5);
+
+        // Add restart button
+        const restartButton = this.add.text(512, 400, 'Click to Restart', {
+            fontFamily: 'Arial', 
+            fontSize: 24, 
+            color: '#ffffff',
+            backgroundColor: '#333333',
+            padding: { x: 20, y: 10 }
+        }).setOrigin(0.5);
+
+        restartButton.setInteractive();
+        restartButton.on('pointerdown', () => {
+            this.scene.restart();
+        });
+
+        restartButton.on('pointerover', () => {
+            restartButton.setBackgroundColor('#555555');
+        });
+
+        restartButton.on('pointerout', () => {
+            restartButton.setBackgroundColor('#333333');
+        });
     }
 
     changeScene ()
