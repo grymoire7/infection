@@ -10,6 +10,8 @@ export class Game extends Scene
     gridStartX: number = 200;
     gridStartY: number = 150;
     grid: Phaser.GameObjects.Rectangle[][];
+    dots: Phaser.GameObjects.Circle[][];
+    gameState: { dotCount: number, owner: string | null }[][];
 
     constructor ()
     {
@@ -32,12 +34,20 @@ export class Game extends Scene
     createGrid()
     {
         this.grid = [];
+        this.dots = [];
+        this.gameState = [];
         
         for (let row = 0; row < this.gridSize; row++) {
             this.grid[row] = [];
+            this.dots[row] = [];
+            this.gameState[row] = [];
+            
             for (let col = 0; col < this.gridSize; col++) {
                 const x = this.gridStartX + col * this.cellSize;
                 const y = this.gridStartY + row * this.cellSize;
+                
+                // Initialize game state for this cell
+                this.gameState[row][col] = { dotCount: 0, owner: null };
                 
                 // Create cell background
                 const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, 0x444444);
@@ -55,12 +65,13 @@ export class Game extends Scene
                     cell.setStrokeStyle(2, 0x666666);
                 });
                 
-                // Add click handler for future use
+                // Add click handler for dot placement
                 cell.on('pointerdown', () => {
-                    console.log(`Clicked cell at row ${row}, col ${col}`);
+                    this.placeDot(row, col);
                 });
                 
                 this.grid[row][col] = cell;
+                this.dots[row][col] = null; // No dot initially
             }
         }
         
@@ -77,6 +88,28 @@ export class Game extends Scene
             fontSize: 18, 
             color: '#cccccc'
         }).setOrigin(0.5);
+    }
+
+    placeDot(row: number, col: number)
+    {
+        // Only allow placing dots in empty cells for now
+        if (this.gameState[row][col].dotCount === 0) {
+            const x = this.gridStartX + col * this.cellSize;
+            const y = this.gridStartY + row * this.cellSize;
+            
+            // Create a red dot (we'll add player turns later)
+            const dot = this.add.circle(x, y, 15, 0xff0000);
+            dot.setStrokeStyle(2, 0x000000);
+            
+            // Update game state
+            this.gameState[row][col].dotCount = 1;
+            this.gameState[row][col].owner = 'red';
+            this.dots[row][col] = dot;
+            
+            console.log(`Placed dot at row ${row}, col ${col}`);
+        } else {
+            console.log(`Cell at row ${row}, col ${col} already has a dot`);
+        }
     }
 
     changeScene ()
