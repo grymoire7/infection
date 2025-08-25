@@ -148,7 +148,7 @@ This section outlines an incremental development process for building the Dots g
 ### Phase 3: Game Flow and UI
 - [x] Add game over screen with winner announcement
 - [x] Implement restart functionality
-- [ ] Add move history/undo capability
+- [x] Add move history/undo capability
 - [ ] Create settings menu for board size configuration
 - [ ] Add sound effects for moves and explosions
 - [ ] Implement responsive design for different screen sizes

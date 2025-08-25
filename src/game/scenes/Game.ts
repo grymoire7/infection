@@ -14,6 +14,8 @@ export class Game extends Scene
     gameState: { dotCount: number, owner: string | null, capacity: number }[][];
     currentPlayer: 'red' | 'blue' = 'red';
     currentPlayerText: Phaser.GameObjects.Text;
+    moveHistory: { gameState: any[][], currentPlayer: 'red' | 'blue' }[] = [];
+    undoButton: Phaser.GameObjects.Text;
 
     constructor ()
     {
@@ -30,6 +32,7 @@ export class Game extends Scene
 
         this.createGrid();
         this.createPlayerIndicator();
+        this.createUndoButton();
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -114,6 +117,43 @@ export class Game extends Scene
         this.updatePlayerIndicator();
     }
 
+    createUndoButton()
+    {
+        this.undoButton = this.add.text(50, 50, 'Undo', {
+            fontFamily: 'Arial', 
+            fontSize: 20, 
+            color: '#ffffff',
+            backgroundColor: '#666666',
+            padding: { x: 15, y: 8 }
+        }).setOrigin(0);
+
+        this.undoButton.setInteractive();
+        this.undoButton.on('pointerdown', () => {
+            this.undoLastMove();
+        });
+
+        this.undoButton.on('pointerover', () => {
+            this.undoButton.setBackgroundColor('#888888');
+        });
+
+        this.undoButton.on('pointerout', () => {
+            this.undoButton.setBackgroundColor('#666666');
+        });
+
+        this.updateUndoButton();
+    }
+
+    updateUndoButton()
+    {
+        if (this.moveHistory.length > 0) {
+            this.undoButton.setAlpha(1);
+            this.undoButton.setInteractive();
+        } else {
+            this.undoButton.setAlpha(0.5);
+            this.undoButton.removeInteractive();
+        }
+    }
+
     updatePlayerIndicator()
     {
         const playerColor = this.currentPlayer === 'red' ? '#ff0000' : '#0000ff';
@@ -155,6 +195,8 @@ export class Game extends Scene
 
         // Can only place dots in empty cells or cells owned by current player
         if (cellState.dotCount === 0 || cellState.owner === this.currentPlayer) {
+            // Save current state to history before making the move
+            this.saveGameState();
             // Update game state first
             cellState.dotCount++;
             cellState.owner = this.currentPlayer;
@@ -189,6 +231,7 @@ export class Game extends Scene
             // Switch to the other player
             this.currentPlayer = this.currentPlayer === 'red' ? 'blue' : 'red';
             this.updatePlayerIndicator();
+            this.updateUndoButton();
         } else {
             console.log(`Cell at row ${row}, col ${col} is owned by the other player`);
         }
@@ -383,6 +426,91 @@ export class Game extends Scene
         this.dots[row][col].push(dot);
     }
 
+    saveGameState()
+    {
+        // Deep copy the current game state
+        const gameStateCopy = this.gameState.map(row => 
+            row.map(cell => ({ ...cell }))
+        );
+
+        // Save the state and current player
+        this.moveHistory.push({
+            gameState: gameStateCopy,
+            currentPlayer: this.currentPlayer
+        });
+
+        // Limit history to prevent memory issues (keep last 50 moves)
+        if (this.moveHistory.length > 50) {
+            this.moveHistory.shift();
+        }
+    }
+
+    undoLastMove()
+    {
+        if (this.moveHistory.length === 0) {
+            console.log('No moves to undo');
+            return;
+        }
+
+        // Get the last saved state
+        const lastState = this.moveHistory.pop();
+        if (!lastState) return;
+
+        // Restore the game state
+        this.gameState = lastState.gameState.map(row => 
+            row.map(cell => ({ ...cell }))
+        );
+        this.currentPlayer = lastState.currentPlayer;
+
+        // Clear all visual elements and recreate them
+        this.clearAllVisualDots();
+        this.recreateAllVisualDots();
+        this.updateAllCellOwnership();
+        this.updatePlayerIndicator();
+        this.updateUndoButton();
+
+        console.log(`Undid move, back to ${this.currentPlayer} player's turn`);
+    }
+
+    clearAllVisualDots()
+    {
+        for (let row = 0; row < this.gridSize; row++) {
+            for (let col = 0; col < this.gridSize; col++) {
+                const cellDots = this.dots[row][col];
+                while (cellDots.length > 0) {
+                    const dot = cellDots.pop();
+                    if (dot) {
+                        dot.destroy();
+                    }
+                }
+            }
+        }
+    }
+
+    recreateAllVisualDots()
+    {
+        for (let row = 0; row < this.gridSize; row++) {
+            for (let col = 0; col < this.gridSize; col++) {
+                const cellState = this.gameState[row][col];
+                if (cellState.owner && cellState.dotCount > 0) {
+                    for (let i = 0; i < cellState.dotCount; i++) {
+                        this.addVisualDot(row, col, cellState.owner);
+                    }
+                }
+                this.arrangeDots(row, col);
+            }
+        }
+    }
+
+    updateAllCellOwnership()
+    {
+        for (let row = 0; row < this.gridSize; row++) {
+            for (let col = 0; col < this.gridSize; col++) {
+                this.updateCellOwnership(row, col);
+            }
+        }
+    }
+
     checkWinCondition(): string | null
     {
         let redCells = 0;
@@ -418,12 +546,14 @@ export class Game extends Scene
 
     handleGameOver(winner: string)
     {
-        // Disable all cell interactions
+        // Disable all cell interactions and undo button
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 this.grid[row][col].removeInteractive();
             }
         }
+        this.undoButton.removeInteractive();
+        this.undoButton.setAlpha(0.3);
 
         // Display winner message
         const winnerColor = winner === 'Red' ? '#ff0000' : '#0000ff';
