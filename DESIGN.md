@@ -130,8 +130,8 @@ This section outlines an incremental development process for building the Dots g
 - [x] Implement cell capacity calculation based on adjacent cells
 - [x] Add multiple dots per cell (visual representation)
 - [x] Implement cell ownership (red/blue coloring)
-- [ ] Add dot explosion logic when capacity is exceeded
-- [ ] Handle chain reactions from explosions
+- [x] Add dot explosion logic when capacity is exceeded
+- [x] Handle chain reactions from explosions
 - [ ] Implement win condition detection
 
 ### Phase 3: Game Flow and UI

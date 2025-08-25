@@ -39,27 +39,27 @@ export class Game extends Scene
         this.grid = [];
         this.dots = [];
         this.gameState = [];
-        
+
         for (let row = 0; row < this.gridSize; row++) {
             this.grid[row] = [];
             this.dots[row] = [];
             this.gameState[row] = [];
-            
+
             for (let col = 0; col < this.gridSize; col++) {
                 const x = this.gridStartX + col * this.cellSize;
                 const y = this.gridStartY + row * this.cellSize;
-                
+
                 // Calculate capacity based on adjacent cells
                 const capacity = this.calculateCellCapacity(row, col);
-                
+
                 // Initialize game state for this cell
                 this.gameState[row][col] = { dotCount: 0, owner: null, capacity: capacity };
-                
+
                 // Create cell background
                 const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, 0x444444);
                 cell.setStrokeStyle(2, 0x666666);
                 cell.setInteractive();
-                
+
                 // Add hover effects
                 cell.on('pointerover', () => {
                     const cellState = this.gameState[row][col];
@@ -72,28 +72,28 @@ export class Game extends Scene
                     }
                     cell.setStrokeStyle(2, 0x888888);
                 });
-                
+
                 cell.on('pointerout', () => {
                     this.updateCellOwnership(row, col);
                 });
-                
+
                 // Add click handler for dot placement
                 cell.on('pointerdown', () => {
                     this.placeDot(row, col);
                 });
-                
+
                 this.grid[row][col] = cell;
                 this.dots[row][col] = []; // Empty array of dots initially
             }
         }
-        
+
         // Add title
         this.add.text(512, 50, 'Dots Game', {
             fontFamily: 'Arial Black', 
             fontSize: 32, 
             color: '#ffffff'
         }).setOrigin(0.5);
-        
+
         // Add instructions
         this.add.text(512, 600, 'Click on a cell to place a dot', {
             fontFamily: 'Arial', 
@@ -110,7 +110,7 @@ export class Game extends Scene
             fontSize: 24, 
             color: '#ffffff'
         }).setOrigin(0.5);
-        
+
         this.updatePlayerIndicator();
     }
 
@@ -118,7 +118,7 @@ export class Game extends Scene
     {
         const playerColor = this.currentPlayer === 'red' ? '#ff0000' : '#0000ff';
         const playerName = this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1);
-        
+
         this.currentPlayerText.setText(`Current Player: ${playerName}`);
         this.currentPlayerText.setColor(playerColor);
     }
@@ -126,7 +126,7 @@ export class Game extends Scene
     calculateCellCapacity(row: number, col: number): number
     {
         let capacity = 0;
-        
+
         // Check all four orthogonal directions
         const directions = [
             [-1, 0], // up
@@ -134,47 +134,50 @@ export class Game extends Scene
             [0, -1], // left
             [0, 1]   // right
         ];
-        
+
         for (const [deltaRow, deltaCol] of directions) {
             const newRow = row + deltaRow;
             const newCol = col + deltaCol;
-            
+
             // Check if the adjacent cell is within grid bounds
             if (newRow >= 0 && newRow < this.gridSize && 
                 newCol >= 0 && newCol < this.gridSize) {
                 capacity++;
             }
         }
-        
+
         return capacity;
     }
 
-    placeDot(row: number, col: number)
+    async placeDot(row: number, col: number)
     {
         const cellState = this.gameState[row][col];
-        
+
         // Can only place dots in empty cells or cells owned by current player
         if (cellState.dotCount === 0 || cellState.owner === this.currentPlayer) {
             // Update game state first
             cellState.dotCount++;
             cellState.owner = this.currentPlayer;
-            
+
             // Create new dot with current player's color
             const color = this.currentPlayer === 'red' ? 0xff0000 : 0x0000ff;
             const dot = this.add.circle(0, 0, 12, color); // Position will be set by arrangeDots
             dot.setStrokeStyle(2, 0x000000);
-            
+
             // Add dot to the cell's dot array
             this.dots[row][col].push(dot);
-            
+
             // Arrange all dots in this cell visually
             this.arrangeDots(row, col);
-            
+
             // Update cell ownership visual
             this.updateCellOwnership(row, col);
-            
+
             console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col} (${cellState.dotCount}/${cellState.capacity})`);
-            
+
+            // Check for explosions after placing the dot
+            await this.checkAndHandleExplosions();
+
             // Switch to the other player
             this.currentPlayer = this.currentPlayer === 'red' ? 'blue' : 'red';
             this.updatePlayerIndicator();
@@ -187,15 +190,15 @@ export class Game extends Scene
     {
         const cellDots = this.dots[row][col];
         const dotCount = cellDots.length;
-        
+
         if (dotCount === 0) return;
-        
+
         const cellCenterX = this.gridStartX + col * this.cellSize;
         const cellCenterY = this.gridStartY + row * this.cellSize;
-        
+
         // Only render up to 6 dots visually, even if more exist
         const visualDotCount = Math.min(dotCount, 6);
-        
+
         if (visualDotCount === 1) {
             // Single dot in center
             cellDots[0].setPosition(cellCenterX, cellCenterY);
@@ -230,7 +233,7 @@ export class Game extends Scene
             cellDots[4].setPosition(cellCenterX, cellCenterY + 12);
             cellDots[5].setPosition(cellCenterX + 18, cellCenterY + 12);
         }
-        
+
         // Hide any dots beyond the 6th one (they still exist in the array for game logic)
         for (let i = 6; i < cellDots.length; i++) {
             cellDots[i].setVisible(false);
@@ -241,7 +244,7 @@ export class Game extends Scene
     {
         const cellState = this.gameState[row][col];
         const cell = this.grid[row][col];
-        
+
         if (cellState.owner === 'red') {
             // Light red background for red-owned cells
             cell.setFillStyle(0x664444);
@@ -255,6 +258,113 @@ export class Game extends Scene
             cell.setFillStyle(0x444444);
             cell.setStrokeStyle(2, 0x666666);
         }
+    }
+
+    async checkAndHandleExplosions()
+    {
+        let explosionOccurred = true;
+
+        // Keep checking for explosions until no more occur (handle chain reactions)
+        while (explosionOccurred) {
+            explosionOccurred = false;
+
+            for (let row = 0; row < this.gridSize; row++) {
+                for (let col = 0; col < this.gridSize; col++) {
+                    const cellState = this.gameState[row][col];
+
+                    // Check if this cell should explode
+                    if (cellState.dotCount > cellState.capacity) {
+                        this.explodeCell(row, col);
+                        explosionOccurred = true;
+                    }
+                }
+            }
+
+            // Add delay between explosion waves to show chain reaction
+            if (explosionOccurred) {
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
+    }
+
+    explodeCell(row: number, col: number)
+    {
+        const cellState = this.gameState[row][col];
+        const explodingPlayer = cellState.owner;
+
+        console.log(`Cell at ${row},${col} exploding! (${cellState.dotCount} > ${cellState.capacity})`);
+
+        // Remove dots equal to capacity from the exploding cell
+        const dotsToDistribute = cellState.capacity;
+        cellState.dotCount -= dotsToDistribute;
+
+        // Remove visual dots from the exploding cell
+        this.updateCellVisualDots(row, col);
+
+        // Distribute dots to adjacent cells
+        const directions = [
+            [-1, 0], // up
+            [1, 0],  // down
+            [0, -1], // left
+            [0, 1]   // right
+        ];
+
+        for (const [deltaRow, deltaCol] of directions) {
+            const newRow = row + deltaRow;
+            const newCol = col + deltaCol;
+
+            // Check if the adjacent cell is within grid bounds
+            if (newRow >= 0 && newRow < this.gridSize && 
+                newCol >= 0 && newCol < this.gridSize) {
+
+                const adjacentCell = this.gameState[newRow][newCol];
+
+                // Add one dot to the adjacent cell
+                adjacentCell.dotCount++;
+
+                // Change ownership to the exploding player
+                adjacentCell.owner = explodingPlayer;
+
+                // Update visual representation (this will recreate all dots with correct colors)
+                this.updateCellVisualDots(newRow, newCol);
+                this.updateCellOwnership(newRow, newCol);
+
+                console.log(`  -> Added dot to ${newRow},${newCol} (now ${adjacentCell.dotCount}/${adjacentCell.capacity})`);
+            }
+        }
+    }
+
+    updateCellVisualDots(row: number, col: number)
+    {
+        const cellState = this.gameState[row][col];
+        const currentDots = this.dots[row][col];
+
+        // Remove all existing visual dots
+        while (currentDots.length > 0) {
+            const dotToRemove = currentDots.pop();
+            if (dotToRemove) {
+                dotToRemove.destroy();
+            }
+        }
+
+        // Recreate all dots with the correct owner's color
+        if (cellState.owner && cellState.dotCount > 0) {
+            for (let i = 0; i < cellState.dotCount; i++) {
+                this.addVisualDot(row, col, cellState.owner);
+            }
+        }
+
+        // Rearrange all dots
+        this.arrangeDots(row, col);
+    }
+
+    addVisualDot(row: number, col: number, owner: string)
+    {
+        const color = owner === 'red' ? 0xff0000 : 0x0000ff;
+        const dot = this.add.circle(0, 0, 12, color);
+        dot.setStrokeStyle(2, 0x000000);
+
+        this.dots[row][col].push(dot);
     }
 
     changeScene ()
