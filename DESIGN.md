@@ -121,7 +121,7 @@ This section outlines an incremental development process for building the Dots g
 
 ### Phase 1: Basic Grid and Interaction
 - [x] Create a 5x5 grid display with clickable cells
-- [ ] Add visual feedback for cell hover states
+- [x] Add visual feedback for cell hover states
 - [ ] Implement basic dot placement (single dot per cell)
 - [ ] Add player turn system (red vs blue)
 - [ ] Display current player indicator

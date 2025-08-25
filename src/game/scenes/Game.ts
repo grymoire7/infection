@@ -44,6 +44,17 @@ export class Game extends Scene
                 cell.setStrokeStyle(2, 0x666666);
                 cell.setInteractive();
                 
+                // Add hover effects
+                cell.on('pointerover', () => {
+                    cell.setFillStyle(0x555555);
+                    cell.setStrokeStyle(2, 0x888888);
+                });
+                
+                cell.on('pointerout', () => {
+                    cell.setFillStyle(0x444444);
+                    cell.setStrokeStyle(2, 0x666666);
+                });
+                
                 // Add click handler for future use
                 cell.on('pointerdown', () => {
                     console.log(`Clicked cell at row ${row}, col ${col}`);
