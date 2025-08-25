@@ -12,6 +12,7 @@ export class Game extends Scene
     grid: Phaser.GameObjects.Rectangle[][];
     dots: Phaser.GameObjects.Circle[][];
     gameState: { dotCount: number, owner: string | null }[][];
+    currentPlayer: 'red' | 'blue' = 'red';
 
     constructor ()
     {
@@ -97,16 +98,20 @@ export class Game extends Scene
             const x = this.gridStartX + col * this.cellSize;
             const y = this.gridStartY + row * this.cellSize;
             
-            // Create a red dot (we'll add player turns later)
-            const dot = this.add.circle(x, y, 15, 0xff0000);
+            // Create dot with current player's color
+            const color = this.currentPlayer === 'red' ? 0xff0000 : 0x0000ff;
+            const dot = this.add.circle(x, y, 15, color);
             dot.setStrokeStyle(2, 0x000000);
             
             // Update game state
             this.gameState[row][col].dotCount = 1;
-            this.gameState[row][col].owner = 'red';
+            this.gameState[row][col].owner = this.currentPlayer;
             this.dots[row][col] = dot;
             
-            console.log(`Placed dot at row ${row}, col ${col}`);
+            console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col}`);
+            
+            // Switch to the other player
+            this.currentPlayer = this.currentPlayer === 'red' ? 'blue' : 'red';
         } else {
             console.log(`Cell at row ${row}, col ${col} already has a dot`);
         }
