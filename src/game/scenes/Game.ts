@@ -10,7 +10,7 @@ export class Game extends Scene
     gridStartX: number = 200;
     gridStartY: number = 150;
     grid: Phaser.GameObjects.Rectangle[][];
-    dots: Phaser.GameObjects.Circle[][];
+    dots: Phaser.GameObjects.Circle[][][]; // Now 3D array: [row][col][dotIndex]
     gameState: { dotCount: number, owner: string | null, capacity: number }[][];
     currentPlayer: 'red' | 'blue' = 'red';
     currentPlayerText: Phaser.GameObjects.Text;
@@ -77,7 +77,7 @@ export class Game extends Scene
                 });
                 
                 this.grid[row][col] = cell;
-                this.dots[row][col] = null; // No dot initially
+                this.dots[row][col] = []; // Empty array of dots initially
             }
         }
         
@@ -145,28 +145,86 @@ export class Game extends Scene
 
     placeDot(row: number, col: number)
     {
-        // Only allow placing dots in empty cells for now
-        if (this.gameState[row][col].dotCount === 0) {
-            const x = this.gridStartX + col * this.cellSize;
-            const y = this.gridStartY + row * this.cellSize;
+        const cellState = this.gameState[row][col];
+        
+        // Can only place dots in empty cells or cells owned by current player
+        if (cellState.dotCount === 0 || cellState.owner === this.currentPlayer) {
+            // Update game state first
+            cellState.dotCount++;
+            cellState.owner = this.currentPlayer;
             
-            // Create dot with current player's color
+            // Create new dot with current player's color
             const color = this.currentPlayer === 'red' ? 0xff0000 : 0x0000ff;
-            const dot = this.add.circle(x, y, 15, color);
+            const dot = this.add.circle(0, 0, 12, color); // Position will be set by arrangeDots
             dot.setStrokeStyle(2, 0x000000);
             
-            // Update game state
-            this.gameState[row][col].dotCount = 1;
-            this.gameState[row][col].owner = this.currentPlayer;
-            this.dots[row][col] = dot;
+            // Add dot to the cell's dot array
+            this.dots[row][col].push(dot);
             
-            console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col} (capacity: ${this.gameState[row][col].capacity})`);
+            // Arrange all dots in this cell visually
+            this.arrangeDots(row, col);
+            
+            console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col} (${cellState.dotCount}/${cellState.capacity})`);
             
             // Switch to the other player
             this.currentPlayer = this.currentPlayer === 'red' ? 'blue' : 'red';
             this.updatePlayerIndicator();
         } else {
-            console.log(`Cell at row ${row}, col ${col} already has a dot`);
+            console.log(`Cell at row ${row}, col ${col} is owned by the other player`);
+        }
+    }
+
+    arrangeDots(row: number, col: number)
+    {
+        const cellDots = this.dots[row][col];
+        const dotCount = cellDots.length;
+        
+        if (dotCount === 0) return;
+        
+        const cellCenterX = this.gridStartX + col * this.cellSize;
+        const cellCenterY = this.gridStartY + row * this.cellSize;
+        
+        // Only render up to 6 dots visually, even if more exist
+        const visualDotCount = Math.min(dotCount, 6);
+        
+        if (visualDotCount === 1) {
+            // Single dot in center
+            cellDots[0].setPosition(cellCenterX, cellCenterY);
+        } else if (visualDotCount === 2) {
+            // Two dots side by side
+            cellDots[0].setPosition(cellCenterX - 15, cellCenterY);
+            cellDots[1].setPosition(cellCenterX + 15, cellCenterY);
+        } else if (visualDotCount === 3) {
+            // Three dots in triangle formation
+            cellDots[0].setPosition(cellCenterX, cellCenterY - 12);
+            cellDots[1].setPosition(cellCenterX - 12, cellCenterY + 8);
+            cellDots[2].setPosition(cellCenterX + 12, cellCenterY + 8);
+        } else if (visualDotCount === 4) {
+            // Four dots in square formation
+            cellDots[0].setPosition(cellCenterX - 12, cellCenterY - 12);
+            cellDots[1].setPosition(cellCenterX + 12, cellCenterY - 12);
+            cellDots[2].setPosition(cellCenterX - 12, cellCenterY + 12);
+            cellDots[3].setPosition(cellCenterX + 12, cellCenterY + 12);
+        } else if (visualDotCount === 5) {
+            // Five dots: one in center, four around it
+            cellDots[0].setPosition(cellCenterX, cellCenterY);
+            cellDots[1].setPosition(cellCenterX - 18, cellCenterY - 18);
+            cellDots[2].setPosition(cellCenterX + 18, cellCenterY - 18);
+            cellDots[3].setPosition(cellCenterX - 18, cellCenterY + 18);
+            cellDots[4].setPosition(cellCenterX + 18, cellCenterY + 18);
+        } else if (visualDotCount === 6) {
+            // Six dots: two rows of three
+            cellDots[0].setPosition(cellCenterX - 18, cellCenterY - 12);
+            cellDots[1].setPosition(cellCenterX, cellCenterY - 12);
+            cellDots[2].setPosition(cellCenterX + 18, cellCenterY - 12);
+            cellDots[3].setPosition(cellCenterX - 18, cellCenterY + 12);
+            cellDots[4].setPosition(cellCenterX, cellCenterY + 12);
+            cellDots[5].setPosition(cellCenterX + 18, cellCenterY + 12);
+        }
+        
+        // Hide any dots beyond the 6th one (they still exist in the array for game logic)
+        for (let i = 6; i < cellDots.length; i++) {
+            cellDots[i].setVisible(false);
         }
     }
 
