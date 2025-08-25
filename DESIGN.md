@@ -115,6 +115,17 @@ The computer opponent can be set to different difficulty levels:
 - Hard: The computer employs advanced strategies.
 - Expert: The computer uses all strategies at its disposal to challenge the player.
 
+## Game levels and level sets
+- Each game will be comprised of multiple levels, called a level set.
+- Each level will have a different board design and/or size.
+- Each level will increase in difficulty.
+- Each level will have a name and a brief description.
+- Each level set will have a name and a brief description.
+- Players can unlock new levels by completing, though not necessarily winning, previous ones.
+- A player's progress will be saved, allowing them to resume from the last completed level.
+- A player's final score for the game will be based on their performance across all levels in the level set.
+- In the settings menu players can choose a different level set (from a list) to play for the next game.
+
 
 ## Game plan
 This section outlines an incremental development process for building the Dots game:
@@ -141,6 +152,9 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Create settings menu for board size configuration
 - [ ] Add sound effects for moves and explosions
 - [ ] Implement responsive design for different screen sizes
+- [ ] Create level set and level data structures and level definitions
+- [ ] Implement level progression system through a level set for gameplay
+- [ ] Add level set selection menu in settings
 
 ### Phase 4: AI Opponent
 - [ ] Implement Easy AI (random valid moves)
@@ -156,6 +170,10 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Add game statistics tracking
 - [ ] Implement save/load game functionality
 - [ ] Add animations for explosions and dot placement
+- [ ] Create multiple level sets with different themes
+- [ ] Add level completion tracking and unlocking system
+- [ ] Implement player progress saving and loading
+- [ ] Add scoring system based on performance across levels
 
 ### Phase 6: Polish and Accessibility
 - [ ] Add keyboard controls for accessibility
@@ -164,6 +182,10 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Create tutorial/help system
 - [ ] Add visual themes and customization options
 - [ ] Performance optimization and testing
+- [ ] Add level set selection interface
+- [ ] Create level editor for custom level creation
+- [ ] Implement achievements and badges system
+- [ ] Add social features for sharing progress
 
 Each phase builds upon the previous one, allowing for incremental testing and refinement of game mechanics.
 
