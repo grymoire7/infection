@@ -1,0 +1,112 @@
+# Dots - a grid game
+
+## Overview
+Dots is a two-plyer game (one human, one computer) played on grids of varying
+sizes and designs. Players take turns adding one dot to an available cell in the grid.
+Play continues until one player owns all the cells on the board.
+
+An available cell is one that does not already contain a dot or one that is
+alrady owned by the player. Let's say that player one is red and player two is
+blue.
+
+- If player one adds a dot to an empty cell, that cell becomes red.
+- A cell has a "capacity" equal to the number of orthogonally adjacent cells.
+  - A cell in the middle of the board has a capacity of 4.
+  - A cell on an edge (but not a corner) has a capacity of 3.
+  - A cell in a corner has a capacity of 2.
+- If a player adds a dot to a cell they already own, the number of dots in that
+  cell increases by one.
+- If the number of dots in a cell exceeds its capacity, that cell "explodes".
+  - The cell loses a number of dots equal to its capacity.
+  - Each orthogonally adjacent cell gains one dot from the exploding cell.
+  - If an adjacent cell is owned by the opposing player, it becomes owned by
+    the player who caused the explosion.
+  - If an adjacent cell now exceeds its capacity, it also explodes. This can
+    cause a chain reaction of explosions.
+- The game ends when one player owns all the cells on the board.
+
+
+## Board design
+The default board is a 5x5 grid:
+
+
+|-------|-------|-------|-------|-------|
+|       |       |       |       |       |
+|       |       |       |       |       |
+|       |       |       |       |       |
+|-------|-------|-------|-------|-------|
+|       |       |     * |     * |       |
+|       |   *   |       |   *   |       |
+|       |       | *     | *     |       |
+|-------|-------|-------|-------|-------|
+|       | *   * | *   * | *   * |       |
+|       |       |   *   | *   * |       |
+|       | *   * | *   * | *   * |       |
+|-------|-------|-------|-------|-------|
+|       |       |       |       |       |
+|       |       |       |       |       |
+|       |       |       |       |       |
+|-------|-------|-------|-------|-------|
+|       |       |       |       |       |
+|       |       |       |       |       |
+|       |       |       |       |       |
+|-------|-------|-------|-------|-------|
+
+
+The board size is configuralbe (up to 9x9) and the design can be changed to
+create different gameplay experiences. For example, the following board has
+some cells that act as solid blocks. These cells cannot be played in or
+owned by either player.
+
+
+|-------|-------|-------|-------|-------|
+|XXXXXXX|       |       |       |XXXXXXX|
+|XXXXXXX|       |       |       |XXXXXXX|
+|XXXXXXX|       |       |       |XXXXXXX|
+|-------|-------|-------|-------|-------|
+|       |       |       |       |       |
+|       |       |       |       |       |
+|       |       |       |       |       |
+|-------|-------|-------|-------|-------|
+|       |       |XXXXXXX|       |       |
+|       |       |XXXXXXX|       |       |
+|       |       |XXXXXXX|       |       |
+|-------|-------|-------|-------|-------|
+|       |       |       |       |       |
+|       |       |       |       |       |
+|       |       |       |       |       |
+|-------|-------|-------|-------|-------|
+|XXXXXXX|       |       |       |XXXXXXX|
+|XXXXXXX|       |       |       |XXXXXXX|
+|XXXXXXX|       |       |       |XXXXXXX|
+|-------|-------|-------|-------|-------|
+ 
+
+
+## User interface
+
+This game is a Phaser 3 project that uses the Vue framework, TypeScript and
+Vite for bundling. It includes a bridge for Vue to Phaser game communication,
+hot-reloading for quick development workflow and scripts to generate
+production-ready builds.
+
+The game is played in a browser. The user interface includes:
+
+- A main menu with options to start a new game, view instructions, and adjust settings.
+- A game board that displays the grid, dots, and player turns.
+- A sidebar or overlay that shows the current player's turn, scores, and game status.
+- A settings menu to adjust game options such as board size and design.
+- A game over screen that announces the winner and offers options to restart or return to the main menu.
+- Sound effects and background music to enhance the gaming experience.
+- Responsive design to ensure the game is playable on various screen sizes and devices.
+- Accessibility features such as keyboard controls and screen reader support.
+
+
+## Difficulty levels
+The computer opponent can be set to different difficulty levels:
+
+- Easy: The computer makes random valid moves.
+- Medium: The computer uses a basic strategy in either low capacity free ceels or in a cell that will cause an explosion.
+- Hard: The computer employs advanced strategies.
+- Expert: The computer uses all strategies at its disposal to challenge the player.
+
