@@ -11,7 +11,7 @@ export class Game extends Scene
     gridStartY: number = 150;
     grid: Phaser.GameObjects.Rectangle[][];
     dots: Phaser.GameObjects.Circle[][];
-    gameState: { dotCount: number, owner: string | null }[][];
+    gameState: { dotCount: number, owner: string | null, capacity: number }[][];
     currentPlayer: 'red' | 'blue' = 'red';
     currentPlayerText: Phaser.GameObjects.Text;
 
@@ -49,8 +49,11 @@ export class Game extends Scene
                 const x = this.gridStartX + col * this.cellSize;
                 const y = this.gridStartY + row * this.cellSize;
                 
+                // Calculate capacity based on adjacent cells
+                const capacity = this.calculateCellCapacity(row, col);
+                
                 // Initialize game state for this cell
-                this.gameState[row][col] = { dotCount: 0, owner: null };
+                this.gameState[row][col] = { dotCount: 0, owner: null, capacity: capacity };
                 
                 // Create cell background
                 const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, 0x444444);
@@ -114,6 +117,32 @@ export class Game extends Scene
         this.currentPlayerText.setColor(playerColor);
     }
 
+    calculateCellCapacity(row: number, col: number): number
+    {
+        let capacity = 0;
+        
+        // Check all four orthogonal directions
+        const directions = [
+            [-1, 0], // up
+            [1, 0],  // down
+            [0, -1], // left
+            [0, 1]   // right
+        ];
+        
+        for (const [deltaRow, deltaCol] of directions) {
+            const newRow = row + deltaRow;
+            const newCol = col + deltaCol;
+            
+            // Check if the adjacent cell is within grid bounds
+            if (newRow >= 0 && newRow < this.gridSize && 
+                newCol >= 0 && newCol < this.gridSize) {
+                capacity++;
+            }
+        }
+        
+        return capacity;
+    }
+
     placeDot(row: number, col: number)
     {
         // Only allow placing dots in empty cells for now
@@ -131,7 +160,7 @@ export class Game extends Scene
             this.gameState[row][col].owner = this.currentPlayer;
             this.dots[row][col] = dot;
             
-            console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col}`);
+            console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col} (capacity: ${this.gameState[row][col].capacity})`);
             
             // Switch to the other player
             this.currentPlayer = this.currentPlayer === 'red' ? 'blue' : 'red';

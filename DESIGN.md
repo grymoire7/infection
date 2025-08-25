@@ -127,7 +127,7 @@ This section outlines an incremental development process for building the Dots g
 - [x] Display current player indicator
 
 ### Phase 2: Core Game Mechanics
-- [ ] Implement cell capacity calculation based on adjacent cells
+- [x] Implement cell capacity calculation based on adjacent cells
 - [ ] Add multiple dots per cell (visual representation)
 - [ ] Implement cell ownership (red/blue coloring)
 - [ ] Add dot explosion logic when capacity is exceeded
