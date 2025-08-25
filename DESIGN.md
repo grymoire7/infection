@@ -124,7 +124,7 @@ This section outlines an incremental development process for building the Dots g
 - [x] Add visual feedback for cell hover states
 - [x] Implement basic dot placement (single dot per cell)
 - [x] Add player turn system (red vs blue)
-- [ ] Display current player indicator
+- [x] Display current player indicator
 
 ### Phase 2: Core Game Mechanics
 - [ ] Implement cell capacity calculation based on adjacent cells

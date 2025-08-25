@@ -13,6 +13,7 @@ export class Game extends Scene
     dots: Phaser.GameObjects.Circle[][];
     gameState: { dotCount: number, owner: string | null }[][];
     currentPlayer: 'red' | 'blue' = 'red';
+    currentPlayerText: Phaser.GameObjects.Text;
 
     constructor ()
     {
@@ -28,6 +29,7 @@ export class Game extends Scene
         this.background.setAlpha(0.3);
 
         this.createGrid();
+        this.createPlayerIndicator();
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -91,6 +93,27 @@ export class Game extends Scene
         }).setOrigin(0.5);
     }
 
+    createPlayerIndicator()
+    {
+        // Add current player indicator
+        this.currentPlayerText = this.add.text(512, 100, '', {
+            fontFamily: 'Arial Black', 
+            fontSize: 24, 
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        
+        this.updatePlayerIndicator();
+    }
+
+    updatePlayerIndicator()
+    {
+        const playerColor = this.currentPlayer === 'red' ? '#ff0000' : '#0000ff';
+        const playerName = this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1);
+        
+        this.currentPlayerText.setText(`Current Player: ${playerName}`);
+        this.currentPlayerText.setColor(playerColor);
+    }
+
     placeDot(row: number, col: number)
     {
         // Only allow placing dots in empty cells for now
@@ -112,6 +135,7 @@ export class Game extends Scene
             
             // Switch to the other player
             this.currentPlayer = this.currentPlayer === 'red' ? 'blue' : 'red';
+            this.updatePlayerIndicator();
         } else {
             console.log(`Cell at row ${row}, col ${col} already has a dot`);
         }
