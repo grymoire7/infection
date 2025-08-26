@@ -67,9 +67,9 @@ export class Game extends Scene
                 cell.on('pointerover', () => {
                     const cellState = this.gameState[row][col];
                     if (cellState.owner === 'red') {
-                        cell.setFillStyle(0x775555);
+                        cell.setFillStyle(0x885555);
                     } else if (cellState.owner === 'blue') {
-                        cell.setFillStyle(0x555577);
+                        cell.setFillStyle(0x555588);
                     } else {
                         cell.setFillStyle(0x555555);
                     }
