@@ -4,77 +4,33 @@ import { ref, toRaw } from 'vue';
 import type { MainMenu } from './game/scenes/MainMenu';
 import PhaserGame from './PhaserGame.vue';
 
-// The sprite can only be moved in the MainMenu Scene
-const canMoveSprite = ref();
-
 //  References to the PhaserGame component (game and scene are exposed)
 const phaserRef = ref();
-const spritePosition = ref({ x: 0, y: 0 });
+const currentSceneName = ref('MainMenu'); // Track current scene
 
-const changeScene = () => {
-
-    const scene = toRaw(phaserRef.value.scene) as MainMenu;
-
-    if (scene)
-    {
-        //  Call the changeScene method defined in the `MainMenu`, `Game` and `GameOver` Scenes
-        scene.changeScene();
-    }
-
-}
-
-const moveSprite = () => {
-
-    if (phaserRef.value !== undefined)
-    {
-
-        const scene = toRaw(phaserRef.value.scene) as MainMenu;
-
-        if (scene)
-        {
-            // Get the update logo position
-            (scene as MainMenu).moveLogo(({ x, y }) => {
-
-                spritePosition.value = { x, y };
-
-            });
-        }
-    }
-
-}
-
-const addSprite = () => {
-
+const goToMainMenu = () => {
     const scene = toRaw(phaserRef.value.scene) as Phaser.Scene;
-
-    if (scene)
-    {
-        // Add a new sprite to the current scene at a random position
-        const x = Phaser.Math.Between(64, scene.scale.width - 64);
-        const y = Phaser.Math.Between(64, scene.scale.height - 64);
-    
-        // `add.sprite` is a Phaser GameObjectFactory method and it returns a Sprite Game Object instance
-        const star = scene.add.sprite(x, y, 'star');
-
-        //  ... which you can then act upon. Here we create a Phaser Tween to fade the star sprite in and out.
-        //  You could, of course, do this from within the Phaser Scene code, but this is just an example
-        //  showing that Phaser objects and systems can be acted upon from outside of Phaser itself.
-        scene.add.tween({
-            targets: star,
-            duration: 500 + Math.random() * 1000,
-            alpha: 0,
-            yoyo: true,
-            repeat: -1
-        });
+    if (scene) {
+        scene.scene.start('MainMenu');
     }
+}
 
+const goToSettings = () => {
+    // Settings scene not implemented yet
+    console.log('Settings scene not implemented yet');
+}
+
+const playGame = () => {
+    const scene = toRaw(phaserRef.value.scene) as Phaser.Scene;
+    if (scene) {
+        scene.scene.start('Game');
+    }
 }
 
 // Event emitted from the PhaserGame component
-const currentScene = (scene: MainMenu) => {
-
-    canMoveSprite.value = (scene.scene.key !== "MainMenu");
-
+const currentScene = (scene: any) => {
+    // Update current scene name for button state management
+    currentSceneName.value = scene.scene.key;
 }
 
 </script>
@@ -83,16 +39,13 @@ const currentScene = (scene: MainMenu) => {
     <PhaserGame ref="phaserRef" @current-active-scene="currentScene" />
     <div>
         <div>
-            <button class="button" @click="changeScene">Change Scene</button>
+            <button class="button" @click="goToMainMenu" :disabled="currentSceneName === 'MainMenu'">Main Menu</button>
         </div>
         <div>
-            <button :disabled="canMoveSprite" class="button" @click="moveSprite">Toggle Movement</button>
-        </div>
-        <div class="spritePosition">Sprite Position:
-            <pre>{{ spritePosition }}</pre>
+            <button class="button" @click="goToSettings" disabled>Settings</button>
         </div>
         <div>
-            <button class="button" @click="addSprite">Add New Sprite</button>
+            <button class="button" @click="playGame" :disabled="currentSceneName === 'Game'">Play Game</button>
         </div>
     </div>
 </template>
