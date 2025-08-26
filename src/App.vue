@@ -16,8 +16,10 @@ const goToMainMenu = () => {
 }
 
 const goToSettings = () => {
-    // Settings scene not implemented yet
-    console.log('Settings scene not implemented yet');
+    const scene = toRaw(phaserRef.value.scene) as Phaser.Scene;
+    if (scene) {
+        scene.scene.start('Settings');
+    }
 }
 
 const playGame = () => {
@@ -42,7 +44,7 @@ const currentScene = (scene: any) => {
             <button class="button" @click="goToMainMenu" :disabled="currentSceneName === 'MainMenu'">Main Menu</button>
         </div>
         <div>
-            <button class="button" @click="goToSettings" disabled>Settings</button>
+            <button class="button" @click="goToSettings" :disabled="currentSceneName === 'Settings'">Settings</button>
         </div>
         <div>
             <button class="button" @click="playGame" :disabled="currentSceneName === 'Game'">Play Game</button>

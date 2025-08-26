@@ -218,7 +218,9 @@ export class Game extends Scene
             console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col} (${cellState.dotCount}/${cellState.capacity})`);
 
             // Play placement sound effect
-            this.sound.play('placement');
+            if (this.game.registry.get('soundEffectsEnabled') !== false) {
+                this.sound.play('placement');
+            }
 
             // Check for explosions after placing the dot
             await this.checkAndHandleExplosions();
@@ -337,7 +339,9 @@ export class Game extends Scene
             // Check for win condition after each explosion wave
             if (explosionOccurred) {
                 // Play explosion propagation sound effect
-                this.sound.play('propagate');
+                if (this.game.registry.get('soundEffectsEnabled') !== false) {
+                    this.sound.play('propagate');
+                }
 
                 const winner = this.checkWinCondition();
                 if (winner) {
