@@ -149,7 +149,7 @@ This section outlines an incremental development process for building the Dots g
 - [x] Add game over screen with winner announcement
 - [x] Implement restart functionality
 - [x] Add move history/undo capability
-- [ ] Add sound effects for dot placement and explosion propagation
+- [x] Add sound effects for dot placement and explosion propagation
 - [ ] Create a settings scene for turning sound effects on/off with room for future settings
 - [ ] Implement responsive design for different screen sizes
 - [ ] Create level set and level data structures and level definitions
