@@ -23,6 +23,8 @@ export class ComputerPlayer {
                 return this.getMediumMove(gameState, gridSize);
             case 'hard':
                 return this.getHardMove(gameState, gridSize);
+            case 'expert':
+                return this.getExpertMove(gameState, gridSize);
             default:
                 return this.getRandomValidMove(gameState, gridSize);
         }
@@ -320,5 +322,118 @@ export class ComputerPlayer {
             }
         }
         return false;
+    }
+
+    /**
+     * Get a move using Expert AI strategy
+     * @param gameState - Current state of the game board
+     * @param gridSize - Size of the game grid
+     * @returns The chosen move coordinate
+     */
+    private getExpertMove(gameState: GameState[][], gridSize: number): { row: number, col: number } {
+        // 1. Look for a full cell next to an opponent's full cell
+        const fullCellNextToOpponentFull = this.findFullCellNextToOpponentFull(gameState, gridSize);
+        if (fullCellNextToOpponentFull) {
+            return fullCellNextToOpponentFull;
+        }
+
+        // 2. Look for a fully loaded cell next to an opponent's cell
+        const fullCellNextToOpponent = this.findFullCellNextToOpponent(gameState, gridSize);
+        if (fullCellNextToOpponent) {
+            return fullCellNextToOpponent;
+        }
+
+        // 3. Look for any fully loaded cell (owned by this player)
+        const fullyLoadedCell = this.findFullyLoadedCell(gameState, gridSize);
+        if (fullyLoadedCell) {
+            return fullyLoadedCell;
+        }
+
+        // 4. Look for an advantage cell
+        const advantageCell = this.findAdvantageCell(gameState, gridSize);
+        if (advantageCell) {
+            return advantageCell;
+        }
+
+        // 5. Look for a low capacity free cell (corner or edge cell)
+        const lowCapacityCell = this.findLowCapacityFreeCell(gameState, gridSize);
+        if (lowCapacityCell) {
+            return lowCapacityCell;
+        }
+
+        // 6. Fall back to random valid move
+        return this.getRandomValidMove(gameState, gridSize);
+    }
+
+    /**
+     * Find an advantage cell - a cell owned by this player that has ullage equal to or less than all adjacent opponent cells
+     * @param gameState - Current state of the game board
+     * @param gridSize - Size of the game grid
+     * @returns Coordinate of advantage cell or null
+     */
+    private findAdvantageCell(gameState: GameState[][], gridSize: number): { row: number, col: number } | null {
+        const opponentColor = this.color === 'red' ? 'blue' : 'red';
+
+        for (let row = 0; row < gridSize; row++) {
+            for (let col = 0; col < gridSize; col++) {
+                const cell = gameState[row][col];
+                
+                // Only consider cells owned by this player
+                if (cell.owner === this.color) {
+                    const cellUllage = cell.capacity - cell.dotCount;
+                    
+                    // Check if this cell has advantage over adjacent opponent cells
+                    if (this.hasAdvantageOverAdjacentOpponents(gameState, gridSize, row, col, cellUllage, opponentColor)) {
+                        return { row, col };
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Check if a cell has advantage over all adjacent opponent cells
+     * @param gameState - Current state of the game board
+     * @param gridSize - Size of the game grid
+     * @param row - Row of the cell to check
+     * @param col - Column of the cell to check
+     * @param cellUllage - Ullage of the cell to check
+     * @param opponentColor - Color of the opponent
+     * @returns True if this cell has advantage over all adjacent opponent cells
+     */
+    private hasAdvantageOverAdjacentOpponents(gameState: GameState[][], gridSize: number, row: number, col: number, cellUllage: number, opponentColor: string): boolean {
+        const directions = [
+            [-1, 0], // up
+            [1, 0],  // down
+            [0, -1], // left
+            [0, 1]   // right
+        ];
+
+        let hasAdjacentOpponent = false;
+
+        for (const [deltaRow, deltaCol] of directions) {
+            const newRow = row + deltaRow;
+            const newCol = col + deltaCol;
+
+            // Check if the adjacent cell is within grid bounds
+            if (newRow >= 0 && newRow < gridSize && newCol >= 0 && newCol < gridSize) {
+                const adjacentCell = gameState[newRow][newCol];
+                
+                // If it's an opponent's cell or empty cell
+                if (adjacentCell.owner === opponentColor || adjacentCell.owner === null) {
+                    hasAdjacentOpponent = true;
+                    const adjacentUllage = adjacentCell.capacity - adjacentCell.dotCount;
+                    
+                    // If our ullage is greater than the adjacent cell's ullage, we don't have advantage
+                    if (cellUllage > adjacentUllage) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        // Only return true if we found at least one adjacent opponent/empty cell and have advantage over all
+        return hasAdjacentOpponent;
     }
 }

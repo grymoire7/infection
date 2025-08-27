@@ -200,7 +200,7 @@ This section outlines an incremental development process for building the Dots g
 - [x] Use the 'ComputerPlayer' class in the game flow to make moves for the computer player
 - [x] Add Medium AI (see "Difficulty levels" section above)
 - [x] Develop Hard AI (see "Difficulty levels" section above)
-- [ ] Create Expert AI (see "Difficulty levels" section above)
+- [x] Create Expert AI (see "Difficulty levels" section above)
 
 ### Phase 5: Levels and Level Sets
 - [ ] Create level set and level data structures and level definitions (see "Game levels and level sets" section above)
