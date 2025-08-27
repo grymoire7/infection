@@ -4,10 +4,21 @@ import { ComputerPlayer } from '../ComputerPlayer';
 
 export class Game extends Scene
 {
+    // Game configuration constants
+    private static readonly DEFAULT_GRID_SIZE = 5;
+    private static readonly MAX_CELL_SIZE = 80;
+    private static readonly MIN_CELL_SIZE = 40;
+    private static readonly DOT_RADIUS = 12;
+    private static readonly DOT_STROKE_WIDTH = 2;
+    private static readonly MAX_VISUAL_DOTS = 6;
+    private static readonly COMPUTER_MOVE_DELAY = 1000;
+    private static readonly EXPLOSION_DELAY = 300;
+    private static readonly MAX_MOVE_HISTORY = 50;
+
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.Image;
-    gridSize: number = 5;
-    cellSize: number = 80;
+    gridSize: number = Game.DEFAULT_GRID_SIZE;
+    cellSize: number = Game.MAX_CELL_SIZE;
     gridStartX: number;
     gridStartY: number;
     grid: Phaser.GameObjects.Rectangle[][];
@@ -55,27 +66,7 @@ export class Game extends Scene
 
     createGrid()
     {
-        // Calculate responsive cell size based on screen dimensions
-        const screenWidth = this.cameras.main.width;
-        const screenHeight = this.cameras.main.height;
-        
-        // Reserve space for UI elements (title, player indicator, instructions)
-        const availableWidth = screenWidth * 0.9; // 90% of screen width
-        const availableHeight = screenHeight * 0.7; // 70% of screen height (leaving room for UI)
-        
-        // Calculate cell size that fits within available space
-        const maxCellSizeByWidth = Math.floor(availableWidth / this.gridSize);
-        const maxCellSizeByHeight = Math.floor(availableHeight / this.gridSize);
-        this.cellSize = Math.min(maxCellSizeByWidth, maxCellSizeByHeight, 80); // Cap at 80px max
-        
-        // Ensure minimum cell size for playability
-        this.cellSize = Math.max(this.cellSize, 40);
-        
-        // Calculate centered grid position
-        const totalGridWidth = this.gridSize * this.cellSize;
-        const totalGridHeight = this.gridSize * this.cellSize;
-        this.gridStartX = (screenWidth - totalGridWidth) / 2 + this.cellSize / 2;
-        this.gridStartY = (screenHeight - totalGridHeight) / 2 + this.cellSize / 2 + 60; // Offset for title
+        this.calculateGridDimensions();
 
         this.grid = [];
         this.dots = [];
@@ -162,6 +153,29 @@ export class Game extends Scene
         }).setOrigin(0.5);
 
         this.updatePlayerIndicator();
+    }
+
+    private calculateGridDimensions(): void {
+        const screenWidth = this.cameras.main.width;
+        const screenHeight = this.cameras.main.height;
+        
+        // Reserve space for UI elements (title, player indicator, instructions)
+        const availableWidth = screenWidth * 0.9;
+        const availableHeight = screenHeight * 0.7;
+        
+        // Calculate cell size that fits within available space
+        const maxCellSizeByWidth = Math.floor(availableWidth / this.gridSize);
+        const maxCellSizeByHeight = Math.floor(availableHeight / this.gridSize);
+        this.cellSize = Math.min(maxCellSizeByWidth, maxCellSizeByHeight, Game.MAX_CELL_SIZE);
+        
+        // Ensure minimum cell size for playability
+        this.cellSize = Math.max(this.cellSize, Game.MIN_CELL_SIZE);
+        
+        // Calculate centered grid position
+        const totalGridWidth = this.gridSize * this.cellSize;
+        const totalGridHeight = this.gridSize * this.cellSize;
+        this.gridStartX = (screenWidth - totalGridWidth) / 2 + this.cellSize / 2;
+        this.gridStartY = (screenHeight - totalGridHeight) / 2 + this.cellSize / 2 + 60;
     }
 
     createUndoButton()
@@ -258,8 +272,8 @@ export class Game extends Scene
 
             // Create new dot with current player's color
             const color = this.currentPlayer === 'red' ? 0xff0000 : 0x0000ff;
-            const dot = this.add.circle(0, 0, 12, color); // Position will be set by arrangeDots
-            dot.setStrokeStyle(2, 0x000000);
+            const dot = this.add.circle(0, 0, Game.DOT_RADIUS, color);
+            dot.setStrokeStyle(Game.DOT_STROKE_WIDTH, 0x000000);
 
             // Add dot to the cell's dot array
             this.dots[row][col].push(dot);
@@ -298,7 +312,7 @@ export class Game extends Scene
 
             // If it's now the computer's turn, make a computer move after a short delay
             if (this.currentPlayer !== this.humanPlayer && this.computerPlayer) {
-                this.time.delayedCall(1000, () => {
+                this.time.delayedCall(Game.COMPUTER_MOVE_DELAY, () => {
                     this.makeComputerMove();
                 });
             }
@@ -317,48 +331,72 @@ export class Game extends Scene
         const cellCenterX = this.gridStartX + col * this.cellSize;
         const cellCenterY = this.gridStartY + row * this.cellSize;
 
-        // Only render up to 6 dots visually, even if more exist
-        const visualDotCount = Math.min(dotCount, 6);
+        // Only render up to max visual dots, even if more exist
+        const visualDotCount = Math.min(dotCount, Game.MAX_VISUAL_DOTS);
 
-        if (visualDotCount === 1) {
-            // Single dot in center
-            cellDots[0].setPosition(cellCenterX, cellCenterY);
-        } else if (visualDotCount === 2) {
-            // Two dots side by side
-            cellDots[0].setPosition(cellCenterX - 15, cellCenterY);
-            cellDots[1].setPosition(cellCenterX + 15, cellCenterY);
-        } else if (visualDotCount === 3) {
-            // Three dots in triangle formation
-            cellDots[0].setPosition(cellCenterX, cellCenterY - 12);
-            cellDots[1].setPosition(cellCenterX - 12, cellCenterY + 8);
-            cellDots[2].setPosition(cellCenterX + 12, cellCenterY + 8);
-        } else if (visualDotCount === 4) {
-            // Four dots in square formation
-            cellDots[0].setPosition(cellCenterX - 12, cellCenterY - 12);
-            cellDots[1].setPosition(cellCenterX + 12, cellCenterY - 12);
-            cellDots[2].setPosition(cellCenterX - 12, cellCenterY + 12);
-            cellDots[3].setPosition(cellCenterX + 12, cellCenterY + 12);
-        } else if (visualDotCount === 5) {
-            // Five dots: one in center, four around it
-            cellDots[0].setPosition(cellCenterX, cellCenterY);
-            cellDots[1].setPosition(cellCenterX - 18, cellCenterY - 18);
-            cellDots[2].setPosition(cellCenterX + 18, cellCenterY - 18);
-            cellDots[3].setPosition(cellCenterX - 18, cellCenterY + 18);
-            cellDots[4].setPosition(cellCenterX + 18, cellCenterY + 18);
-        } else if (visualDotCount === 6) {
-            // Six dots: two rows of three
-            cellDots[0].setPosition(cellCenterX - 18, cellCenterY - 12);
-            cellDots[1].setPosition(cellCenterX, cellCenterY - 12);
-            cellDots[2].setPosition(cellCenterX + 18, cellCenterY - 12);
-            cellDots[3].setPosition(cellCenterX - 18, cellCenterY + 12);
-            cellDots[4].setPosition(cellCenterX, cellCenterY + 12);
-            cellDots[5].setPosition(cellCenterX + 18, cellCenterY + 12);
+        const positions = this.calculateDotPositions(visualDotCount, cellCenterX, cellCenterY);
+        
+        // Apply positions to dots
+        for (let i = 0; i < visualDotCount; i++) {
+            cellDots[i].setPosition(positions[i].x, positions[i].y);
         }
 
-        // Hide any dots beyond the 6th one (they still exist in the array for game logic)
-        for (let i = 6; i < cellDots.length; i++) {
+        // Hide any dots beyond the max visual count
+        for (let i = Game.MAX_VISUAL_DOTS; i < cellDots.length; i++) {
             cellDots[i].setVisible(false);
         }
+    }
+
+    private calculateDotPositions(count: number, centerX: number, centerY: number): { x: number, y: number }[] {
+        const positions: { x: number, y: number }[] = [];
+
+        switch (count) {
+            case 1:
+                positions.push({ x: centerX, y: centerY });
+                break;
+            case 2:
+                positions.push(
+                    { x: centerX - 15, y: centerY },
+                    { x: centerX + 15, y: centerY }
+                );
+                break;
+            case 3:
+                positions.push(
+                    { x: centerX, y: centerY - 12 },
+                    { x: centerX - 12, y: centerY + 8 },
+                    { x: centerX + 12, y: centerY + 8 }
+                );
+                break;
+            case 4:
+                positions.push(
+                    { x: centerX - 12, y: centerY - 12 },
+                    { x: centerX + 12, y: centerY - 12 },
+                    { x: centerX - 12, y: centerY + 12 },
+                    { x: centerX + 12, y: centerY + 12 }
+                );
+                break;
+            case 5:
+                positions.push(
+                    { x: centerX, y: centerY },
+                    { x: centerX - 18, y: centerY - 18 },
+                    { x: centerX + 18, y: centerY - 18 },
+                    { x: centerX - 18, y: centerY + 18 },
+                    { x: centerX + 18, y: centerY + 18 }
+                );
+                break;
+            case 6:
+                positions.push(
+                    { x: centerX - 18, y: centerY - 12 },
+                    { x: centerX, y: centerY - 12 },
+                    { x: centerX + 18, y: centerY - 12 },
+                    { x: centerX - 18, y: centerY + 12 },
+                    { x: centerX, y: centerY + 12 },
+                    { x: centerX + 18, y: centerY + 12 }
+                );
+                break;
+        }
+
+        return positions;
     }
 
     updateCellOwnership(row: number, col: number)
@@ -416,7 +454,7 @@ export class Game extends Scene
                 }
 
                 // Add delay between explosion waves to show chain reaction
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(resolve => setTimeout(resolve, Game.EXPLOSION_DELAY));
             }
         }
     }
@@ -495,8 +533,8 @@ export class Game extends Scene
     addVisualDot(row: number, col: number, owner: string)
     {
         const color = owner === 'red' ? 0xff0000 : 0x0000ff;
-        const dot = this.add.circle(0, 0, 12, color);
-        dot.setStrokeStyle(2, 0x000000);
+        const dot = this.add.circle(0, 0, Game.DOT_RADIUS, color);
+        dot.setStrokeStyle(Game.DOT_STROKE_WIDTH, 0x000000);
 
         this.dots[row][col].push(dot);
     }
@@ -539,8 +577,8 @@ export class Game extends Scene
             currentPlayer: this.currentPlayer
         });
 
-        // Limit history to prevent memory issues (keep last 50 moves)
-        if (this.moveHistory.length > 50) {
+        // Limit history to prevent memory issues
+        if (this.moveHistory.length > Game.MAX_MOVE_HISTORY) {
             this.moveHistory.shift();
         }
     }
