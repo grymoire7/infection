@@ -203,9 +203,9 @@ This section outlines an incremental development process for building the Dots g
 - [x] Create Expert AI (see "Difficulty levels" section above)
 
 ### Phase 4a: Fixups
-- [ ] We have a GameOver scene and we should use it. When the game ends:
-    - [ ] Reset the game state
-    - [ ] Display the GameOver scene with the winner announcement (and later the score and/or stats)
+- [x] We have a GameOver scene and we should use it. When the game ends:
+    - [x] Reset the game state
+    - [x] Display the GameOver scene with the winner announcement (and later the score and/or stats)
 - [ ] In the game scene, add a "Quit" button:
     - [ ] Reset the game state
     - [ ] Display the GameOver scene with "Game Abandoned" instead of a winner announcement

@@ -642,31 +642,17 @@ export class Game extends Scene
 
     handleGameOver(winner: string)
     {
-        // Disable all cell interactions
-        for (let row = 0; row < this.gridSize; row++) {
-            for (let col = 0; col < this.gridSize; col++) {
-                this.grid[row][col].removeInteractive();
-            }
-        }
+        // Reset the game state
+        this.clearSavedGameState();
         
-        // Disable undo button
-        this.uiManager.disableUndoButton();
-
-        // Show game over screen
-        this.uiManager.showGameOverScreen(winner, () => {
-            this.clearSavedGameState();
-            this.scene.restart();
+        // Store winner information for GameOver scene
+        this.game.registry.set('gameWinner', winner);
+        
+        // Add a 1-second pause before transitioning to GameOver scene
+        // This allows the user to see the final resolved game state
+        this.time.delayedCall(1000, () => {
+            this.scene.start('GameOver');
         });
-
-        // Save the game over state to registry
-        this.stateManager.saveToRegistry(
-            this.gameState,
-            this.currentPlayer,
-            this.humanPlayer,
-            this.computerPlayer?.getColor() || 'blue',
-            true,
-            winner
-        );
     }
 
     async makeComputerMove()
