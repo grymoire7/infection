@@ -21,6 +21,8 @@ export class ComputerPlayer {
                 return this.getRandomValidMove(gameState, gridSize);
             case 'medium':
                 return this.getMediumMove(gameState, gridSize);
+            case 'hard':
+                return this.getHardMove(gameState, gridSize);
             default:
                 return this.getRandomValidMove(gameState, gridSize);
         }
@@ -165,5 +167,158 @@ export class ComputerPlayer {
         }
 
         return null;
+    }
+
+    /**
+     * Get a move using Hard AI strategy
+     * @param gameState - Current state of the game board
+     * @param gridSize - Size of the game grid
+     * @returns The chosen move coordinate
+     */
+    private getHardMove(gameState: GameState[][], gridSize: number): { row: number, col: number } {
+        // 1. Look for a full cell next to an opponent's full cell
+        const fullCellNextToOpponentFull = this.findFullCellNextToOpponentFull(gameState, gridSize);
+        if (fullCellNextToOpponentFull) {
+            return fullCellNextToOpponentFull;
+        }
+
+        // 2. Look for a fully loaded cell next to an opponent's cell
+        const fullCellNextToOpponent = this.findFullCellNextToOpponent(gameState, gridSize);
+        if (fullCellNextToOpponent) {
+            return fullCellNextToOpponent;
+        }
+
+        // 3. Look for any fully loaded cell (owned by this player)
+        const fullyLoadedCell = this.findFullyLoadedCell(gameState, gridSize);
+        if (fullyLoadedCell) {
+            return fullyLoadedCell;
+        }
+
+        // 4. Look for a low capacity free cell (corner or edge cell)
+        const lowCapacityCell = this.findLowCapacityFreeCell(gameState, gridSize);
+        if (lowCapacityCell) {
+            return lowCapacityCell;
+        }
+
+        // 5. Fall back to random valid move
+        return this.getRandomValidMove(gameState, gridSize);
+    }
+
+    /**
+     * Find a full cell owned by this player that is next to an opponent's full cell
+     * @param gameState - Current state of the game board
+     * @param gridSize - Size of the game grid
+     * @returns Coordinate of full cell next to opponent's full cell or null
+     */
+    private findFullCellNextToOpponentFull(gameState: GameState[][], gridSize: number): { row: number, col: number } | null {
+        const opponentColor = this.color === 'red' ? 'blue' : 'red';
+
+        for (let row = 0; row < gridSize; row++) {
+            for (let col = 0; col < gridSize; col++) {
+                const cell = gameState[row][col];
+                
+                // Check if this is our full cell
+                if (cell.owner === this.color && cell.dotCount === cell.capacity) {
+                    // Check if any adjacent cell is an opponent's full cell
+                    if (this.hasAdjacentOpponentFullCell(gameState, gridSize, row, col, opponentColor)) {
+                        return { row, col };
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Find a fully loaded cell owned by this player that is next to any opponent's cell
+     * @param gameState - Current state of the game board
+     * @param gridSize - Size of the game grid
+     * @returns Coordinate of full cell next to opponent cell or null
+     */
+    private findFullCellNextToOpponent(gameState: GameState[][], gridSize: number): { row: number, col: number } | null {
+        const opponentColor = this.color === 'red' ? 'blue' : 'red';
+
+        for (let row = 0; row < gridSize; row++) {
+            for (let col = 0; col < gridSize; col++) {
+                const cell = gameState[row][col];
+                
+                // Check if this is our full cell
+                if (cell.owner === this.color && cell.dotCount === cell.capacity) {
+                    // Check if any adjacent cell is owned by opponent
+                    if (this.hasAdjacentOpponentCell(gameState, gridSize, row, col, opponentColor)) {
+                        return { row, col };
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Check if a cell has an adjacent opponent's full cell
+     * @param gameState - Current state of the game board
+     * @param gridSize - Size of the game grid
+     * @param row - Row of the cell to check
+     * @param col - Column of the cell to check
+     * @param opponentColor - Color of the opponent
+     * @returns True if there's an adjacent opponent's full cell
+     */
+    private hasAdjacentOpponentFullCell(gameState: GameState[][], gridSize: number, row: number, col: number, opponentColor: string): boolean {
+        const directions = [
+            [-1, 0], // up
+            [1, 0],  // down
+            [0, -1], // left
+            [0, 1]   // right
+        ];
+
+        for (const [deltaRow, deltaCol] of directions) {
+            const newRow = row + deltaRow;
+            const newCol = col + deltaCol;
+
+            // Check if the adjacent cell is within grid bounds
+            if (newRow >= 0 && newRow < gridSize && newCol >= 0 && newCol < gridSize) {
+                const adjacentCell = gameState[newRow][newCol];
+                
+                // Check if it's an opponent's full cell
+                if (adjacentCell.owner === opponentColor && adjacentCell.dotCount === adjacentCell.capacity) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if a cell has an adjacent opponent's cell
+     * @param gameState - Current state of the game board
+     * @param gridSize - Size of the game grid
+     * @param row - Row of the cell to check
+     * @param col - Column of the cell to check
+     * @param opponentColor - Color of the opponent
+     * @returns True if there's an adjacent opponent's cell
+     */
+    private hasAdjacentOpponentCell(gameState: GameState[][], gridSize: number, row: number, col: number, opponentColor: string): boolean {
+        const directions = [
+            [-1, 0], // up
+            [1, 0],  // down
+            [0, -1], // left
+            [0, 1]   // right
+        ];
+
+        for (const [deltaRow, deltaCol] of directions) {
+            const newRow = row + deltaRow;
+            const newCol = col + deltaCol;
+
+            // Check if the adjacent cell is within grid bounds
+            if (newRow >= 0 && newRow < gridSize && newCol >= 0 && newCol < gridSize) {
+                const adjacentCell = gameState[newRow][newCol];
+                
+                // Check if it's owned by opponent
+                if (adjacentCell.owner === opponentColor) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
