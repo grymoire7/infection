@@ -13,6 +13,8 @@ export class Game extends Scene
     dots: Phaser.GameObjects.Circle[][][]; // Now 3D array: [row][col][dotIndex]
     gameState: { dotCount: number, owner: string | null, capacity: number }[][];
     currentPlayer: 'red' | 'blue' = 'red';
+    humanPlayer: 'red' | 'blue' = 'red';
+    computerPlayer: 'red' | 'blue' = 'blue';
     currentPlayerText: Phaser.GameObjects.Text;
     moveHistory: { gameState: any[][], currentPlayer: 'red' | 'blue' }[] = [];
     undoButton: Phaser.GameObjects.Text;
@@ -29,6 +31,9 @@ export class Game extends Scene
 
         this.background = this.add.image(512, 384, 'background');
         this.background.setAlpha(0.3);
+
+        // Initialize player colors and turn order from settings
+        this.initializeGameSettings();
 
         this.createGrid();
 
@@ -485,6 +490,25 @@ export class Game extends Scene
         this.dots[row][col].push(dot);
     }
 
+    initializeGameSettings()
+    {
+        // Get player color preference from settings (default to red)
+        const playerColor = this.game.registry.get('playerColor') || 'red';
+        this.humanPlayer = playerColor as 'red' | 'blue';
+        this.computerPlayer = this.humanPlayer === 'red' ? 'blue' : 'red';
+
+        // Get who goes first preference from settings (default to player)
+        const whoGoesFirst = this.game.registry.get('whoGoesFirst') || 'player';
+        
+        if (whoGoesFirst === 'player') {
+            this.currentPlayer = this.humanPlayer;
+        } else {
+            this.currentPlayer = this.computerPlayer;
+        }
+
+        console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${this.computerPlayer}, ${whoGoesFirst} goes first`);
+    }
+
     saveGameState()
     {
         // Deep copy the current game state
@@ -579,6 +603,8 @@ export class Game extends Scene
         this.game.registry.set('gameState', {
             gameState: this.gameState.map(row => row.map(cell => ({ ...cell }))),
             currentPlayer: this.currentPlayer,
+            humanPlayer: this.humanPlayer,
+            computerPlayer: this.computerPlayer,
             moveHistory: this.moveHistory.map(move => ({
                 gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
                 currentPlayer: move.currentPlayer
@@ -595,6 +621,8 @@ export class Game extends Scene
         if (savedState) {
             this.gameState = savedState.gameState.map(row => row.map(cell => ({ ...cell })));
             this.currentPlayer = savedState.currentPlayer;
+            this.humanPlayer = savedState.humanPlayer || 'red';
+            this.computerPlayer = savedState.computerPlayer || 'blue';
             this.moveHistory = savedState.moveHistory.map(move => ({
                 gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
                 currentPlayer: move.currentPlayer
@@ -697,6 +725,8 @@ export class Game extends Scene
         this.game.registry.set('gameState', {
             gameState: this.gameState.map(row => row.map(cell => ({ ...cell }))),
             currentPlayer: this.currentPlayer,
+            humanPlayer: this.humanPlayer,
+            computerPlayer: this.computerPlayer,
             moveHistory: this.moveHistory.map(move => ({
                 gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
                 currentPlayer: move.currentPlayer

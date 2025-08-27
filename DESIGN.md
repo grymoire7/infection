@@ -190,8 +190,8 @@ This section outlines an incremental development process for building the Dots g
 - [x] Implement responsive design for different screen sizes
 
 ### Phase 4: AI Opponent
-- [ ] Add 'Difficulty level' selection in settings (see "Difficulty levels" section above)
-- [ ] Add settings option for player to choose color (red or blue) and who goes first
+- [x] Add 'Difficulty level' selection in settings (see "Difficulty levels" section above)
+- [x] Add settings option for player to choose color (red or blue) and who goes first
 - [ ] Create 'ComputerPlayer' class
     - Initialize with difficulty level and color
     - A 'findMove' method to determine the next move based on difficulty
