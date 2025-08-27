@@ -13,7 +13,6 @@ export class Settings extends Scene
     playerColorButton: GameObjects.Text;
     whoGoesFirst: string = 'player';
     whoGoesFirstButton: GameObjects.Text;
-    backButton: GameObjects.Text;
 
     constructor ()
     {
@@ -168,29 +167,6 @@ export class Settings extends Scene
             color: '#888888'
         }).setOrigin(0.5);
 
-        // Responsive back button
-        const backButtonFontSize = Math.min(24, this.cameras.main.width / 30);
-        this.backButton = this.add.text(centerX, centerY * 1.4, 'Back to Main Menu', {
-            fontFamily: 'Arial', 
-            fontSize: backButtonFontSize, 
-            color: '#ffffff',
-            backgroundColor: '#333333',
-            padding: { x: 15, y: 8 }
-        }).setOrigin(0.5);
-
-        this.backButton.setInteractive();
-        this.backButton.on('pointerdown', () => {
-            this.goBack();
-        });
-
-        this.backButton.on('pointerover', () => {
-            this.backButton.setBackgroundColor('#555555');
-        });
-
-        this.backButton.on('pointerout', () => {
-            this.backButton.setBackgroundColor('#333333');
-        });
-
         this.updateSoundToggleButton();
         this.updateDifficultyButton();
         this.updatePlayerColorButton();
@@ -337,16 +313,5 @@ export class Settings extends Scene
         
         // Set global registry value
         this.game.registry.set('whoGoesFirst', this.whoGoesFirst);
-    }
-
-    goBack()
-    {
-        // Check if there's a saved game state to return to
-        const savedGameState = this.game.registry.get('gameState');
-        if (savedGameState) {
-            this.scene.start('Game');
-        } else {
-            this.scene.start('MainMenu');
-        }
     }
 }
