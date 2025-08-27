@@ -2,6 +2,7 @@ import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 import { ComputerPlayer } from '../ComputerPlayer';
 import { GameStateManager, GameState } from '../GameStateManager';
+import { GameUIManager } from '../GameUIManager';
 
 export class Game extends Scene
 {
@@ -31,6 +32,7 @@ export class Game extends Scene
     undoButton: Phaser.GameObjects.Text;
     computerPlayer: ComputerPlayer | null = null;
     stateManager: GameStateManager;
+    uiManager: GameUIManager;
 
     constructor ()
     {
@@ -45,8 +47,9 @@ export class Game extends Scene
         this.background = this.add.image(512, 384, 'background');
         this.background.setAlpha(0.3);
 
-        // Initialize state manager
+        // Initialize managers
         this.stateManager = new GameStateManager(this.game.registry);
+        this.uiManager = new GameUIManager(this);
 
         // Initialize player colors and turn order from settings
         this.initializeGameSettings();
@@ -56,14 +59,22 @@ export class Game extends Scene
         // Load saved game state if it exists, after grid is created
         this.loadGameState();
         
+        // Create UI elements
+        const uiElements = this.uiManager.createUI();
+        this.currentPlayerText = uiElements.currentPlayerText;
+        this.undoButton = uiElements.undoButton;
+        
+        // Set up undo button handler
+        this.uiManager.setUndoButtonHandler(() => this.undoLastMove());
+        
         // Recreate visual elements if game state was loaded
         if (this.stateManager.hasSavedState()) {
             this.recreateAllVisualDots();
             this.updateAllCellOwnership();
         }
         
-        this.createPlayerIndicator();
-        this.createUndoButton();
+        this.updatePlayerIndicator();
+        this.updateUndoButton();
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -128,36 +139,8 @@ export class Game extends Scene
             }
         }
 
-        // Add responsive title
-        const titleFontSize = Math.min(32, this.cameras.main.width / 25);
-        this.add.text(this.cameras.main.width / 2, 30, 'Dots Game', {
-            fontFamily: 'Arial Black', 
-            fontSize: titleFontSize, 
-            color: '#ffffff'
-        }).setOrigin(0.5);
-
-        // Add responsive instructions
-        const instructionFontSize = Math.min(18, this.cameras.main.width / 45);
-        const instructionY = this.cameras.main.height - 40;
-        this.add.text(this.cameras.main.width / 2, instructionY, 'Click on a cell to place a dot', {
-            fontFamily: 'Arial', 
-            fontSize: instructionFontSize, 
-            color: '#cccccc'
-        }).setOrigin(0.5);
     }
 
-    createPlayerIndicator()
-    {
-        // Add responsive current player indicator
-        const indicatorFontSize = Math.min(24, this.cameras.main.width / 35);
-        this.currentPlayerText = this.add.text(this.cameras.main.width / 2, 70, '', {
-            fontFamily: 'Arial Black', 
-            fontSize: indicatorFontSize, 
-            color: '#ffffff'
-        }).setOrigin(0.5);
-
-        this.updatePlayerIndicator();
-    }
 
     private calculateGridDimensions(): void {
         const screenWidth = this.cameras.main.width;
@@ -182,55 +165,14 @@ export class Game extends Scene
         this.gridStartY = (screenHeight - totalGridHeight) / 2 + this.cellSize / 2 + 60;
     }
 
-    createUndoButton()
-    {
-        // Position undo button responsively
-        const buttonFontSize = Math.min(20, this.cameras.main.width / 40);
-        const buttonX = Math.min(50, this.cameras.main.width * 0.05);
-        const buttonY = Math.min(50, this.cameras.main.height * 0.08);
-        
-        this.undoButton = this.add.text(buttonX, buttonY, 'Undo', {
-            fontFamily: 'Arial', 
-            fontSize: buttonFontSize, 
-            color: '#ffffff',
-            backgroundColor: '#666666',
-            padding: { x: 12, y: 6 }
-        }).setOrigin(0);
-
-        this.undoButton.setInteractive();
-        this.undoButton.on('pointerdown', () => {
-            this.undoLastMove();
-        });
-
-        this.undoButton.on('pointerover', () => {
-            this.undoButton.setBackgroundColor('#888888');
-        });
-
-        this.undoButton.on('pointerout', () => {
-            this.undoButton.setBackgroundColor('#666666');
-        });
-
-        this.updateUndoButton();
-    }
-
     updateUndoButton()
     {
-        if (this.stateManager.canUndo()) {
-            this.undoButton.setAlpha(1);
-            this.undoButton.setInteractive();
-        } else {
-            this.undoButton.setAlpha(0.5);
-            this.undoButton.removeInteractive();
-        }
+        this.uiManager.updateUndoButton(this.stateManager.canUndo());
     }
 
     updatePlayerIndicator()
     {
-        const playerColor = this.currentPlayer === 'red' ? '#ff0000' : '#0000ff';
-        const playerName = this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1);
-
-        this.currentPlayerText.setText(`Current Player: ${playerName}`);
-        this.currentPlayerText.setColor(playerColor);
+        this.uiManager.updatePlayerIndicator(this.currentPlayer);
     }
 
     calculateCellCapacity(row: number, col: number): number
@@ -700,46 +642,20 @@ export class Game extends Scene
 
     handleGameOver(winner: string)
     {
-        // Disable all cell interactions and undo button
+        // Disable all cell interactions
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 this.grid[row][col].removeInteractive();
             }
         }
-        this.undoButton.removeInteractive();
-        this.undoButton.setAlpha(0.3);
+        
+        // Disable undo button
+        this.uiManager.disableUndoButton();
 
-        // Display responsive winner message
-        const winnerColor = winner === 'Red' ? '#ff0000' : '#0000ff';
-        const winnerFontSize = Math.min(48, this.cameras.main.width / 15);
-        this.add.text(this.cameras.main.width / 2, this.cameras.main.height * 0.4, `${winner} Player Wins!`, {
-            fontFamily: 'Arial Black', 
-            fontSize: winnerFontSize, 
-            color: winnerColor
-        }).setOrigin(0.5);
-
-        // Add responsive restart button
-        const restartFontSize = Math.min(24, this.cameras.main.width / 30);
-        const restartButton = this.add.text(this.cameras.main.width / 2, this.cameras.main.height * 0.55, 'Click to Restart', {
-            fontFamily: 'Arial', 
-            fontSize: restartFontSize, 
-            color: '#ffffff',
-            backgroundColor: '#333333',
-            padding: { x: 15, y: 8 }
-        }).setOrigin(0.5);
-
-        restartButton.setInteractive();
-        restartButton.on('pointerdown', () => {
+        // Show game over screen
+        this.uiManager.showGameOverScreen(winner, () => {
             this.clearSavedGameState();
             this.scene.restart();
-        });
-
-        restartButton.on('pointerover', () => {
-            restartButton.setBackgroundColor('#555555');
-        });
-
-        restartButton.on('pointerout', () => {
-            restartButton.setBackgroundColor('#333333');
         });
 
         // Save the game over state to registry
