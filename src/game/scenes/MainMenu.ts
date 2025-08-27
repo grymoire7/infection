@@ -18,13 +18,21 @@ export class MainMenu extends Scene
 
     create ()
     {
-        this.background = this.add.image(512, 384, 'background');
+        const centerX = this.cameras.main.width / 2;
+        const centerY = this.cameras.main.height / 2;
+        
+        this.background = this.add.image(centerX, centerY, 'background');
 
-        this.logo = this.add.image(512, 300, 'logo').setDepth(100);
+        this.logo = this.add.image(centerX, centerY * 0.7, 'logo').setDepth(100);
+        
+        // Scale logo based on screen size
+        const logoScale = Math.min(1, this.cameras.main.width / 1024);
+        this.logo.setScale(logoScale);
 
-        this.title = this.add.text(512, 460, 'Main Menu', {
-            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 8,
+        const titleFontSize = Math.min(38, this.cameras.main.width / 20);
+        this.title = this.add.text(centerX, centerY * 1.2, 'Main Menu', {
+            fontFamily: 'Arial Black', fontSize: titleFontSize, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 6,
             align: 'center'
         }).setOrigin(0.5).setDepth(100);
 
@@ -62,10 +70,12 @@ export class MainMenu extends Scene
             
             this.animatedDots.push(dot);
             
-            // Set up circular movement parameters
-            const centerX = 512;
-            const centerY = 384;
-            const radius = Phaser.Math.Between(100, 200);
+            // Set up responsive circular movement parameters
+            const centerX = this.cameras.main.width / 2;
+            const centerY = this.cameras.main.height / 2;
+            const maxRadius = Math.min(this.cameras.main.width, this.cameras.main.height) * 0.25;
+            const minRadius = maxRadius * 0.5;
+            const radius = Phaser.Math.Between(minRadius, maxRadius);
             const speed = Phaser.Math.Between(4000, 8000); // Duration for full circle
             const startAngle = Phaser.Math.Between(0, 360);
             

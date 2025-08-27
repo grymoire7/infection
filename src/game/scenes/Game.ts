@@ -49,11 +49,27 @@ export class Game extends Scene
 
     createGrid()
     {
+        // Calculate responsive cell size based on screen dimensions
+        const screenWidth = this.cameras.main.width;
+        const screenHeight = this.cameras.main.height;
+        
+        // Reserve space for UI elements (title, player indicator, instructions)
+        const availableWidth = screenWidth * 0.9; // 90% of screen width
+        const availableHeight = screenHeight * 0.7; // 70% of screen height (leaving room for UI)
+        
+        // Calculate cell size that fits within available space
+        const maxCellSizeByWidth = Math.floor(availableWidth / this.gridSize);
+        const maxCellSizeByHeight = Math.floor(availableHeight / this.gridSize);
+        this.cellSize = Math.min(maxCellSizeByWidth, maxCellSizeByHeight, 80); // Cap at 80px max
+        
+        // Ensure minimum cell size for playability
+        this.cellSize = Math.max(this.cellSize, 40);
+        
         // Calculate centered grid position
         const totalGridWidth = this.gridSize * this.cellSize;
         const totalGridHeight = this.gridSize * this.cellSize;
-        this.gridStartX = (this.cameras.main.width - totalGridWidth) / 2 + this.cellSize / 2;
-        this.gridStartY = (this.cameras.main.height - totalGridHeight) / 2 + this.cellSize / 2;
+        this.gridStartX = (screenWidth - totalGridWidth) / 2 + this.cellSize / 2;
+        this.gridStartY = (screenHeight - totalGridHeight) / 2 + this.cellSize / 2 + 60; // Offset for title
 
         this.grid = [];
         this.dots = [];
@@ -111,27 +127,31 @@ export class Game extends Scene
             }
         }
 
-        // Add title
-        this.add.text(512, 50, 'Dots Game', {
+        // Add responsive title
+        const titleFontSize = Math.min(32, this.cameras.main.width / 25);
+        this.add.text(this.cameras.main.width / 2, 30, 'Dots Game', {
             fontFamily: 'Arial Black', 
-            fontSize: 32, 
+            fontSize: titleFontSize, 
             color: '#ffffff'
         }).setOrigin(0.5);
 
-        // Add instructions
-        this.add.text(512, 600, 'Click on a cell to place a dot', {
+        // Add responsive instructions
+        const instructionFontSize = Math.min(18, this.cameras.main.width / 45);
+        const instructionY = this.cameras.main.height - 40;
+        this.add.text(this.cameras.main.width / 2, instructionY, 'Click on a cell to place a dot', {
             fontFamily: 'Arial', 
-            fontSize: 18, 
+            fontSize: instructionFontSize, 
             color: '#cccccc'
         }).setOrigin(0.5);
     }
 
     createPlayerIndicator()
     {
-        // Add current player indicator
-        this.currentPlayerText = this.add.text(512, 100, '', {
+        // Add responsive current player indicator
+        const indicatorFontSize = Math.min(24, this.cameras.main.width / 35);
+        this.currentPlayerText = this.add.text(this.cameras.main.width / 2, 70, '', {
             fontFamily: 'Arial Black', 
-            fontSize: 24, 
+            fontSize: indicatorFontSize, 
             color: '#ffffff'
         }).setOrigin(0.5);
 
@@ -140,12 +160,17 @@ export class Game extends Scene
 
     createUndoButton()
     {
-        this.undoButton = this.add.text(50, 50, 'Undo', {
+        // Position undo button responsively
+        const buttonFontSize = Math.min(20, this.cameras.main.width / 40);
+        const buttonX = Math.min(50, this.cameras.main.width * 0.05);
+        const buttonY = Math.min(50, this.cameras.main.height * 0.08);
+        
+        this.undoButton = this.add.text(buttonX, buttonY, 'Undo', {
             fontFamily: 'Arial', 
-            fontSize: 20, 
+            fontSize: buttonFontSize, 
             color: '#ffffff',
             backgroundColor: '#666666',
-            padding: { x: 15, y: 8 }
+            padding: { x: 12, y: 6 }
         }).setOrigin(0);
 
         this.undoButton.setInteractive();
@@ -635,21 +660,23 @@ export class Game extends Scene
         this.undoButton.removeInteractive();
         this.undoButton.setAlpha(0.3);
 
-        // Display winner message
+        // Display responsive winner message
         const winnerColor = winner === 'Red' ? '#ff0000' : '#0000ff';
-        this.add.text(512, 300, `${winner} Player Wins!`, {
+        const winnerFontSize = Math.min(48, this.cameras.main.width / 15);
+        this.add.text(this.cameras.main.width / 2, this.cameras.main.height * 0.4, `${winner} Player Wins!`, {
             fontFamily: 'Arial Black', 
-            fontSize: 48, 
+            fontSize: winnerFontSize, 
             color: winnerColor
         }).setOrigin(0.5);
 
-        // Add restart button
-        const restartButton = this.add.text(512, 400, 'Click to Restart', {
+        // Add responsive restart button
+        const restartFontSize = Math.min(24, this.cameras.main.width / 30);
+        const restartButton = this.add.text(this.cameras.main.width / 2, this.cameras.main.height * 0.55, 'Click to Restart', {
             fontFamily: 'Arial', 
-            fontSize: 24, 
+            fontSize: restartFontSize, 
             color: '#ffffff',
             backgroundColor: '#333333',
-            padding: { x: 20, y: 10 }
+            padding: { x: 15, y: 8 }
         }).setOrigin(0.5);
 
         restartButton.setInteractive();

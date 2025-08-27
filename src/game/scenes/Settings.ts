@@ -16,34 +16,42 @@ export class Settings extends Scene
 
     create ()
     {
-        this.background = this.add.image(512, 384, 'background');
+        const centerX = this.cameras.main.width / 2;
+        const centerY = this.cameras.main.height / 2;
+        
+        this.background = this.add.image(centerX, centerY, 'background');
         this.background.setAlpha(0.3);
 
-        this.title = this.add.text(512, 100, 'Settings', {
+        const titleFontSize = Math.min(48, this.cameras.main.width / 15);
+        this.title = this.add.text(centerX, centerY * 0.25, 'Settings', {
             fontFamily: 'Arial Black', 
-            fontSize: 48, 
+            fontSize: titleFontSize, 
             color: '#ffffff',
             stroke: '#000000', 
-            strokeThickness: 8,
+            strokeThickness: 6,
             align: 'center'
         }).setOrigin(0.5);
 
         // Load saved settings
         this.loadSettings();
 
-        // Sound Effects Toggle
-        this.add.text(300, 250, 'Sound Effects:', {
+        // Responsive Sound Effects Toggle
+        const labelFontSize = Math.min(24, this.cameras.main.width / 30);
+        const labelX = centerX - 100;
+        const labelY = centerY * 0.65;
+        
+        this.add.text(labelX, labelY, 'Sound Effects:', {
             fontFamily: 'Arial', 
-            fontSize: 24, 
+            fontSize: labelFontSize, 
             color: '#ffffff'
         }).setOrigin(0, 0.5);
 
-        this.soundToggleButton = this.add.text(500, 250, '', {
+        this.soundToggleButton = this.add.text(labelX + 150, labelY, '', {
             fontFamily: 'Arial', 
-            fontSize: 24, 
+            fontSize: labelFontSize, 
             color: '#ffffff',
             backgroundColor: '#666666',
-            padding: { x: 20, y: 10 }
+            padding: { x: 15, y: 8 }
         }).setOrigin(0, 0.5);
 
         this.soundToggleButton.setInteractive();
@@ -59,20 +67,22 @@ export class Settings extends Scene
             this.soundToggleButton.setBackgroundColor('#666666');
         });
 
-        // Placeholder for future settings
-        this.add.text(512, 350, 'More settings coming soon...', {
+        // Responsive placeholder for future settings
+        const placeholderFontSize = Math.min(18, this.cameras.main.width / 45);
+        this.add.text(centerX, centerY * 0.9, 'More settings coming soon...', {
             fontFamily: 'Arial', 
-            fontSize: 18, 
+            fontSize: placeholderFontSize, 
             color: '#888888'
         }).setOrigin(0.5);
 
-        // Back button
-        this.backButton = this.add.text(512, 500, 'Back to Main Menu', {
+        // Responsive back button
+        const backButtonFontSize = Math.min(24, this.cameras.main.width / 30);
+        this.backButton = this.add.text(centerX, centerY * 1.3, 'Back to Main Menu', {
             fontFamily: 'Arial', 
-            fontSize: 24, 
+            fontSize: backButtonFontSize, 
             color: '#ffffff',
             backgroundColor: '#333333',
-            padding: { x: 20, y: 10 }
+            padding: { x: 15, y: 8 }
         }).setOrigin(0.5);
 
         this.backButton.setInteractive();

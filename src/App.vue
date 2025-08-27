@@ -46,17 +46,82 @@ const currentScene = (scene: any) => {
 
 </script>
 
+<style scoped>
+.game-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+}
+
+.controls {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: #333;
+    flex-shrink: 0;
+}
+
+.button {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    background-color: #666;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.button:hover:not(:disabled) {
+    background-color: #888;
+}
+
+.button:disabled {
+    background-color: #444;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    .controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .button {
+        width: 200px;
+        padding: 12px 16px;
+        font-size: 16px;
+        margin: 2px 0;
+    }
+}
+
+/* Tablet styles */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .button {
+        padding: 10px 18px;
+        font-size: 15px;
+    }
+}
+</style>
+
 <template>
-    <PhaserGame ref="phaserRef" @current-active-scene="currentScene" />
-    <div>
-        <div>
-            <button class="button" @click="goToMainMenu" :disabled="currentSceneName === 'MainMenu'">Main Menu</button>
-        </div>
-        <div>
-            <button class="button" @click="goToSettings" :disabled="currentSceneName === 'Settings'">Settings</button>
-        </div>
-        <div>
-            <button class="button" @click="playGame" :disabled="currentSceneName === 'Game'">Play Game</button>
+    <div class="game-container">
+        <PhaserGame ref="phaserRef" @current-active-scene="currentScene" />
+        <div class="controls">
+            <div>
+                <button class="button" @click="goToMainMenu" :disabled="currentSceneName === 'MainMenu'">Main Menu</button>
+            </div>
+            <div>
+                <button class="button" @click="goToSettings" :disabled="currentSceneName === 'Settings'">Settings</button>
+            </div>
+            <div>
+                <button class="button" @click="playGame" :disabled="currentSceneName === 'Game'">Play Game</button>
+            </div>
         </div>
     </div>
 </template>
