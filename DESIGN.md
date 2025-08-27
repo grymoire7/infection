@@ -202,6 +202,14 @@ This section outlines an incremental development process for building the Dots g
 - [x] Develop Hard AI (see "Difficulty levels" section above)
 - [x] Create Expert AI (see "Difficulty levels" section above)
 
+### Phase 4a: Fixups
+- [ ] We have a GameOver scene and we should use it. When the game ends:
+    - [ ] Reset the game state
+    - [ ] Display the GameOver scene with the winner announcement (and later the score and/or stats)
+- [ ] In the game scene, add a "Quit" button:
+    - [ ] Reset the game state
+    - [ ] Display the GameOver scene with "Game Abandoned" instead of a winner announcement
+
 ### Phase 5: Levels and Level Sets
 - [ ] Create level set and level data structures and level definitions (see "Game levels and level sets" section above)
 - [ ] Implement level progression system through a level set for gameplay (see "Game levels and level sets" section above)
