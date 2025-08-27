@@ -7,8 +7,8 @@ export class Game extends Scene
     background: Phaser.GameObjects.Image;
     gridSize: number = 5;
     cellSize: number = 80;
-    gridStartX: number = 200;
-    gridStartY: number = 150;
+    gridStartX: number;
+    gridStartY: number;
     grid: Phaser.GameObjects.Rectangle[][];
     dots: Phaser.GameObjects.Circle[][][]; // Now 3D array: [row][col][dotIndex]
     gameState: { dotCount: number, owner: string | null, capacity: number }[][];
@@ -39,6 +39,12 @@ export class Game extends Scene
 
     createGrid()
     {
+        // Calculate centered grid position
+        const totalGridWidth = this.gridSize * this.cellSize;
+        const totalGridHeight = this.gridSize * this.cellSize;
+        this.gridStartX = (this.cameras.main.width - totalGridWidth) / 2 + this.cellSize / 2;
+        this.gridStartY = (this.cameras.main.height - totalGridHeight) / 2 + this.cellSize / 2;
+
         this.grid = [];
         this.dots = [];
         this.gameState = [];
