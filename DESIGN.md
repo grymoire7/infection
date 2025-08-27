@@ -108,12 +108,46 @@ The game is played in a browser. The user interface includes:
 
 
 ## Difficulty levels
+
+### Definitions
+Fully loaded cell (or full cell): A cell that has a number of dots equal to its
+    capacity and will explode if another dot is added.
+
+Low capacity cell: A cell with a low capacity, such as a corner cell (capacity
+    of 2) or an edge cell (capacity of 3).
+
+Cell ullage: The difference between a cell's capacity and the number of dots it
+    currently contains. For example, a corner cell with 1 dot has an ullage of 1
+    (capacity 2 - 1 dot = 1 ullage).
+
+Advantage cell: A cell that has ullage equal to or less than all adjacent
+    opponent cells. For example, if a player has a corner cell with 1 dot (ullage
+    1) next to an opponent's edge cell with 2 dots (ullage 1) and an empty cell
+    (ullage 3), the corner cell is an advantage cell because its ullage (1) is
+    equal to or less than the adjacent opponent cells' ullages (1 and 3).
+
+
+### Strategy levels
 The computer opponent can be set to different difficulty levels:
 
-- Easy: The computer makes random valid moves.
-- Medium: The computer uses a basic strategy in either low capacity free ceels or in a cell that will cause an explosion.
-- Hard: The computer employs advanced strategies.
-- Expert: The computer uses all strategies at its disposal to challenge the player.
+- Easy: The computer make a random valid move. (This is the default level.)
+- Medium: The computer searches for a cell in the following order:
+    - a fully loaded cell
+    - a low capacity free cell (like a corner cell)
+    - a random valid move
+- Hard: The computer searches for a cell in the following order:
+    - a full cell next to an opponent's full cell
+    - a fully loaded cell next to an opponent's cell
+    - any fully loaded cell
+    - a low capacity free cell (like a corner cell)
+    - a random valid move
+- Expert: The computer searches for a cell in the following order:
+    - a full cell next to an opponent's full cell
+    - a fully loaded cell next to an opponent's cell
+    - any fully loaded cell
+    - an advantage cell
+    - a low capacity free cell (like a corner cell)
+    - a random valid move
 
 ## Game levels and level sets
 - Each game will be comprised of multiple levels, called a level set.
@@ -121,8 +155,10 @@ The computer opponent can be set to different difficulty levels:
 - Each level will increase in difficulty.
 - Each level will have a name and a brief description.
 - Each level set will have a name and a brief description.
+- Levels and level sets will be defined in JSON files to facilitate easy creation and modification.
 - Players can unlock new levels by completing, though not necessarily winning, previous ones.
 - A player's progress will be saved, allowing them to resume from the last completed level.
+- We will now have the idea winning/losing a level and winning/losing a game.
 - A player's final score for the game will be based on their performance across all levels in the level set.
 - In the settings menu players can choose a different level set (from a list) to play for the next game.
 
@@ -152,18 +188,25 @@ This section outlines an incremental development process for building the Dots g
 - [x] Add sound effects for dot placement and explosion propagation
 - [x] Create a settings scene for turning sound effects on/off with room for future settings
 - [x] Implement responsive design for different screen sizes
-- [ ] Create level set and level data structures and level definitions
-- [ ] Implement level progression system through a level set for gameplay
-- [ ] Add level set selection menu in settings
 
 ### Phase 4: AI Opponent
-- [ ] Implement Easy AI (random valid moves)
-- [ ] Add Medium AI (basic strategy)
-- [ ] Develop Hard AI (advanced strategies)
-- [ ] Create Expert AI (optimal play)
-- [ ] Add AI difficulty selection in settings
+- [ ] Add 'Difficulty level' selection in settings (see "Difficulty levels" section above)
+- [ ] Add settings option for player to choose color (red or blue) and who goes first
+- [ ] Create 'ComputerPlayer' class
+    - Initialize with difficulty level and color
+    - A 'findMove' method to determine the next move based on difficulty
+    - Initially, the method can return a random valid move
+- [ ] Implement Easy AI (see "Difficulty levels" section above)
+- [ ] Add Medium AI (see "Difficulty levels" section above)
+- [ ] Develop Hard AI (see "Difficulty levels" section above)
+- [ ] Create Expert AI (see "Difficulty levels" section above)
 
-### Phase 5: Advanced Features
+### Phase 5: Levels and Level Sets
+- [ ] Create level set and level data structures and level definitions (see "Game levels and level sets" section above)
+- [ ] Implement level progression system through a level set for gameplay (see "Game levels and level sets" section above)
+- [ ] Add level set selection menu in settings (see "Game levels and level sets" section above)
+
+### Phase 6: Advanced Features
 - [ ] Implement custom board designs with blocked cells
 - [ ] Add board size options (3x3 to 9x9)
 - [ ] Create board template system
@@ -175,14 +218,13 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Implement player progress saving and loading
 - [ ] Add scoring system based on performance across levels
 
-### Phase 6: Polish and Accessibility
+### Phase 7: Polish and Accessibility
+- [ ] Create tutorial/help system
 - [ ] Add keyboard controls for accessibility
 - [ ] Implement screen reader support
 - [ ] Add background music and enhanced sound effects
-- [ ] Create tutorial/help system
 - [ ] Add visual themes and customization options
 - [ ] Performance optimization and testing
-- [ ] Add level set selection interface
 - [ ] Create level editor for custom level creation
 - [ ] Implement achievements and badges system
 - [ ] Add social features for sharing progress
