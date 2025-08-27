@@ -1,6 +1,7 @@
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 import { ComputerPlayer } from '../ComputerPlayer';
+import { GameStateManager, GameState } from '../GameStateManager';
 
 export class Game extends Scene
 {
@@ -23,13 +24,13 @@ export class Game extends Scene
     gridStartY: number;
     grid: Phaser.GameObjects.Rectangle[][];
     dots: Phaser.GameObjects.Circle[][][]; // Now 3D array: [row][col][dotIndex]
-    gameState: { dotCount: number, owner: string | null, capacity: number }[][];
+    gameState: GameState[][];
     currentPlayer: 'red' | 'blue' = 'red';
     humanPlayer: 'red' | 'blue' = 'red';
     currentPlayerText: Phaser.GameObjects.Text;
-    moveHistory: { gameState: any[][], currentPlayer: 'red' | 'blue' }[] = [];
     undoButton: Phaser.GameObjects.Text;
     computerPlayer: ComputerPlayer | null = null;
+    stateManager: GameStateManager;
 
     constructor ()
     {
@@ -44,6 +45,9 @@ export class Game extends Scene
         this.background = this.add.image(512, 384, 'background');
         this.background.setAlpha(0.3);
 
+        // Initialize state manager
+        this.stateManager = new GameStateManager(this.game.registry);
+
         // Initialize player colors and turn order from settings
         this.initializeGameSettings();
 
@@ -53,7 +57,7 @@ export class Game extends Scene
         this.loadGameState();
         
         // Recreate visual elements if game state was loaded
-        if (this.game.registry.get('gameState')) {
+        if (this.stateManager.hasSavedState()) {
             this.recreateAllVisualDots();
             this.updateAllCellOwnership();
         }
@@ -211,7 +215,7 @@ export class Game extends Scene
 
     updateUndoButton()
     {
-        if (this.moveHistory.length > 0) {
+        if (this.stateManager.canUndo()) {
             this.undoButton.setAlpha(1);
             this.undoButton.setInteractive();
         } else {
@@ -265,7 +269,7 @@ export class Game extends Scene
         if ((cellState.dotCount === 0 || cellState.owner === this.currentPlayer) && 
             (isComputerMove || this.currentPlayer === this.humanPlayer)) {
             // Save current state to history before making the move
-            this.saveGameState();
+            this.stateManager.saveMove(this.gameState, this.currentPlayer);
             // Update game state first
             cellState.dotCount++;
             cellState.owner = this.currentPlayer;
@@ -308,7 +312,12 @@ export class Game extends Scene
             this.updateUndoButton();
 
             // Save game state after each move
-            this.saveGameStateToRegistry();
+            this.stateManager.saveToRegistry(
+                this.gameState,
+                this.currentPlayer,
+                this.humanPlayer,
+                this.computerPlayer?.getColor() || 'blue'
+            );
 
             // If it's now the computer's turn, make a computer move after a short delay
             if (this.currentPlayer !== this.humanPlayer && this.computerPlayer) {
@@ -564,40 +573,13 @@ export class Game extends Scene
         console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${whoGoesFirst} goes first`);
     }
 
-    saveGameState()
-    {
-        // Deep copy the current game state
-        const gameStateCopy = this.gameState.map(row => 
-            row.map(cell => ({ ...cell }))
-        );
-
-        // Save the state and current player
-        this.moveHistory.push({
-            gameState: gameStateCopy,
-            currentPlayer: this.currentPlayer
-        });
-
-        // Limit history to prevent memory issues
-        if (this.moveHistory.length > Game.MAX_MOVE_HISTORY) {
-            this.moveHistory.shift();
-        }
-    }
-
     undoLastMove()
     {
-        if (this.moveHistory.length === 0) {
-            console.log('No moves to undo');
-            return;
-        }
-
-        // Get the last saved state
-        const lastState = this.moveHistory.pop();
+        const lastState = this.stateManager.undoLastMove();
         if (!lastState) return;
 
         // Restore the game state
-        this.gameState = lastState.gameState.map(row => 
-            row.map(cell => ({ ...cell }))
-        );
+        this.gameState = lastState.gameState;
         this.currentPlayer = lastState.currentPlayer;
 
         // Clear all visual elements and recreate them
@@ -608,7 +590,12 @@ export class Game extends Scene
         this.updateUndoButton();
 
         // Save updated game state after undo
-        this.saveGameStateToRegistry();
+        this.stateManager.saveToRegistry(
+            this.gameState,
+            this.currentPlayer,
+            this.humanPlayer,
+            this.computerPlayer?.getColor() || 'blue'
+        );
 
         console.log(`Undid move, back to ${this.currentPlayer} player's turn`);
     }
@@ -652,38 +639,16 @@ export class Game extends Scene
         }
     }
 
-    saveGameStateToRegistry()
-    {
-        // Save current game state to global registry
-        this.game.registry.set('gameState', {
-            gameState: this.gameState.map(row => row.map(cell => ({ ...cell }))),
-            currentPlayer: this.currentPlayer,
-            humanPlayer: this.humanPlayer,
-            computerPlayerColor: this.computerPlayer?.getColor() || 'blue',
-            moveHistory: this.moveHistory.map(move => ({
-                gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
-                currentPlayer: move.currentPlayer
-            })),
-            gameOver: false,
-            winner: null
-        });
-    }
-
     loadGameState()
     {
-        // Load game state from global registry
-        const savedState = this.game.registry.get('gameState');
+        const savedState = this.stateManager.loadFromRegistry();
         if (savedState) {
-            this.gameState = savedState.gameState.map(row => row.map(cell => ({ ...cell })));
+            this.gameState = savedState.gameState;
             this.currentPlayer = savedState.currentPlayer;
-            this.humanPlayer = savedState.humanPlayer || 'red';
-            const computerColor = savedState.computerPlayerColor || 'blue';
+            this.humanPlayer = savedState.humanPlayer;
+            const computerColor = savedState.computerPlayerColor;
             const difficulty = this.game.registry.get('difficultyLevel') || 'Easy';
             this.computerPlayer = new ComputerPlayer(difficulty, computerColor);
-            this.moveHistory = savedState.moveHistory.map(move => ({
-                gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
-                currentPlayer: move.currentPlayer
-            }));
             
             // Check if the game was over when saved
             if (savedState.gameOver && savedState.winner) {
@@ -697,8 +662,7 @@ export class Game extends Scene
 
     clearSavedGameState()
     {
-        // Clear saved game state from registry
-        this.game.registry.remove('gameState');
+        this.stateManager.clearSavedState();
     }
 
     checkWinCondition(): string | null
@@ -779,18 +743,14 @@ export class Game extends Scene
         });
 
         // Save the game over state to registry
-        this.game.registry.set('gameState', {
-            gameState: this.gameState.map(row => row.map(cell => ({ ...cell }))),
-            currentPlayer: this.currentPlayer,
-            humanPlayer: this.humanPlayer,
-            computerPlayerColor: this.computerPlayer?.getColor() || 'blue',
-            moveHistory: this.moveHistory.map(move => ({
-                gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
-                currentPlayer: move.currentPlayer
-            })),
-            gameOver: true,
-            winner: winner
-        });
+        this.stateManager.saveToRegistry(
+            this.gameState,
+            this.currentPlayer,
+            this.humanPlayer,
+            this.computerPlayer?.getColor() || 'blue',
+            true,
+            winner
+        );
     }
 
     async makeComputerMove()

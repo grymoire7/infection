@@ -1,3 +1,5 @@
+import { GameState } from './GameStateManager';
+
 export class ComputerPlayer {
     private difficulty: string;
     private color: 'red' | 'blue';
@@ -13,7 +15,7 @@ export class ComputerPlayer {
      * @param gridSize - Size of the game grid
      * @returns {row: number, col: number} - The chosen move coordinates
      */
-    findMove(gameState: { dotCount: number, owner: string | null, capacity: number }[][], gridSize: number): { row: number, col: number } {
+    findMove(gameState: GameState[][], gridSize: number): { row: number, col: number } {
         // For now, return a random valid move regardless of difficulty
         // This will be enhanced in subsequent phases
         const move = this.getRandomValidMove(gameState, gridSize);
@@ -27,7 +29,7 @@ export class ComputerPlayer {
      * @param gridSize - Size of the game grid
      * @returns A random valid move coordinate
      */
-    private getRandomValidMove(gameState: { dotCount: number, owner: string | null, capacity: number }[][], gridSize: number): { row: number, col: number } {
+    private getRandomValidMove(gameState: GameState[][], gridSize: number): { row: number, col: number } {
         const validMoves = this.getValidMoves(gameState, gridSize);
         
         if (validMoves.length === 0) {
@@ -44,7 +46,7 @@ export class ComputerPlayer {
      * @param gridSize - Size of the game grid
      * @returns Array of valid move coordinates
      */
-    private getValidMoves(gameState: { dotCount: number, owner: string | null, capacity: number }[][], gridSize: number): { row: number, col: number }[] {
+    private getValidMoves(gameState: GameState[][], gridSize: number): { row: number, col: number }[] {
         const validMoves: { row: number, col: number }[] = [];
 
         for (let row = 0; row < gridSize; row++) {
