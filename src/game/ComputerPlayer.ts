@@ -1,5 +1,5 @@
 export class ComputerPlayer {
-    private difficulty: 'easy' | 'medium' | 'hard' | 'expert';
+    private difficulty: string;
     private color: 'red' | 'blue';
 
     constructor(difficulty: string, color: 'red' | 'blue') {
@@ -16,7 +16,7 @@ export class ComputerPlayer {
     findMove(gameState: { dotCount: number, owner: string | null, capacity: number }[][], gridSize: number): { row: number, col: number } {
         // For now, return a random valid move regardless of difficulty
         // This will be enhanced in subsequent phases
-        move = this.getRandomValidMove(gameState, gridSize);
+        const move = this.getRandomValidMove(gameState, gridSize);
 
         return move;
     }

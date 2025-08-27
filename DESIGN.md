@@ -196,7 +196,8 @@ This section outlines an incremental development process for building the Dots g
     - Initialize with difficulty level and color
     - A 'findMove' method to determine the next move based on difficulty
     - Initially, the method can return a random valid move
-- [ ] Implement Easy AI (see "Difficulty levels" section above)
+- [x] Implement Easy AI (see "Difficulty levels" section above)
+- [x] Use the 'ComputerPlayer' class in the game flow to make moves for the computer player
 - [ ] Add Medium AI (see "Difficulty levels" section above)
 - [ ] Develop Hard AI (see "Difficulty levels" section above)
 - [ ] Create Expert AI (see "Difficulty levels" section above)

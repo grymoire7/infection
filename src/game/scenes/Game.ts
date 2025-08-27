@@ -1,5 +1,6 @@
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
+import { ComputerPlayer } from '../ComputerPlayer';
 
 export class Game extends Scene
 {
@@ -14,10 +15,10 @@ export class Game extends Scene
     gameState: { dotCount: number, owner: string | null, capacity: number }[][];
     currentPlayer: 'red' | 'blue' = 'red';
     humanPlayer: 'red' | 'blue' = 'red';
-    computerPlayer: 'red' | 'blue' = 'blue';
     currentPlayerText: Phaser.GameObjects.Text;
     moveHistory: { gameState: any[][], currentPlayer: 'red' | 'blue' }[] = [];
     undoButton: Phaser.GameObjects.Text;
+    computerPlayer: ComputerPlayer | null = null;
 
     constructor ()
     {
@@ -240,12 +241,15 @@ export class Game extends Scene
         return capacity;
     }
 
-    async placeDot(row: number, col: number)
+    async placeDot(row: number, col: number, isComputerMove: boolean = false)
     {
         const cellState = this.gameState[row][col];
 
         // Can only place dots in empty cells or cells owned by current player
-        if (cellState.dotCount === 0 || cellState.owner === this.currentPlayer) {
+        // For human moves, check if it's the human player's turn (prevent clicking during computer turn)
+        // For computer moves, bypass the human player check
+        if ((cellState.dotCount === 0 || cellState.owner === this.currentPlayer) && 
+            (isComputerMove || this.currentPlayer === this.humanPlayer)) {
             // Save current state to history before making the move
             this.saveGameState();
             // Update game state first
@@ -291,6 +295,13 @@ export class Game extends Scene
 
             // Save game state after each move
             this.saveGameStateToRegistry();
+
+            // If it's now the computer's turn, make a computer move after a short delay
+            if (this.currentPlayer !== this.humanPlayer && this.computerPlayer) {
+                this.time.delayedCall(1000, () => {
+                    this.makeComputerMove();
+                });
+            }
         } else {
             console.log(`Cell at row ${row}, col ${col} is owned by the other player`);
         }
@@ -495,7 +506,13 @@ export class Game extends Scene
         // Get player color preference from settings (default to red)
         const playerColor = this.game.registry.get('playerColor') || 'red';
         this.humanPlayer = playerColor as 'red' | 'blue';
-        this.computerPlayer = this.humanPlayer === 'red' ? 'blue' : 'red';
+        const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
+
+        // Get difficulty level from settings (default to Easy)
+        const difficulty = this.game.registry.get('difficultyLevel') || 'Easy';
+
+        // Create computer player instance
+        this.computerPlayer = new ComputerPlayer(difficulty, computerColor);
 
         // Get who goes first preference from settings (default to player)
         const whoGoesFirst = this.game.registry.get('whoGoesFirst') || 'player';
@@ -503,10 +520,10 @@ export class Game extends Scene
         if (whoGoesFirst === 'player') {
             this.currentPlayer = this.humanPlayer;
         } else {
-            this.currentPlayer = this.computerPlayer;
+            this.currentPlayer = computerColor;
         }
 
-        console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${this.computerPlayer}, ${whoGoesFirst} goes first`);
+        console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${whoGoesFirst} goes first`);
     }
 
     saveGameState()
@@ -604,7 +621,7 @@ export class Game extends Scene
             gameState: this.gameState.map(row => row.map(cell => ({ ...cell }))),
             currentPlayer: this.currentPlayer,
             humanPlayer: this.humanPlayer,
-            computerPlayer: this.computerPlayer,
+            computerPlayerColor: this.computerPlayer?.getColor() || 'blue',
             moveHistory: this.moveHistory.map(move => ({
                 gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
                 currentPlayer: move.currentPlayer
@@ -622,7 +639,9 @@ export class Game extends Scene
             this.gameState = savedState.gameState.map(row => row.map(cell => ({ ...cell })));
             this.currentPlayer = savedState.currentPlayer;
             this.humanPlayer = savedState.humanPlayer || 'red';
-            this.computerPlayer = savedState.computerPlayer || 'blue';
+            const computerColor = savedState.computerPlayerColor || 'blue';
+            const difficulty = this.game.registry.get('difficultyLevel') || 'Easy';
+            this.computerPlayer = new ComputerPlayer(difficulty, computerColor);
             this.moveHistory = savedState.moveHistory.map(move => ({
                 gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
                 currentPlayer: move.currentPlayer
@@ -726,7 +745,7 @@ export class Game extends Scene
             gameState: this.gameState.map(row => row.map(cell => ({ ...cell }))),
             currentPlayer: this.currentPlayer,
             humanPlayer: this.humanPlayer,
-            computerPlayer: this.computerPlayer,
+            computerPlayerColor: this.computerPlayer?.getColor() || 'blue',
             moveHistory: this.moveHistory.map(move => ({
                 gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
                 currentPlayer: move.currentPlayer
@@ -734,6 +753,25 @@ export class Game extends Scene
             gameOver: true,
             winner: winner
         });
+    }
+
+    async makeComputerMove()
+    {
+        if (!this.computerPlayer || this.currentPlayer === this.humanPlayer) {
+            return;
+        }
+
+        try {
+            // Get the computer's move
+            const move = this.computerPlayer.findMove(this.gameState, this.gridSize);
+            console.log(`Computer (${this.computerPlayer.getColor()}) choosing move: ${move.row}, ${move.col}`);
+
+            // Make the move (pass true to indicate this is a computer move)
+            await this.placeDot(move.row, move.col, true);
+        } catch (error) {
+            console.error('Computer player error:', error);
+            // If computer can't find a move, the game might be over
+        }
     }
 
     changeScene ()
