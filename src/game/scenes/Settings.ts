@@ -131,6 +131,12 @@ export class Settings extends Scene
 
     goBack()
     {
-        this.scene.start('MainMenu');
+        // Check if there's a saved game state to return to
+        const savedGameState = this.game.registry.get('gameState');
+        if (savedGameState) {
+            this.scene.start('Game');
+        } else {
+            this.scene.start('MainMenu');
+        }
     }
 }

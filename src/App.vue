@@ -25,7 +25,16 @@ const goToSettings = () => {
 const playGame = () => {
     const scene = toRaw(phaserRef.value.scene) as Phaser.Scene;
     if (scene) {
-        scene.scene.start('Game');
+        // Check if there's a saved game state to resume
+        const savedGameState = scene.game.registry.get('gameState');
+        if (savedGameState) {
+            // Resume the existing game
+            scene.scene.start('Game');
+        } else {
+            // Start a new game and clear any previous state
+            scene.game.registry.remove('gameState');
+            scene.scene.start('Game');
+        }
     }
 }
 

@@ -31,6 +31,16 @@ export class Game extends Scene
         this.background.setAlpha(0.3);
 
         this.createGrid();
+
+        // Load saved game state if it exists, after grid is created
+        this.loadGameState();
+        
+        // Recreate visual elements if game state was loaded
+        if (this.game.registry.get('gameState')) {
+            this.recreateAllVisualDots();
+            this.updateAllCellOwnership();
+        }
+        
         this.createPlayerIndicator();
         this.createUndoButton();
 
@@ -61,8 +71,13 @@ export class Game extends Scene
                 // Calculate capacity based on adjacent cells
                 const capacity = this.calculateCellCapacity(row, col);
 
-                // Initialize game state for this cell
-                this.gameState[row][col] = { dotCount: 0, owner: null, capacity: capacity };
+                // Initialize game state for this cell (only if not already loaded)
+                if (!this.gameState[row]) {
+                    this.gameState[row] = [];
+                }
+                if (!this.gameState[row][col]) {
+                    this.gameState[row][col] = { dotCount: 0, owner: null, capacity: capacity };
+                }
 
                 // Create cell background
                 const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, 0x444444);
@@ -243,6 +258,9 @@ export class Game extends Scene
             this.currentPlayer = this.currentPlayer === 'red' ? 'blue' : 'red';
             this.updatePlayerIndicator();
             this.updateUndoButton();
+
+            // Save game state after each move
+            this.saveGameStateToRegistry();
         } else {
             console.log(`Cell at row ${row}, col ${col} is owned by the other player`);
         }
@@ -485,6 +503,9 @@ export class Game extends Scene
         this.updatePlayerIndicator();
         this.updateUndoButton();
 
+        // Save updated game state after undo
+        this.saveGameStateToRegistry();
+
         console.log(`Undid move, back to ${this.currentPlayer} player's turn`);
     }
 
@@ -525,6 +546,49 @@ export class Game extends Scene
                 this.updateCellOwnership(row, col);
             }
         }
+    }
+
+    saveGameStateToRegistry()
+    {
+        // Save current game state to global registry
+        this.game.registry.set('gameState', {
+            gameState: this.gameState.map(row => row.map(cell => ({ ...cell }))),
+            currentPlayer: this.currentPlayer,
+            moveHistory: this.moveHistory.map(move => ({
+                gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
+                currentPlayer: move.currentPlayer
+            })),
+            gameOver: false,
+            winner: null
+        });
+    }
+
+    loadGameState()
+    {
+        // Load game state from global registry
+        const savedState = this.game.registry.get('gameState');
+        if (savedState) {
+            this.gameState = savedState.gameState.map(row => row.map(cell => ({ ...cell })));
+            this.currentPlayer = savedState.currentPlayer;
+            this.moveHistory = savedState.moveHistory.map(move => ({
+                gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
+                currentPlayer: move.currentPlayer
+            }));
+            
+            // Check if the game was over when saved
+            if (savedState.gameOver && savedState.winner) {
+                // Recreate the game over state after a short delay to ensure all visuals are ready
+                this.time.delayedCall(100, () => {
+                    this.handleGameOver(savedState.winner);
+                });
+            }
+        }
+    }
+
+    clearSavedGameState()
+    {
+        // Clear saved game state from registry
+        this.game.registry.remove('gameState');
     }
 
     checkWinCondition(): string | null
@@ -590,6 +654,7 @@ export class Game extends Scene
 
         restartButton.setInteractive();
         restartButton.on('pointerdown', () => {
+            this.clearSavedGameState();
             this.scene.restart();
         });
 
@@ -599,6 +664,18 @@ export class Game extends Scene
 
         restartButton.on('pointerout', () => {
             restartButton.setBackgroundColor('#333333');
+        });
+
+        // Save the game over state to registry
+        this.game.registry.set('gameState', {
+            gameState: this.gameState.map(row => row.map(cell => ({ ...cell }))),
+            currentPlayer: this.currentPlayer,
+            moveHistory: this.moveHistory.map(move => ({
+                gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
+                currentPlayer: move.currentPlayer
+            })),
+            gameOver: true,
+            winner: winner
         });
     }
 
