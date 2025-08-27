@@ -16,11 +16,14 @@ export class ComputerPlayer {
      * @returns {row: number, col: number} - The chosen move coordinates
      */
     findMove(gameState: GameState[][], gridSize: number): { row: number, col: number } {
-        // For now, return a random valid move regardless of difficulty
-        // This will be enhanced in subsequent phases
-        const move = this.getRandomValidMove(gameState, gridSize);
-
-        return move;
+        switch (this.difficulty.toLowerCase()) {
+            case 'easy':
+                return this.getRandomValidMove(gameState, gridSize);
+            case 'medium':
+                return this.getMediumMove(gameState, gridSize);
+            default:
+                return this.getRandomValidMove(gameState, gridSize);
+        }
     }
 
     /**
@@ -82,5 +85,85 @@ export class ComputerPlayer {
      */
     setDifficulty(difficulty: string): void {
         this.difficulty = difficulty;
+    }
+
+    /**
+     * Get a move using Medium AI strategy
+     * @param gameState - Current state of the game board
+     * @param gridSize - Size of the game grid
+     * @returns The chosen move coordinate
+     */
+    private getMediumMove(gameState: GameState[][], gridSize: number): { row: number, col: number } {
+        // 1. Look for a fully loaded cell (owned by this player)
+        const fullyLoadedCell = this.findFullyLoadedCell(gameState, gridSize);
+        if (fullyLoadedCell) {
+            return fullyLoadedCell;
+        }
+
+        // 2. Look for a low capacity free cell (corner or edge cell)
+        const lowCapacityCell = this.findLowCapacityFreeCell(gameState, gridSize);
+        if (lowCapacityCell) {
+            return lowCapacityCell;
+        }
+
+        // 3. Fall back to random valid move
+        return this.getRandomValidMove(gameState, gridSize);
+    }
+
+    /**
+     * Find a fully loaded cell owned by this player
+     * @param gameState - Current state of the game board
+     * @param gridSize - Size of the game grid
+     * @returns Coordinate of fully loaded cell or null
+     */
+    private findFullyLoadedCell(gameState: GameState[][], gridSize: number): { row: number, col: number } | null {
+        for (let row = 0; row < gridSize; row++) {
+            for (let col = 0; col < gridSize; col++) {
+                const cell = gameState[row][col];
+                if (cell.owner === this.color && cell.dotCount === cell.capacity) {
+                    return { row, col };
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Find a low capacity free cell (corner or edge cells)
+     * @param gameState - Current state of the game board
+     * @param gridSize - Size of the game grid
+     * @returns Coordinate of low capacity free cell or null
+     */
+    private findLowCapacityFreeCell(gameState: GameState[][], gridSize: number): { row: number, col: number } | null {
+        const lowCapacityCells: { row: number, col: number }[] = [];
+
+        for (let row = 0; row < gridSize; row++) {
+            for (let col = 0; col < gridSize; col++) {
+                const cell = gameState[row][col];
+                
+                // Only consider empty cells
+                if (cell.dotCount === 0) {
+                    // Corner cells have capacity 2, edge cells have capacity 3
+                    if (cell.capacity <= 3) {
+                        lowCapacityCells.push({ row, col });
+                    }
+                }
+            }
+        }
+
+        if (lowCapacityCells.length > 0) {
+            // Prefer corner cells (capacity 2) over edge cells (capacity 3)
+            const cornerCells = lowCapacityCells.filter(pos => gameState[pos.row][pos.col].capacity === 2);
+            if (cornerCells.length > 0) {
+                const randomIndex = Math.floor(Math.random() * cornerCells.length);
+                return cornerCells[randomIndex];
+            }
+            
+            // If no corner cells, pick a random edge cell
+            const randomIndex = Math.floor(Math.random() * lowCapacityCells.length);
+            return lowCapacityCells[randomIndex];
+        }
+
+        return null;
     }
 }
