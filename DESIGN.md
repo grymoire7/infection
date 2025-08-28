@@ -211,7 +211,7 @@ This section outlines an incremental development process for building the Dots g
     - [x] Display the GameOver scene with "Game Abandoned" instead of a winner announcement
 
 ### Phase 5: Levels and Level Sets
-- [ ] Create level set and level data structures and level definitions (see "Game levels and level sets" section above)
+- [x] Create level set and level data structures and level definitions (see "Game levels and level sets" section above)
 - [ ] Implement level progression system through a level set for gameplay (see "Game levels and level sets" section above)
 - [ ] Add level set selection menu in settings (see "Game levels and level sets" section above)
 

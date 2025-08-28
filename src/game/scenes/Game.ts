@@ -15,7 +15,6 @@ export class Game extends Scene
     private static readonly MAX_VISUAL_DOTS = 6;
     private static readonly COMPUTER_MOVE_DELAY = 1000;
     private static readonly EXPLOSION_DELAY = 300;
-    private static readonly MAX_MOVE_HISTORY = 50;
 
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.Image;
@@ -24,7 +23,7 @@ export class Game extends Scene
     gridStartX: number;
     gridStartY: number;
     grid: Phaser.GameObjects.Rectangle[][];
-    dots: Phaser.GameObjects.Circle[][][]; // Now 3D array: [row][col][dotIndex]
+    dots: any[][][]; // Now 3D array: [row][col][dotIndex]
     gameState: GameState[][];
     currentPlayer: 'red' | 'blue' = 'red';
     humanPlayer: 'red' | 'blue' = 'red';
@@ -34,6 +33,8 @@ export class Game extends Scene
     computerPlayer: ComputerPlayer | null = null;
     stateManager: GameStateManager;
     uiManager: GameUIManager;
+    // Level-related properties
+    private blockedCells: { row: number; col: number }[] = [];
 
     constructor ()
     {
@@ -99,49 +100,61 @@ export class Game extends Scene
                 const x = this.gridStartX + col * this.cellSize;
                 const y = this.gridStartY + row * this.cellSize;
 
-                // Calculate capacity based on adjacent cells
-                const capacity = this.calculateCellCapacity(row, col);
+                // Check if cell is blocked
+                const isBlocked = this.blockedCells.some((cell: { row: number; col: number }) => cell.row === row && cell.col === col);
+                
+                // Calculate capacity based on adjacent cells (0 if blocked)
+                const capacity = isBlocked ? 0 : this.calculateCellCapacity(row, col);
 
-                // Initialize game state for this cell (only if not already loaded)
+                // Initialize game state for this cell
                 if (!this.gameState[row]) {
                     this.gameState[row] = [];
                 }
                 if (!this.gameState[row][col]) {
-                    this.gameState[row][col] = { dotCount: 0, owner: null, capacity: capacity };
+                    this.gameState[row][col] = { 
+                        dotCount: 0, 
+                        owner: null, 
+                        capacity: capacity,
+                        isBlocked: isBlocked 
+                    };
                 }
 
                 // Create cell background
-                const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, 0x444444);
-                cell.setStrokeStyle(2, 0x666666);
-                cell.setInteractive();
+                const cellColor = isBlocked ? 0x222222 : 0x444444;
+                const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, cellColor);
+                cell.setStrokeStyle(2, isBlocked ? 0x333333 : 0x666666);
+                
+                // Only make non-blocked cells interactive
+                if (!isBlocked) {
+                    cell.setInteractive();
 
-                // Add hover effects
-                cell.on('pointerover', () => {
-                    const cellState = this.gameState[row][col];
-                    if (cellState.owner === 'red') {
-                        cell.setFillStyle(0x885555);
-                    } else if (cellState.owner === 'blue') {
-                        cell.setFillStyle(0x555588);
-                    } else {
-                        cell.setFillStyle(0x555555);
-                    }
-                    cell.setStrokeStyle(2, 0x888888);
-                });
+                    // Add hover effects
+                    cell.on('pointerover', () => {
+                        const cellState = this.gameState[row][col];
+                        if (cellState.owner === 'red') {
+                            cell.setFillStyle(0x885555);
+                        } else if (cellState.owner === 'blue') {
+                            cell.setFillStyle(0x555588);
+                        } else {
+                            cell.setFillStyle(0x555555);
+                        }
+                        cell.setStrokeStyle(2, 0x888888);
+                    });
 
-                cell.on('pointerout', () => {
-                    this.updateCellOwnership(row, col);
-                });
+                    cell.on('pointerout', () => {
+                        this.updateCellOwnership(row, col);
+                    });
 
-                // Add click handler for dot placement
-                cell.on('pointerdown', () => {
-                    this.placeDot(row, col);
-                });
+                    // Add click handler for dot placement
+                    cell.on('pointerdown', () => {
+                        this.placeDot(row, col);
+                    });
+                }
 
                 this.grid[row][col] = cell;
                 this.dots[row][col] = []; // Empty array of dots initially
             }
         }
-
     }
 
 
@@ -207,6 +220,11 @@ export class Game extends Scene
     async placeDot(row: number, col: number, isComputerMove: boolean = false)
     {
         const cellState = this.gameState[row][col];
+        
+        // Check if cell is blocked
+        if (cellState.isBlocked) {
+            return;
+        }
 
         // Can only place dots in empty cells or cells owned by current player
         // For human moves, check if it's the human player's turn (prevent clicking during computer turn)
@@ -611,7 +629,9 @@ export class Game extends Scene
             if (savedState.gameOver && savedState.winner) {
                 // Recreate the game over state after a short delay to ensure all visuals are ready
                 this.time.delayedCall(100, () => {
-                    this.handleGameOver(savedState.winner);
+                    if (savedState.winner) {
+                        this.handleGameOver(savedState.winner);
+                    }
                 });
             }
         }

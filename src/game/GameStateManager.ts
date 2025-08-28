@@ -1,7 +1,26 @@
+export interface Level {
+    id: string;
+    name: string;
+    description: string;
+    gridSize: number;
+    blockedCells: { row: number; col: number }[];
+    difficulty: number;
+    order: number;
+}
+
+export interface LevelSet {
+    id: string;
+    name: string;
+    description: string;
+    levels: Level[];
+    order: number;
+}
+
 export interface GameState {
     dotCount: number;
-    owner: string | null;
+    owner: 'red' | 'blue' | null;
     capacity: number;
+    isBlocked: boolean;
 }
 
 export interface MoveHistoryEntry {
@@ -114,14 +133,14 @@ export class GameStateManager {
         if (!savedState) return null;
 
         // Restore move history
-        this.moveHistory = savedState.moveHistory.map(move => ({
-            gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
+        this.moveHistory = savedState.moveHistory.map((move: MoveHistoryEntry) => ({
+            gameState: move.gameState.map((row: GameState[]) => row.map((cell: GameState) => ({ ...cell }))),
             currentPlayer: move.currentPlayer
         }));
 
         // Return deep copy to prevent mutation
         return {
-            gameState: savedState.gameState.map(row => row.map(cell => ({ ...cell }))),
+            gameState: savedState.gameState.map((row: GameState[]) => row.map((cell: GameState) => ({ ...cell }))),
             currentPlayer: savedState.currentPlayer,
             humanPlayer: savedState.humanPlayer,
             computerPlayerColor: savedState.computerPlayerColor,

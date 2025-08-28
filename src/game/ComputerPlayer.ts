@@ -60,8 +60,8 @@ export class ComputerPlayer {
             for (let col = 0; col < gridSize; col++) {
                 const cell = gameState[row][col];
                 
-                // A move is valid if the cell is empty or owned by this player
-                if (cell.dotCount === 0 || cell.owner === this.color) {
+                // A move is valid if the cell is not blocked and (empty or owned by this player)
+                if (!cell.isBlocked && (cell.dotCount === 0 || cell.owner === this.color)) {
                     validMoves.push({ row, col });
                 }
             }

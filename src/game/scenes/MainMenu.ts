@@ -8,7 +8,7 @@ export class MainMenu extends Scene
     logo: GameObjects.Image;
     title: GameObjects.Text;
     logoTween: Phaser.Tweens.Tween | null;
-    animatedDots: GameObjects.Circle[] = [];
+    animatedDots: any[] = [];
     dotTweens: Phaser.Tweens.Tween[] = [];
 
     constructor ()

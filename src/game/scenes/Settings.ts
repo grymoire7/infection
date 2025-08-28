@@ -266,7 +266,7 @@ export class Settings extends Scene
             'Expert': '#ff0000'   // Red
         };
         
-        this.difficultyButton.setColor(difficultyColors[this.difficultyLevel] || '#ffffff');
+        this.difficultyButton.setColor((difficultyColors as any)[this.difficultyLevel] || '#ffffff');
         
         // Set global registry value
         this.game.registry.set('difficultyLevel', this.difficultyLevel);
