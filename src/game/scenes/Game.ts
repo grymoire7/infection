@@ -94,7 +94,18 @@ export class Game extends Scene
     {
         if (this.stateManager.hasSavedState()) return;
 
-        const loadDefault = () => { this.loadLevel('default', 'level-1'); };
+        // Get the selected level set from settings, default to 'default'
+        const selectedLevelSetId = this.game.registry.get('levelSetId') || 'default';
+        
+        const loadSelectedLevelSet = () => {
+            const levelSet = LEVEL_SETS.find(set => set.id === selectedLevelSetId);
+            if (levelSet && levelSet.levelIds.length > 0) {
+                this.loadLevel(selectedLevelSetId, levelSet.levelIds[0]);
+            } else {
+                // Fall back to default level set if selected level set is invalid
+                this.loadLevel('default', 'level-1');
+            }
+        };
 
         // Check if we should load the next level
         if (this.game.registry.get('loadNextLevel')) {
@@ -110,20 +121,20 @@ export class Game extends Scene
                         const nextLevelId = levelSet.levelIds[currentIndex + 1];
                         this.loadLevel(levelSetId, nextLevelId);
                     } else {
-                        // Fall back to first level if no next level found
-                        loadDefault();
+                        // Fall back to first level of selected level set if no next level found
+                        loadSelectedLevelSet();
                     }
                 } else {
-                    // Fall back to first level if level set not found
-                    loadDefault();
+                    // Fall back to first level of selected level set if level set not found
+                    loadSelectedLevelSet();
                 }
             } else {
-                // Fall back to first level if no level info found
-                loadDefault();
+                // Fall back to first level of selected level set if no level info found
+                loadSelectedLevelSet();
             }
         } else {
-            // Load the first level of the default level set if no saved state
-            loadDefault();
+            // Load the first level of the selected level set if no saved state
+            loadSelectedLevelSet();
         }
     }
 

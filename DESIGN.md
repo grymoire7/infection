@@ -217,7 +217,8 @@ This section outlines an incremental development process for building the Dots g
     - Show below the current player indicator
     - Format as "Now playing ${LevelSet name} on level ${Level name}"
     - Text should be white
-- [ ] Add level set selection menu in settings (see "Game levels and level sets" section above)
+- [x] Add LevelSet selection menu in Settings scene
+    - This should be labeled "Level Set:" and be a dropdown list of available level sets by name.
 
 ### Phase 6: Advanced Features
 - [ ] Implement custom board designs with blocked cells

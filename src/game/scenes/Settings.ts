@@ -1,5 +1,6 @@
 import { GameObjects, Scene } from 'phaser';
 import { EventBus } from '../EventBus';
+import { LEVEL_SETS } from '../LevelDefinitions';
 
 export class Settings extends Scene
 {
@@ -13,6 +14,8 @@ export class Settings extends Scene
     playerColorButton: GameObjects.Text;
     whoGoesFirst: string = 'player';
     whoGoesFirstButton: GameObjects.Text;
+    levelSetId: string = 'default';
+    levelSetButton: GameObjects.Text;
 
     constructor ()
     {
@@ -130,8 +133,37 @@ export class Settings extends Scene
             this.playerColorButton.setBackgroundColor('#666666');
         });
 
+        // Level Set Selection
+        const levelSetLabelY = centerY * 1.1;
+        this.add.text(labelX, levelSetLabelY, 'Level Set:', {
+            fontFamily: 'Arial', 
+            fontSize: labelFontSize, 
+            color: '#ffffff'
+        }).setOrigin(0, 0.5);
+
+        this.levelSetButton = this.add.text(labelX + 170, levelSetLabelY, '', {
+            fontFamily: 'Arial', 
+            fontSize: labelFontSize, 
+            color: '#ffffff',
+            backgroundColor: '#666666',
+            padding: { x: 15, y: 8 }
+        }).setOrigin(0, 0.5);
+
+        this.levelSetButton.setInteractive();
+        this.levelSetButton.on('pointerdown', () => {
+            this.cycleLevelSet();
+        });
+
+        this.levelSetButton.on('pointerover', () => {
+            this.levelSetButton.setBackgroundColor('#888888');
+        });
+
+        this.levelSetButton.on('pointerout', () => {
+            this.levelSetButton.setBackgroundColor('#666666');
+        });
+
         // Who Goes First Selection
-        const whoGoesFirstLabelY = centerY * 1.1;
+        const whoGoesFirstLabelY = centerY * 1.25;
         this.add.text(labelX, whoGoesFirstLabelY, 'Who Goes First:', {
             fontFamily: 'Arial', 
             fontSize: labelFontSize, 
@@ -161,7 +193,7 @@ export class Settings extends Scene
 
         // Responsive placeholder for future settings
         const placeholderFontSize = Math.min(18, this.cameras.main.width / 45);
-        this.add.text(centerX, centerY * 1.25, 'More settings coming soon...', {
+        this.add.text(centerX, centerY * 1.4, 'More settings coming soon...', {
             fontFamily: 'Arial', 
             fontSize: placeholderFontSize, 
             color: '#888888'
@@ -170,6 +202,7 @@ export class Settings extends Scene
         this.updateSoundToggleButton();
         this.updateDifficultyButton();
         this.updatePlayerColorButton();
+        this.updateLevelSetButton();
         this.updateWhoGoesFirstButton();
 
         EventBus.emit('current-scene-ready', this);
@@ -200,6 +233,12 @@ export class Settings extends Scene
         if (savedWhoGoesFirst !== null) {
             this.whoGoesFirst = savedWhoGoesFirst;
         }
+
+        // Load level set setting from localStorage
+        const savedLevelSetId = localStorage.getItem('dotsGame_levelSetId');
+        if (savedLevelSetId !== null) {
+            this.levelSetId = savedLevelSetId;
+        }
     }
 
     saveSettings()
@@ -215,6 +254,9 @@ export class Settings extends Scene
         
         // Save who goes first setting to localStorage
         localStorage.setItem('dotsGame_whoGoesFirst', this.whoGoesFirst);
+        
+        // Save level set setting to localStorage
+        localStorage.setItem('dotsGame_levelSetId', this.levelSetId);
     }
 
     toggleSoundEffects()
@@ -303,6 +345,33 @@ export class Settings extends Scene
         this.game.registry.set('whoGoesFirst', this.whoGoesFirst);
         
         console.log(`Who goes first set to: ${this.whoGoesFirst}`);
+    }
+
+    cycleLevelSet()
+    {
+        const levelSets = LEVEL_SETS;
+        const currentIndex = levelSets.findIndex(set => set.id === this.levelSetId);
+        const nextIndex = (currentIndex + 1) % levelSets.length;
+        this.levelSetId = levelSets[nextIndex].id;
+        
+        this.updateLevelSetButton();
+        this.saveSettings();
+        
+        // Update global level set setting
+        this.game.registry.set('levelSetId', this.levelSetId);
+        
+        console.log(`Level Set changed to: ${this.levelSetId}`);
+    }
+
+    updateLevelSetButton()
+    {
+        const levelSet = LEVEL_SETS.find(set => set.id === this.levelSetId);
+        const displayText = levelSet ? levelSet.name : 'Default Levels';
+        this.levelSetButton.setText(displayText);
+        this.levelSetButton.setColor('#ffffff');
+        
+        // Set global registry value
+        this.game.registry.set('levelSetId', this.levelSetId);
     }
 
     updateWhoGoesFirstButton()
