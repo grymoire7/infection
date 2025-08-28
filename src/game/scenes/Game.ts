@@ -318,7 +318,7 @@ export class Game extends Scene
             console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col} (${cellState.dotCount}/${cellState.capacity})`);
 
             // Play placement sound effect
-            if (this.game.registry.get('soundEffectsEnabled') !== false) {
+            if (this.areSoundEffectsEnabled()) {
                 this.sound.play('placement');
             }
 
@@ -478,7 +478,7 @@ export class Game extends Scene
             // Check for win condition after each explosion wave
             if (explosionOccurred) {
                 // Play explosion propagation sound effect
-                if (this.game.registry.get('soundEffectsEnabled') !== false) {
+                if (this.areSoundEffectsEnabled()) {
                     this.sound.play('propagate');
                 }
 
@@ -577,6 +577,9 @@ export class Game extends Scene
 
     initializeGameSettings()
     {
+        // Load settings from localStorage first to ensure they're up to date
+        this.loadSettingsFromLocalStorage();
+        
         // Get player color preference from settings (default to red)
         const playerColor = this.game.registry.get('playerColor') || 'red';
         this.humanPlayer = playerColor as 'red' | 'blue';
@@ -598,6 +601,34 @@ export class Game extends Scene
         }
 
         console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${whoGoesFirst} goes first`);
+    }
+
+    loadSettingsFromLocalStorage()
+    {
+        // Load sound effects setting from localStorage
+        const savedSoundSetting = localStorage.getItem('dotsGame_soundEffects');
+        if (savedSoundSetting !== null) {
+            const soundEffectsEnabled = savedSoundSetting === 'true';
+            this.game.registry.set('soundEffectsEnabled', soundEffectsEnabled);
+        }
+
+        // Load difficulty level setting from localStorage
+        const savedDifficulty = localStorage.getItem('dotsGame_difficultyLevel');
+        if (savedDifficulty !== null) {
+            this.game.registry.set('difficultyLevel', savedDifficulty);
+        }
+
+        // Load player color setting from localStorage
+        const savedPlayerColor = localStorage.getItem('dotsGame_playerColor');
+        if (savedPlayerColor !== null) {
+            this.game.registry.set('playerColor', savedPlayerColor);
+        }
+
+        // Load who goes first setting from localStorage
+        const savedWhoGoesFirst = localStorage.getItem('dotsGame_whoGoesFirst');
+        if (savedWhoGoesFirst !== null) {
+            this.game.registry.set('whoGoesFirst', savedWhoGoesFirst);
+        }
     }
 
     undoLastMove()
@@ -779,6 +810,23 @@ export class Game extends Scene
             console.error('Computer player error:', error);
             // If computer can't find a move, the game might be over
         }
+    }
+
+    areSoundEffectsEnabled(): boolean {
+        // Check registry first, then fall back to localStorage
+        const registryValue = this.game.registry.get('soundEffectsEnabled');
+        if (registryValue !== undefined) {
+            return registryValue;
+        }
+        
+        // Fall back to localStorage
+        const savedSoundSetting = localStorage.getItem('dotsGame_soundEffects');
+        if (savedSoundSetting !== null) {
+            return savedSoundSetting === 'true';
+        }
+        
+        // Default to true if no setting found
+        return true;
     }
 
     loadLevel(levelSetId: string, levelId: string) {
