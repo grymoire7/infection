@@ -1,6 +1,7 @@
 export class GameUIManager {
     private scene: Phaser.Scene;
     private currentPlayerText: Phaser.GameObjects.Text;
+    private levelInfoText: Phaser.GameObjects.Text;
     private undoButton: Phaser.GameObjects.Text;
     private quitButton: Phaser.GameObjects.Text;
 
@@ -11,15 +12,17 @@ export class GameUIManager {
     /**
      * Create all UI elements for the game
      */
-    createUI(): { currentPlayerText: Phaser.GameObjects.Text, undoButton: Phaser.GameObjects.Text, quitButton: Phaser.GameObjects.Text } {
+    createUI(): { currentPlayerText: Phaser.GameObjects.Text, levelInfoText: Phaser.GameObjects.Text, undoButton: Phaser.GameObjects.Text, quitButton: Phaser.GameObjects.Text } {
         this.createTitle();
         this.createInstructions();
         this.createPlayerIndicator();
+        this.createLevelInfo();
         this.createUndoButton();
         this.createQuitButton();
 
         return {
             currentPlayerText: this.currentPlayerText,
+            levelInfoText: this.levelInfoText,
             undoButton: this.undoButton,
             quitButton: this.quitButton
         };
@@ -49,6 +52,15 @@ export class GameUIManager {
         this.currentPlayerText = this.scene.add.text(this.scene.cameras.main.width / 2, 70, '', {
             fontFamily: 'Arial Black', 
             fontSize: indicatorFontSize, 
+            color: '#ffffff'
+        }).setOrigin(0.5);
+    }
+
+    private createLevelInfo(): void {
+        const levelInfoFontSize = Math.min(18, this.scene.cameras.main.width / 45);
+        this.levelInfoText = this.scene.add.text(this.scene.cameras.main.width / 2, 100, '', {
+            fontFamily: 'Arial', 
+            fontSize: levelInfoFontSize, 
             color: '#ffffff'
         }).setOrigin(0.5);
     }
@@ -185,6 +197,10 @@ export class GameUIManager {
     /**
      * Disable the quit button (used during game over)
      */
+    updateLevelInfo(levelSetName: string, levelName: string): void {
+        this.levelInfoText.setText(`Now playing ${levelSetName} on level ${levelName}`);
+    }
+
     disableQuitButton(): void {
         this.quitButton.removeInteractive();
         this.quitButton.setAlpha(0.3);

@@ -213,6 +213,10 @@ This section outlines an incremental development process for building the Dots g
 ### Phase 5: Levels and Level Sets
 - [x] Create level set and level data structures and level definitions (see "Game levels and level sets" section above)
 - [x] Implement level progression system through a level set for gameplay (see "Game levels and level sets" section above)
+- [x] Display current LevelSet and Level name in the game scene
+    - Show below the current player indicator
+    - Format as "Now playing ${LevelSet name} on level ${Level name}"
+    - Text should be white
 - [ ] Add level set selection menu in settings (see "Game levels and level sets" section above)
 
 ### Phase 6: Advanced Features

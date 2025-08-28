@@ -29,6 +29,7 @@ export class Game extends Scene
     currentPlayer: 'red' | 'blue' = 'red';
     humanPlayer: 'red' | 'blue' = 'red';
     currentPlayerText: Phaser.GameObjects.Text;
+    levelInfoText: Phaser.GameObjects.Text;
     undoButton: Phaser.GameObjects.Text;
     quitButton: Phaser.GameObjects.Text;
     computerPlayer: ComputerPlayer | null = null;
@@ -57,6 +58,7 @@ export class Game extends Scene
         // Create UI elements first
         const uiElements = this.uiManager.createUI();
         this.currentPlayerText = uiElements.currentPlayerText;
+        this.levelInfoText = uiElements.levelInfoText;
         this.undoButton = uiElements.undoButton;
         this.quitButton = uiElements.quitButton;
         
@@ -82,6 +84,7 @@ export class Game extends Scene
         
         // Update UI indicators
         this.updatePlayerIndicator();
+        this.updateLevelInfo();
         this.updateUndoButton();
 
         EventBus.emit('current-scene-ready', this);
@@ -230,6 +233,26 @@ export class Game extends Scene
     updatePlayerIndicator()
     {
         this.uiManager.updatePlayerIndicator(this.currentPlayer);
+    }
+
+    updateLevelInfo()
+    {
+        const levelSetId = this.game.registry.get('currentLevelSetId');
+        const levelId = this.game.registry.get('currentLevelId');
+        
+        if (levelSetId && levelId) {
+            // Find level set and level names
+            const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
+            const level = getLevelById(levelId);
+            
+            if (levelSet && level) {
+                this.uiManager.updateLevelInfo(levelSet.name, level.name);
+                return;
+            }
+        }
+        
+        // Default text if level info isn't available
+        this.uiManager.updateLevelInfo('Default Levels', 'Beginner\'s Grid');
     }
 
     calculateCellCapacity(row: number, col: number): number
@@ -783,6 +806,9 @@ export class Game extends Scene
         // Update UI only if UI elements exist
         if (this.currentPlayerText) {
             this.updatePlayerIndicator();
+        }
+        if (this.levelInfoText) {
+            this.updateLevelInfo();
         }
         if (this.undoButton) {
             this.updateUndoButton();
