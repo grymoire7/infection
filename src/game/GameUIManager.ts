@@ -2,6 +2,7 @@ export class GameUIManager {
     private scene: Phaser.Scene;
     private currentPlayerText: Phaser.GameObjects.Text;
     private undoButton: Phaser.GameObjects.Text;
+    private quitButton: Phaser.GameObjects.Text;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -10,15 +11,17 @@ export class GameUIManager {
     /**
      * Create all UI elements for the game
      */
-    createUI(): { currentPlayerText: Phaser.GameObjects.Text, undoButton: Phaser.GameObjects.Text } {
+    createUI(): { currentPlayerText: Phaser.GameObjects.Text, undoButton: Phaser.GameObjects.Text, quitButton: Phaser.GameObjects.Text } {
         this.createTitle();
         this.createInstructions();
         this.createPlayerIndicator();
         this.createUndoButton();
+        this.createQuitButton();
 
         return {
             currentPlayerText: this.currentPlayerText,
-            undoButton: this.undoButton
+            undoButton: this.undoButton,
+            quitButton: this.quitButton
         };
     }
 
@@ -74,6 +77,30 @@ export class GameUIManager {
         });
     }
 
+    private createQuitButton(): void {
+        const buttonFontSize = Math.min(20, this.scene.cameras.main.width / 40);
+        const buttonX = Math.min(50, this.scene.cameras.main.width * 0.05);
+        const buttonY = Math.min(100, this.scene.cameras.main.height * 0.15);
+        
+        this.quitButton = this.scene.add.text(buttonX, buttonY, 'Quit', {
+            fontFamily: 'Arial', 
+            fontSize: buttonFontSize, 
+            color: '#ffffff',
+            backgroundColor: '#aa4444',
+            padding: { x: 12, y: 6 }
+        }).setOrigin(0);
+
+        this.quitButton.setInteractive();
+        
+        this.quitButton.on('pointerover', () => {
+            this.quitButton.setBackgroundColor('#cc6666');
+        });
+
+        this.quitButton.on('pointerout', () => {
+            this.quitButton.setBackgroundColor('#aa4444');
+        });
+    }
+
     /**
      * Update the player indicator display
      */
@@ -103,6 +130,13 @@ export class GameUIManager {
      */
     setUndoButtonHandler(handler: () => void): void {
         this.undoButton.on('pointerdown', handler);
+    }
+
+    /**
+     * Set the quit button click handler
+     */
+    setQuitButtonHandler(handler: () => void): void {
+        this.quitButton.on('pointerdown', handler);
     }
 
     /**
@@ -146,5 +180,13 @@ export class GameUIManager {
     disableUndoButton(): void {
         this.undoButton.removeInteractive();
         this.undoButton.setAlpha(0.3);
+    }
+
+    /**
+     * Disable the quit button (used during game over)
+     */
+    disableQuitButton(): void {
+        this.quitButton.removeInteractive();
+        this.quitButton.setAlpha(0.3);
     }
 }

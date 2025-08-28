@@ -206,9 +206,9 @@ This section outlines an incremental development process for building the Dots g
 - [x] We have a GameOver scene and we should use it. When the game ends:
     - [x] Reset the game state
     - [x] Display the GameOver scene with the winner announcement (and later the score and/or stats)
-- [ ] In the game scene, add a "Quit" button:
-    - [ ] Reset the game state
-    - [ ] Display the GameOver scene with "Game Abandoned" instead of a winner announcement
+- [x] In the game scene, add a "Quit" button:
+    - [x] Reset the game state
+    - [x] Display the GameOver scene with "Game Abandoned" instead of a winner announcement
 
 ### Phase 5: Levels and Level Sets
 - [ ] Create level set and level data structures and level definitions (see "Game levels and level sets" section above)

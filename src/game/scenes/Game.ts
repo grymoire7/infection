@@ -30,6 +30,7 @@ export class Game extends Scene
     humanPlayer: 'red' | 'blue' = 'red';
     currentPlayerText: Phaser.GameObjects.Text;
     undoButton: Phaser.GameObjects.Text;
+    quitButton: Phaser.GameObjects.Text;
     computerPlayer: ComputerPlayer | null = null;
     stateManager: GameStateManager;
     uiManager: GameUIManager;
@@ -63,9 +64,11 @@ export class Game extends Scene
         const uiElements = this.uiManager.createUI();
         this.currentPlayerText = uiElements.currentPlayerText;
         this.undoButton = uiElements.undoButton;
+        this.quitButton = uiElements.quitButton;
         
-        // Set up undo button handler
+        // Set up button handlers
         this.uiManager.setUndoButtonHandler(() => this.undoLastMove());
+        this.uiManager.setQuitButtonHandler(() => this.quitGame());
         
         // Recreate visual elements if game state was loaded
         if (this.stateManager.hasSavedState()) {
@@ -542,6 +545,18 @@ export class Game extends Scene
         console.log(`Undid move, back to ${this.currentPlayer} player's turn`);
     }
 
+    quitGame()
+    {
+        // Reset the game state
+        this.clearSavedGameState();
+        
+        // Store abandonment information for GameOver scene
+        this.game.registry.set('gameWinner', 'Abandoned');
+        
+        // Transition to GameOver scene immediately
+        this.scene.start('GameOver');
+    }
+
     clearAllVisualDots()
     {
         for (let row = 0; row < this.gridSize; row++) {
@@ -642,15 +657,22 @@ export class Game extends Scene
 
     handleGameOver(winner: string)
     {
+        // Prevent multiple calls to handleGameOver
+        if (this.game.registry.get('gameEnding')) {
+            return;
+        }
+        this.game.registry.set('gameEnding', true);
+        
         // Reset the game state
         this.clearSavedGameState();
         
         // Store winner information for GameOver scene
         this.game.registry.set('gameWinner', winner);
         
-        // Add a 1-second pause before transitioning to GameOver scene
+        // Add a short pause before transitioning to GameOver scene
         // This allows the user to see the final resolved game state
-        this.time.delayedCall(1000, () => {
+        this.time.delayedCall(1500, () => {
+            this.game.registry.remove('gameEnding');
             this.scene.start('GameOver');
         });
     }

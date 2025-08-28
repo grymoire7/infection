@@ -39,10 +39,20 @@ export class GameOver extends Scene
             strokeThickness: 6
         }).setOrigin(0.5);
 
-        // Winner announcement
+        // Winner announcement or abandonment message
         const winnerFontSize = Math.min(36, this.cameras.main.width / 20);
-        const winnerColor = winner === 'Red' ? '#ff0000' : '#0000ff';
-        this.winnerText = this.add.text(centerX, centerY * 0.6, `${winner} Player Wins!`, {
+        let winnerColor = '#ffffff';
+        let winnerMessage = '';
+
+        if (winner === 'Abandoned') {
+            winnerColor = '#ffaa00';
+            winnerMessage = 'Game Abandoned';
+        } else {
+            winnerColor = winner === 'Red' ? '#ff0000' : '#0000ff';
+            winnerMessage = `${winner} Player Wins!`;
+        }
+
+        this.winnerText = this.add.text(centerX, centerY * 0.6, winnerMessage, {
             fontFamily: 'Arial Black', 
             fontSize: winnerFontSize, 
             color: winnerColor,
