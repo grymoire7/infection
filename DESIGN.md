@@ -157,7 +157,7 @@ The computer opponent can be set to different difficulty levels:
 - Each level set will have a name and a brief description.
 - Levels and level sets will be defined in JSON files to facilitate easy creation and modification.
 - Players can unlock new levels by completing, though not necessarily winning, previous ones.
-- A player's progress will be saved, allowing them to resume from the last completed level.
+- A player's progress will be saved, allowing them to resume from the last completed level and board state.
 - We will now have the idea winning/losing a level and winning/losing a game.
 - A player's final score for the game will be based on their performance across all levels in the level set.
 - In the settings menu players can choose a different level set (from a list) to play for the next game.
