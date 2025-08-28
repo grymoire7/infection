@@ -5,15 +5,13 @@ export interface Level {
     gridSize: number;
     blockedCells: { row: number; col: number }[];
     difficulty: number;
-    order: number;
 }
 
 export interface LevelSet {
     id: string;
     name: string;
     description: string;
-    levels: Level[];
-    order: number;
+    levelIds: string[];
 }
 
 export interface GameState {

@@ -3,6 +3,7 @@ import { Scene } from 'phaser';
 import { ComputerPlayer } from '../ComputerPlayer';
 import { GameStateManager, GameState } from '../GameStateManager';
 import { GameUIManager } from '../GameUIManager';
+import { LEVEL_SETS, getLevelById } from '../LevelDefinitions';
 
 export class Game extends Scene
 {
@@ -53,15 +54,7 @@ export class Game extends Scene
         this.stateManager = new GameStateManager(this.game.registry);
         this.uiManager = new GameUIManager(this);
 
-        // Initialize player colors and turn order from settings
-        this.initializeGameSettings();
-
-        this.createGrid();
-
-        // Load saved game state if it exists, after grid is created
-        this.loadGameState();
-        
-        // Create UI elements
+        // Create UI elements first
         const uiElements = this.uiManager.createUI();
         this.currentPlayerText = uiElements.currentPlayerText;
         this.undoButton = uiElements.undoButton;
@@ -70,17 +63,65 @@ export class Game extends Scene
         // Set up button handlers
         this.uiManager.setUndoButtonHandler(() => this.undoLastMove());
         this.uiManager.setQuitButtonHandler(() => this.quitGame());
-        
+
+        // Initialize player colors and turn order from settings
+        this.initializeGameSettings();
+
+        this.createGrid();
+
+        // Load saved game state if it exists, after grid is created
+        this.loadGameState();
+        // If no saved state, load the next level or default level
+        this.loadLevelNoState();
+
         // Recreate visual elements if game state was loaded
         if (this.stateManager.hasSavedState()) {
             this.recreateAllVisualDots();
             this.updateAllCellOwnership();
         }
         
+        // Update UI indicators
         this.updatePlayerIndicator();
         this.updateUndoButton();
 
         EventBus.emit('current-scene-ready', this);
+    }
+
+    loadLevelNoState()
+    {
+        if (this.stateManager.hasSavedState()) return;
+
+        const loadDefault = () => { this.loadLevel('default', 'level-1'); };
+
+        // Check if we should load the next level
+        if (this.game.registry.get('loadNextLevel')) {
+            this.game.registry.remove('loadNextLevel');
+            const levelSetId = this.game.registry.get('currentLevelSetId');
+            const levelId = this.game.registry.get('currentLevelId');
+            if (levelSetId && levelId) {
+                // Find the next level
+                const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
+                if (levelSet) {
+                    const currentIndex = levelSet.levelIds.indexOf(levelId);
+                    if (currentIndex !== -1 && currentIndex + 1 < levelSet.levelIds.length) {
+                        const nextLevelId = levelSet.levelIds[currentIndex + 1];
+                        this.loadLevel(levelSetId, nextLevelId);
+                    } else {
+                        // Fall back to first level if no next level found
+                        loadDefault();
+                    }
+                } else {
+                    // Fall back to first level if level set not found
+                    loadDefault();
+                }
+            } else {
+                // Fall back to first level if no level info found
+                loadDefault();
+            }
+        } else {
+            // Load the first level of the default level set if no saved state
+            loadDefault();
+        }
     }
 
     createGrid()
@@ -617,23 +658,24 @@ export class Game extends Scene
     loadGameState()
     {
         const savedState = this.stateManager.loadFromRegistry();
-        if (savedState) {
-            this.gameState = savedState.gameState;
-            this.currentPlayer = savedState.currentPlayer;
-            this.humanPlayer = savedState.humanPlayer;
-            const computerColor = savedState.computerPlayerColor;
-            const difficulty = this.game.registry.get('difficultyLevel') || 'Easy';
-            this.computerPlayer = new ComputerPlayer(difficulty, computerColor);
-            
-            // Check if the game was over when saved
-            if (savedState.gameOver && savedState.winner) {
-                // Recreate the game over state after a short delay to ensure all visuals are ready
-                this.time.delayedCall(100, () => {
-                    if (savedState.winner) {
-                        this.handleGameOver(savedState.winner);
-                    }
-                });
-            }
+        if (!savedState) return;
+
+        this.gameState = savedState.gameState;
+        this.currentPlayer = savedState.currentPlayer;
+        this.humanPlayer = savedState.humanPlayer;
+        const computerColor = savedState.computerPlayerColor;
+
+        const difficulty = this.game.registry.get('difficultyLevel') || 'Easy';
+        this.computerPlayer = new ComputerPlayer(difficulty, computerColor);
+        
+        // Check if the game was over when saved
+        if (savedState.gameOver && savedState.winner) {
+            // Recreate the game over state after a short delay to ensure all visuals are ready
+            this.time.delayedCall(100, () => {
+                if (savedState.winner) {
+                    this.handleGameOver(savedState.winner);
+                }
+            });
         }
     }
 
@@ -714,6 +756,41 @@ export class Game extends Scene
             console.error('Computer player error:', error);
             // If computer can't find a move, the game might be over
         }
+    }
+
+    loadLevel(levelSetId: string, levelId: string) {
+        // Find the level set
+        const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
+        if (!levelSet) return;
+        
+        // Find the level
+        const level = getLevelById(levelId);
+        if (!level) return;
+        
+        // Set level properties
+        this.gridSize = level.gridSize;
+        this.blockedCells = level.blockedCells;
+        
+        // Reset game state
+        this.clearSavedGameState();
+        this.createGrid();
+        this.recreateAllVisualDots();
+        this.updateAllCellOwnership();
+        
+        // Reset player turn
+        this.initializeGameSettings();
+        
+        // Update UI only if UI elements exist
+        if (this.currentPlayerText) {
+            this.updatePlayerIndicator();
+        }
+        if (this.undoButton) {
+            this.updateUndoButton();
+        }
+        
+        // Save level info to registry
+        this.game.registry.set('currentLevelSetId', levelSetId);
+        this.game.registry.set('currentLevelId', levelId);
     }
 
     changeScene ()

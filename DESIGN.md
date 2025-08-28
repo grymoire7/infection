@@ -212,7 +212,7 @@ This section outlines an incremental development process for building the Dots g
 
 ### Phase 5: Levels and Level Sets
 - [x] Create level set and level data structures and level definitions (see "Game levels and level sets" section above)
-- [ ] Implement level progression system through a level set for gameplay (see "Game levels and level sets" section above)
+- [x] Implement level progression system through a level set for gameplay (see "Game levels and level sets" section above)
 - [ ] Add level set selection menu in settings (see "Game levels and level sets" section above)
 
 ### Phase 6: Advanced Features
