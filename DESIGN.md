@@ -221,7 +221,12 @@ This section outlines an incremental development process for building the Dots g
     - This should be labeled "Level Set:" and be a dropdown list of available level sets by name.
 
 ### Phase 6: Advanced Features
-- [ ] Implement custom board designs with blocked cells
+- [x] Implement game flow with blocked cells
+    - currently blocked cells do not work correctly as part of the game flow
+    - blocked cells cannot accept dots from an explosion or be owned by either player
+    - blocked cells have a capacity of 0
+    - blocked cells are never counted when determining another cell's capacity
+    - bloacked cells should be visually distinct (e.g., a bright gray color)
 - [ ] Add board size options (3x3 to 9x9)
 - [ ] Create board template system
 - [ ] Add game statistics tracking

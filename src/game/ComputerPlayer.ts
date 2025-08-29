@@ -16,18 +16,52 @@ export class ComputerPlayer {
      * @returns {row: number, col: number} - The chosen move coordinates
      */
     findMove(gameState: GameState[][], gridSize: number): { row: number, col: number } {
+        let move: { row: number, col: number } | null = null;
+        
         switch (this.difficulty.toLowerCase()) {
             case 'easy':
-                return this.getRandomValidMove(gameState, gridSize);
+                move = this.getRandomValidMove(gameState, gridSize);
+                break;
             case 'medium':
-                return this.getMediumMove(gameState, gridSize);
+                move = this.getMediumMove(gameState, gridSize);
+                break;
             case 'hard':
-                return this.getHardMove(gameState, gridSize);
+                move = this.getHardMove(gameState, gridSize);
+                break;
             case 'expert':
-                return this.getExpertMove(gameState, gridSize);
+                move = this.getExpertMove(gameState, gridSize);
+                break;
             default:
-                return this.getRandomValidMove(gameState, gridSize);
+                move = this.getRandomValidMove(gameState, gridSize);
+                break;
         }
+        
+        // Validate the move
+        if (move && this.isValidMove(gameState, move.row, move.col)) {
+            return move;
+        }
+        
+        // If the move is invalid, fall back to a random valid move
+        try {
+            return this.getRandomValidMove(gameState, gridSize);
+        } catch (error) {
+            // If no valid moves are available, throw the error
+            throw error;
+        }
+    }
+
+    /**
+     * Check if a move is valid
+     */
+    private isValidMove(gameState: GameState[][], row: number, col: number): boolean {
+        // Check if the cell is within bounds
+        if (row < 0 || row >= gameState.length || col < 0 || col >= gameState[0].length) {
+            return false;
+        }
+        
+        const cell = gameState[row][col];
+        // A move is valid if the cell is not blocked and (empty or owned by this player)
+        return cell && !cell.isBlocked && (cell.dotCount === 0 || cell.owner === this.color);
     }
 
     /**
@@ -61,7 +95,9 @@ export class ComputerPlayer {
                 const cell = gameState[row][col];
                 
                 // A move is valid if the cell is not blocked and (empty or owned by this player)
-                if (!cell.isBlocked && (cell.dotCount === 0 || cell.owner === this.color)) {
+                // Blocked cells always have capacity 0 and can't be interacted with
+                // Make sure cell exists and is not blocked
+                if (cell && !cell.isBlocked && (cell.dotCount === 0 || cell.owner === this.color)) {
                     validMoves.push({ row, col });
                 }
             }
@@ -124,7 +160,8 @@ export class ComputerPlayer {
         for (let row = 0; row < gridSize; row++) {
             for (let col = 0; col < gridSize; col++) {
                 const cell = gameState[row][col];
-                if (cell.owner === this.color && cell.dotCount === cell.capacity) {
+                // Make sure cell exists and is not blocked
+                if (cell && !cell.isBlocked && cell.owner === this.color && cell.dotCount === cell.capacity) {
                     return { row, col };
                 }
             }

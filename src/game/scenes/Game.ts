@@ -156,25 +156,40 @@ export class Game extends Scene
     private initializeGridArrays(): void {
         this.grid = Array(this.gridSize).fill(null).map(() => []);
         this.dots = Array(this.gridSize).fill(null).map(() => []);
-        this.boardState = Array(this.gridSize).fill(null).map(() => []);
+        // Initialize boardState with empty arrays for each row
+        this.boardState = Array(this.gridSize);
+        for (let i = 0; i < this.gridSize; i++) {
+            this.boardState[i] = Array(this.gridSize);
+        }
     }
 
     private createGridCells(): void {
+        // First pass: initialize all cell states with temporary capacities
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
-                this.createGridCell(row, col);
+                const isBlocked = this.isCellBlocked(row, col);
+                // Initialize with temporary capacity, we'll update it later
+                this.initializeCellState(row, col, 0, isBlocked);
+            }
+        }
+        
+        // Second pass: calculate actual capacities and update cell states
+        for (let row = 0; row < this.gridSize; row++) {
+            for (let col = 0; col < this.gridSize; col++) {
+                const cellState = this.boardState[row][col];
+                if (!cellState.isBlocked) {
+                    cellState.capacity = this.calculateCellCapacity(row, col);
+                }
+                // Create visual elements
+                const x = this.gridStartX + col * this.cellSize;
+                const y = this.gridStartY + row * this.cellSize;
+                this.createCellVisual(row, col, x, y, cellState.isBlocked);
             }
         }
     }
 
     private createGridCell(row: number, col: number): void {
-        const x = this.gridStartX + col * this.cellSize;
-        const y = this.gridStartY + row * this.cellSize;
-        const isBlocked = this.isCellBlocked(row, col);
-        const capacity = isBlocked ? 0 : this.calculateCellCapacity(row, col);
-
-        this.initializeCellState(row, col, capacity, isBlocked);
-        this.createCellVisual(row, col, x, y, isBlocked);
+        // This method is no longer used in the new approach
     }
 
     private isCellBlocked(row: number, col: number): boolean {
@@ -191,12 +206,17 @@ export class Game extends Scene
     }
 
     private createCellVisual(row: number, col: number, x: number, y: number, isBlocked: boolean): void {
-        const cellColor = isBlocked ? 0x222222 : 0x444444;
+        // Use a bright gray color for blocked cells to make them more distinctive
+        const cellColor = isBlocked ? 0xCCCCCC : 0x444444;
         const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, cellColor);
-        cell.setStrokeStyle(2, isBlocked ? 0x333333 : 0x666666);
+        // Use a darker stroke for blocked cells to make them stand out
+        cell.setStrokeStyle(2, isBlocked ? 0x999999 : 0x666666);
         
         if (!isBlocked) {
             this.makeCellInteractive(row, col, cell);
+        } else {
+            // Make sure blocked cells are not interactive and have a distinct appearance
+            cell.disableInteractive();
         }
 
         this.grid[row][col] = cell;
@@ -212,6 +232,11 @@ export class Game extends Scene
 
     private handleCellHover(row: number, col: number, cell: Phaser.GameObjects.Rectangle): void {
         const cellState = this.boardState[row][col];
+        // Don't change appearance for blocked cells
+        if (cellState.isBlocked) {
+            return;
+        }
+        
         if (cellState.owner === 'red') {
             cell.setFillStyle(0x885555);
         } else if (cellState.owner === 'blue') {
@@ -295,7 +320,14 @@ export class Game extends Scene
             // Check if the adjacent cell is within grid bounds
             if (newRow >= 0 && newRow < this.gridSize && 
                 newCol >= 0 && newCol < this.gridSize) {
-                capacity++;
+                // Make sure the cell exists in boardState
+                if (this.boardState[newRow] && this.boardState[newRow][newCol]) {
+                    const adjacentCell = this.boardState[newRow][newCol];
+                    // Only count non-blocked adjacent cells
+                    if (!adjacentCell.isBlocked) {
+                        capacity++;
+                    }
+                }
             }
         }
 
@@ -306,8 +338,9 @@ export class Game extends Scene
     {
         const cellState = this.boardState[row][col];
         
-        // Check if cell is blocked
+        // Check if cell is blocked - can't place dots on blocked cells
         if (cellState.isBlocked) {
+            console.log(`Cannot place dot on blocked cell at ${row},${col}`);
             return;
         }
 
@@ -410,6 +443,13 @@ export class Game extends Scene
         const cellState = this.boardState[row][col];
         const cell = this.grid[row][col];
 
+        // Blocked cells always maintain their bright gray appearance
+        if (cellState.isBlocked) {
+            cell.setFillStyle(0xCCCCCC);
+            cell.setStrokeStyle(2, 0x999999);
+            return;
+        }
+
         if (cellState.owner === 'red') {
             // Light red background for red-owned cells
             cell.setFillStyle(0x664444);
@@ -491,11 +531,16 @@ export class Game extends Scene
             const newRow = row + deltaRow;
             const newCol = col + deltaCol;
 
-            // Check if the adjacent cell is within grid bounds
+            // Check if the adjacent cell is within grid bounds and not blocked
             if (newRow >= 0 && newRow < this.gridSize && 
                 newCol >= 0 && newCol < this.gridSize) {
 
                 const adjacentCell = this.boardState[newRow][newCol];
+                
+                // Skip blocked cells
+                if (adjacentCell.isBlocked) {
+                    continue;
+                }
 
                 // Add one dot to the adjacent cell
                 adjacentCell.dotCount++;
@@ -714,10 +759,15 @@ export class Game extends Scene
         let blueCells = 0;
         let emptyCells = 0;
 
-        // Count cells owned by each player
+        // Count cells owned by each player, ignoring blocked cells
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 const cellState = this.boardState[row][col];
+                
+                // Skip blocked cells in win condition calculation
+                if (cellState.isBlocked) {
+                    continue;
+                }
                 
                 if (cellState.owner === 'red') {
                     redCells++;
@@ -729,7 +779,7 @@ export class Game extends Scene
             }
         }
 
-        // Win condition: one player owns all cells (no empty cells and opponent has 0 cells)
+        // Win condition: one player owns all non-blocked cells (no empty cells and opponent has 0 cells)
         if (emptyCells === 0) {
             if (redCells > 0 && blueCells === 0) {
                 return 'Red';
@@ -774,12 +824,46 @@ export class Game extends Scene
             const move = this.computerPlayer.findMove(this.boardState, this.gridSize);
             console.log(`Computer (${this.computerPlayer.getColor()}) choosing move: ${move.row}, ${move.col}`);
 
-            // Make the move (pass true to indicate this is a computer move)
-            await this.placeDot(move.row, move.col, true);
+            // Validate the move before attempting to place the dot
+            const cellState = this.boardState[move.row][move.col];
+            if (cellState && !cellState.isBlocked && (cellState.dotCount === 0 || cellState.owner === this.currentPlayer)) {
+                // Make the move (pass true to indicate this is a computer move)
+                await this.placeDot(move.row, move.col, true);
+            } else {
+                console.error('Computer attempted invalid move, trying random valid move instead');
+                // Fall back to a random valid move
+                const validMoves = this.getValidMoves();
+                if (validMoves.length > 0) {
+                    const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+                    await this.placeDot(randomMove.row, randomMove.col, true);
+                } else {
+                    console.error('No valid moves available for computer');
+                }
+            }
         } catch (error) {
             console.error('Computer player error:', error);
             // If computer can't find a move, the game might be over
         }
+    }
+
+    /**
+     * Get all valid moves for the current player
+     */
+    private getValidMoves(): { row: number, col: number }[] {
+        const validMoves: { row: number, col: number }[] = [];
+
+        for (let row = 0; row < this.gridSize; row++) {
+            for (let col = 0; col < this.gridSize; col++) {
+                const cellState = this.boardState[row][col];
+                
+                // A move is valid if the cell is not blocked and (empty or owned by current player)
+                if (cellState && !cellState.isBlocked && (cellState.dotCount === 0 || cellState.owner === this.currentPlayer)) {
+                    validMoves.push({ row, col });
+                }
+            }
+        }
+
+        return validMoves;
     }
 
     areSoundEffectsEnabled(): boolean {
