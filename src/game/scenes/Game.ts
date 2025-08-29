@@ -4,6 +4,7 @@ import { ComputerPlayer } from '../ComputerPlayer';
 import { GameStateManager, GameState } from '../GameStateManager';
 import { GameUIManager } from '../GameUIManager';
 import { LEVEL_SETS, getLevelById } from '../LevelDefinitions';
+import { DotPositioner } from '../utils/DotPositioner';
 
 export class Game extends Scene
 {
@@ -13,7 +14,6 @@ export class Game extends Scene
     private static readonly MIN_CELL_SIZE = 40;
     private static readonly DOT_RADIUS = 12;
     private static readonly DOT_STROKE_WIDTH = 2;
-    private static readonly MAX_VISUAL_DOTS = 6;
     private static readonly COMPUTER_MOVE_DELAY = 1000;
     private static readonly EXPLOSION_DELAY = 300;
 
@@ -389,9 +389,9 @@ export class Game extends Scene
         const cellCenterY = this.gridStartY + row * this.cellSize;
 
         // Only render up to max visual dots, even if more exist
-        const visualDotCount = Math.min(dotCount, Game.MAX_VISUAL_DOTS);
+        const visualDotCount = Math.min(dotCount, DotPositioner.getMaxVisualDots());
 
-        const positions = this.calculateDotPositions(visualDotCount, cellCenterX, cellCenterY);
+        const positions = DotPositioner.calculateDotPositions(visualDotCount, cellCenterX, cellCenterY);
         
         // Apply positions to dots
         for (let i = 0; i < visualDotCount; i++) {
@@ -399,62 +399,11 @@ export class Game extends Scene
         }
 
         // Hide any dots beyond the max visual count
-        for (let i = Game.MAX_VISUAL_DOTS; i < cellDots.length; i++) {
+        for (let i = DotPositioner.getMaxVisualDots(); i < cellDots.length; i++) {
             cellDots[i].setVisible(false);
         }
     }
 
-    private calculateDotPositions(count: number, centerX: number, centerY: number): { x: number, y: number }[] {
-        const positions: { x: number, y: number }[] = [];
-
-        switch (count) {
-            case 1:
-                positions.push({ x: centerX, y: centerY });
-                break;
-            case 2:
-                positions.push(
-                    { x: centerX - 15, y: centerY },
-                    { x: centerX + 15, y: centerY }
-                );
-                break;
-            case 3:
-                positions.push(
-                    { x: centerX, y: centerY - 12 },
-                    { x: centerX - 12, y: centerY + 8 },
-                    { x: centerX + 12, y: centerY + 8 }
-                );
-                break;
-            case 4:
-                positions.push(
-                    { x: centerX - 12, y: centerY - 12 },
-                    { x: centerX + 12, y: centerY - 12 },
-                    { x: centerX - 12, y: centerY + 12 },
-                    { x: centerX + 12, y: centerY + 12 }
-                );
-                break;
-            case 5:
-                positions.push(
-                    { x: centerX, y: centerY },
-                    { x: centerX - 18, y: centerY - 18 },
-                    { x: centerX + 18, y: centerY - 18 },
-                    { x: centerX - 18, y: centerY + 18 },
-                    { x: centerX + 18, y: centerY + 18 }
-                );
-                break;
-            case 6:
-                positions.push(
-                    { x: centerX - 18, y: centerY - 12 },
-                    { x: centerX, y: centerY - 12 },
-                    { x: centerX + 18, y: centerY - 12 },
-                    { x: centerX - 18, y: centerY + 12 },
-                    { x: centerX, y: centerY + 12 },
-                    { x: centerX + 18, y: centerY + 12 }
-                );
-                break;
-        }
-
-        return positions;
-    }
 
     updateCellOwnership(row: number, col: number)
     {
