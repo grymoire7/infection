@@ -43,173 +43,183 @@ export class Game extends Scene
         super('Game');
     }
 
-    create ()
-    {
+    create() {
+        this.initializeCamera();
+        this.initializeBackground();
+        this.initializeManagers();
+        this.initializeUI();
+        this.initializeGameSettings();
+        this.createGrid();
+        this.loadGameStateOrLevel();
+        this.updateUI();
+        EventBus.emit('current-scene-ready', this);
+    }
+
+    private initializeCamera(): void {
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x222222);
+    }
 
+    private initializeBackground(): void {
         this.background = this.add.image(512, 384, 'background');
         this.background.setAlpha(0.3);
+    }
 
-        // Initialize managers
+    private initializeManagers(): void {
         this.stateManager = new GameStateManager(this.game.registry);
         this.uiManager = new GameUIManager(this);
+    }
 
-        // Create UI elements first
+    private initializeUI(): void {
         const uiElements = this.uiManager.createUI();
         this.currentPlayerText = uiElements.currentPlayerText;
         this.levelInfoText = uiElements.levelInfoText;
         this.undoButton = uiElements.undoButton;
         this.quitButton = uiElements.quitButton;
         
-        // Set up button handlers
         this.uiManager.setUndoButtonHandler(() => this.undoLastMove());
         this.uiManager.setQuitButtonHandler(() => this.quitGame());
+    }
 
-        // Initialize player colors and turn order from settings
-        this.initializeGameSettings();
-
-        this.createGrid();
-
-        // Load saved game state if it exists, after grid is created
+    private loadGameStateOrLevel(): void {
         this.loadGameState();
-        // If no saved state, load the next level or default level
         this.loadLevelNoState();
-
-        // Recreate visual elements if game state was loaded
+        
         if (this.stateManager.hasSavedState()) {
             this.recreateAllVisualDots();
             this.updateAllCellOwnership();
         }
-        
-        // Update UI indicators
+    }
+
+    private updateUI(): void {
         this.updatePlayerIndicator();
         this.updateLevelInfo();
         this.updateUndoButton();
-
-        EventBus.emit('current-scene-ready', this);
     }
 
-    loadLevelNoState()
-    {
+    private loadLevelNoState(): void {
         if (this.stateManager.hasSavedState()) return;
 
-        // Get the selected level set from settings, default to 'default'
         const selectedLevelSetId = this.game.registry.get('levelSetId') || 'default';
         
-        const loadSelectedLevelSet = () => {
-            const levelSet = LEVEL_SETS.find(set => set.id === selectedLevelSetId);
-            if (levelSet && levelSet.levelIds.length > 0) {
-                this.loadLevel(selectedLevelSetId, levelSet.levelIds[0]);
-            } else {
-                // Fall back to default level set if selected level set is invalid
-                this.loadLevel('default', 'level-1');
-            }
-        };
-
-        // Check if we should load the next level
-        if (this.game.registry.get('loadNextLevel')) {
-            this.game.registry.remove('loadNextLevel');
-            const levelSetId = this.game.registry.get('currentLevelSetId');
-            const levelId = this.game.registry.get('currentLevelId');
-            if (levelSetId && levelId) {
-                // Find the next level
-                const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
-                if (levelSet) {
-                    const currentIndex = levelSet.levelIds.indexOf(levelId);
-                    if (currentIndex !== -1 && currentIndex + 1 < levelSet.levelIds.length) {
-                        const nextLevelId = levelSet.levelIds[currentIndex + 1];
-                        this.loadLevel(levelSetId, nextLevelId);
-                    } else {
-                        // Fall back to first level of selected level set if no next level found
-                        loadSelectedLevelSet();
-                    }
-                } else {
-                    // Fall back to first level of selected level set if level set not found
-                    loadSelectedLevelSet();
-                }
-            } else {
-                // Fall back to first level of selected level set if no level info found
-                loadSelectedLevelSet();
-            }
+        if (this.shouldLoadNextLevel()) {
+            this.loadNextLevelOrFallback(selectedLevelSetId);
         } else {
-            // Load the first level of the selected level set if no saved state
-            loadSelectedLevelSet();
+            this.loadFirstLevelOfSet(selectedLevelSetId);
         }
     }
 
-    createGrid()
-    {
+    private shouldLoadNextLevel(): boolean {
+        return this.game.registry.get('loadNextLevel') === true;
+    }
+
+    private loadNextLevelOrFallback(selectedLevelSetId: string): void {
+        this.game.registry.remove('loadNextLevel');
+        const levelSetId = this.game.registry.get('currentLevelSetId');
+        const levelId = this.game.registry.get('currentLevelId');
+        
+        if (!levelSetId || !levelId) {
+            this.loadFirstLevelOfSet(selectedLevelSetId);
+            return;
+        }
+
+        const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
+        if (!levelSet) {
+            this.loadFirstLevelOfSet(selectedLevelSetId);
+            return;
+        }
+
+        const currentIndex = levelSet.levelIds.indexOf(levelId);
+        if (currentIndex !== -1 && currentIndex + 1 < levelSet.levelIds.length) {
+            const nextLevelId = levelSet.levelIds[currentIndex + 1];
+            this.loadLevel(levelSetId, nextLevelId);
+        } else {
+            this.loadFirstLevelOfSet(selectedLevelSetId);
+        }
+    }
+
+    private loadFirstLevelOfSet(levelSetId: string): void {
+        const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
+        if (levelSet && levelSet.levelIds.length > 0) {
+            this.loadLevel(levelSetId, levelSet.levelIds[0]);
+        } else {
+            this.loadLevel('default', 'level-1');
+        }
+    }
+
+    private createGrid(): void {
         this.calculateGridDimensions();
+        this.initializeGridArrays();
+        this.createGridCells();
+    }
 
-        this.grid = [];
-        this.dots = [];
-        this.boardState = [];
+    private initializeGridArrays(): void {
+        this.grid = Array(this.gridSize).fill(null).map(() => []);
+        this.dots = Array(this.gridSize).fill(null).map(() => []);
+        this.boardState = Array(this.gridSize).fill(null).map(() => []);
+    }
 
+    private createGridCells(): void {
         for (let row = 0; row < this.gridSize; row++) {
-            this.grid[row] = [];
-            this.dots[row] = [];
-            this.boardState[row] = [];
-
             for (let col = 0; col < this.gridSize; col++) {
-                const x = this.gridStartX + col * this.cellSize;
-                const y = this.gridStartY + row * this.cellSize;
-
-                // Check if cell is blocked
-                const isBlocked = this.blockedCells.some((cell: { row: number; col: number }) => cell.row === row && cell.col === col);
-                
-                // Calculate capacity based on adjacent cells (0 if blocked)
-                const capacity = isBlocked ? 0 : this.calculateCellCapacity(row, col);
-
-                // Initialize board state for this cell
-                if (!this.boardState[row]) {
-                    this.boardState[row] = [];
-                }
-                if (!this.boardState[row][col]) {
-                    this.boardState[row][col] = { 
-                        dotCount: 0, 
-                        owner: null, 
-                        capacity: capacity,
-                        isBlocked: isBlocked 
-                    };
-                }
-
-                // Create cell background
-                const cellColor = isBlocked ? 0x222222 : 0x444444;
-                const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, cellColor);
-                cell.setStrokeStyle(2, isBlocked ? 0x333333 : 0x666666);
-                
-                // Only make non-blocked cells interactive
-                if (!isBlocked) {
-                    cell.setInteractive();
-
-                    // Add hover effects
-                    cell.on('pointerover', () => {
-                        const cellState = this.boardState[row][col];
-                        if (cellState.owner === 'red') {
-                            cell.setFillStyle(0x885555);
-                        } else if (cellState.owner === 'blue') {
-                            cell.setFillStyle(0x555588);
-                        } else {
-                            cell.setFillStyle(0x555555);
-                        }
-                        cell.setStrokeStyle(2, 0x888888);
-                    });
-
-                    cell.on('pointerout', () => {
-                        this.updateCellOwnership(row, col);
-                    });
-
-                    // Add click handler for dot placement
-                    cell.on('pointerdown', () => {
-                        this.placeDot(row, col);
-                    });
-                }
-
-                this.grid[row][col] = cell;
-                this.dots[row][col] = []; // Empty array of dots initially
+                this.createGridCell(row, col);
             }
         }
+    }
+
+    private createGridCell(row: number, col: number): void {
+        const x = this.gridStartX + col * this.cellSize;
+        const y = this.gridStartY + row * this.cellSize;
+        const isBlocked = this.isCellBlocked(row, col);
+        const capacity = isBlocked ? 0 : this.calculateCellCapacity(row, col);
+
+        this.initializeCellState(row, col, capacity, isBlocked);
+        this.createCellVisual(row, col, x, y, isBlocked);
+    }
+
+    private isCellBlocked(row: number, col: number): boolean {
+        return this.blockedCells.some(cell => cell.row === row && cell.col === col);
+    }
+
+    private initializeCellState(row: number, col: number, capacity: number, isBlocked: boolean): void {
+        this.boardState[row][col] = { 
+            dotCount: 0, 
+            owner: null, 
+            capacity,
+            isBlocked
+        };
+    }
+
+    private createCellVisual(row: number, col: number, x: number, y: number, isBlocked: boolean): void {
+        const cellColor = isBlocked ? 0x222222 : 0x444444;
+        const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, cellColor);
+        cell.setStrokeStyle(2, isBlocked ? 0x333333 : 0x666666);
+        
+        if (!isBlocked) {
+            this.makeCellInteractive(row, col, cell);
+        }
+
+        this.grid[row][col] = cell;
+        this.dots[row][col] = [];
+    }
+
+    private makeCellInteractive(row: number, col: number, cell: Phaser.GameObjects.Rectangle): void {
+        cell.setInteractive();
+        cell.on('pointerover', () => this.handleCellHover(row, col, cell));
+        cell.on('pointerout', () => this.updateCellOwnership(row, col));
+        cell.on('pointerdown', () => this.placeDot(row, col));
+    }
+
+    private handleCellHover(row: number, col: number, cell: Phaser.GameObjects.Rectangle): void {
+        const cellState = this.boardState[row][col];
+        if (cellState.owner === 'red') {
+            cell.setFillStyle(0x885555);
+        } else if (cellState.owner === 'blue') {
+            cell.setFillStyle(0x555588);
+        } else {
+            cell.setFillStyle(0x555555);
+        }
+        cell.setStrokeStyle(2, 0x888888);
     }
 
 
