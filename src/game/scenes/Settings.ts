@@ -267,6 +267,8 @@ export class Settings extends Scene
         
         // Update global sound setting
         this.game.registry.set('soundEffectsEnabled', this.soundEffectsEnabled);
+        // Set flag to indicate settings have changed
+        this.game.registry.set('settingsDirty', true);
         
         console.log(`Sound effects ${this.soundEffectsEnabled ? 'enabled' : 'disabled'}`);
     }
@@ -292,6 +294,8 @@ export class Settings extends Scene
         
         // Update global difficulty setting
         this.game.registry.set('difficultyLevel', this.difficultyLevel);
+        // Set flag to indicate settings have changed
+        this.game.registry.set('settingsDirty', true);
         
         console.log(`AI Difficulty set to: ${this.difficultyLevel}`);
     }
@@ -322,6 +326,8 @@ export class Settings extends Scene
         
         // Update global player color setting
         this.game.registry.set('playerColor', this.playerColor);
+        // Set flag to indicate settings have changed
+        this.game.registry.set('settingsDirty', true);
         
         console.log(`Player color set to: ${this.playerColor}`);
     }
@@ -343,6 +349,8 @@ export class Settings extends Scene
         
         // Update global who goes first setting
         this.game.registry.set('whoGoesFirst', this.whoGoesFirst);
+        // Set flag to indicate settings have changed
+        this.game.registry.set('settingsDirty', true);
         
         console.log(`Who goes first set to: ${this.whoGoesFirst}`);
     }
@@ -359,6 +367,8 @@ export class Settings extends Scene
         
         // Update global level set setting
         this.game.registry.set('levelSetId', this.levelSetId);
+        // Set flag to indicate settings have changed
+        this.game.registry.set('settingsDirty', true);
         
         console.log(`Level Set changed to: ${this.levelSetId}`);
     }

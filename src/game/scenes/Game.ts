@@ -52,6 +52,7 @@ export class Game extends Scene
         this.createGrid();
         this.loadGameStateOrLevel();
         this.updateUI();
+        
         EventBus.emit('current-scene-ready', this);
     }
 
@@ -82,12 +83,23 @@ export class Game extends Scene
     }
 
     private loadGameStateOrLevel(): void {
-        this.loadGameState();
-        this.loadLevelNoState();
-        
+        // If we have a saved state, load it
         if (this.stateManager.hasSavedState()) {
+            this.loadGameState();
             this.recreateAllVisualDots();
             this.updateAllCellOwnership();
+        } else {
+            // Always load the level based on the current level set in the registry
+            const levelSetId = this.game.registry.get('levelSetId') || 'default';
+            const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
+            
+            // Load the first level of the current level set
+            if (levelSet && levelSet.levelIds.length > 0) {
+                this.loadLevel(levelSetId, levelSet.levelIds[0]);
+            } else {
+                // Fallback to default level
+                this.loadLevel('default', 'level-1');
+            }
         }
     }
 
@@ -100,6 +112,7 @@ export class Game extends Scene
     private loadLevelNoState(): void {
         if (this.stateManager.hasSavedState()) return;
 
+        // Always use the level set from the registry
         const selectedLevelSetId = this.game.registry.get('levelSetId') || 'default';
         
         if (this.shouldLoadNextLevel()) {
@@ -188,9 +201,6 @@ export class Game extends Scene
         }
     }
 
-    private createGridCell(row: number, col: number): void {
-        // This method is no longer used in the new approach
-    }
 
     private isCellBlocked(row: number, col: number): boolean {
         return this.blockedCells.some(cell => cell.row === row && cell.col === col);
@@ -283,22 +293,29 @@ export class Game extends Scene
 
     updateLevelInfo()
     {
-        const levelSetId = this.game.registry.get('currentLevelSetId');
-        const levelId = this.game.registry.get('currentLevelId');
+        // Always use the current level set from the registry
+        const levelSetId = this.game.registry.get('levelSetId') || 'default';
+        const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
         
-        if (levelSetId && levelId) {
-            // Find level set and level names
-            const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
-            const level = getLevelById(levelId);
-            
-            if (levelSet && level) {
-                this.uiManager.updateLevelInfo(levelSet.name, level.name);
-                return;
-            }
+        // Get the current level ID from the registry
+        const levelId = this.game.registry.get('currentLevelId');
+        let level;
+        
+        if (levelId) {
+            level = getLevelById(levelId);
         }
         
-        // Default text if level info isn't available
-        this.uiManager.updateLevelInfo('Default Levels', 'Beginner\'s Grid');
+        // If level is not found, use the first level of the current level set
+        if (!level && levelSet && levelSet.levelIds.length > 0) {
+            level = getLevelById(levelSet.levelIds[0]);
+        }
+        
+        if (levelSet && level) {
+            this.uiManager.updateLevelInfo(levelSet.name, level.name);
+        } else {
+            // Default text if level info isn't available
+            this.uiManager.updateLevelInfo('Default Levels', 'Beginner\'s Grid');
+        }
     }
 
     calculateCellCapacity(row: number, col: number): number
@@ -595,6 +612,14 @@ export class Game extends Scene
         // Load settings from localStorage first to ensure they're up to date
         this.loadSettingsFromLocalStorage();
         
+        // Ensure level set ID is set in the registry
+        const levelSetId = this.game.registry.get('levelSetId');
+        if (!levelSetId) {
+            // If not set, get it from localStorage or use default
+            const savedLevelSetId = localStorage.getItem('dotsGame_levelSetId') || 'default';
+            this.game.registry.set('levelSetId', savedLevelSetId);
+        }
+        
         // Get player color preference from settings (default to red)
         const playerColor = this.game.registry.get('playerColor') || 'red';
         this.humanPlayer = playerColor as 'red' | 'blue';
@@ -643,6 +668,12 @@ export class Game extends Scene
         const savedWhoGoesFirst = localStorage.getItem('dotsGame_whoGoesFirst');
         if (savedWhoGoesFirst !== null) {
             this.game.registry.set('whoGoesFirst', savedWhoGoesFirst);
+        }
+
+        // Load level set setting from localStorage
+        const savedLevelSetId = localStorage.getItem('dotsGame_levelSetId');
+        if (savedLevelSetId !== null) {
+            this.game.registry.set('levelSetId', savedLevelSetId);
         }
     }
 
@@ -925,4 +956,63 @@ export class Game extends Scene
     {
         this.scene.start('GameOver');
     }
+
+    // This method is called when the scene becomes active again
+    wake() {
+        // Check if settings have been changed while we were away
+        const settingsDirty = this.game.registry.get('settingsDirty');
+        if (settingsDirty) {
+            // Clear the flag
+            this.game.registry.remove('settingsDirty');
+            
+            // Check if level set has changed
+            const currentLevelSetId = this.game.registry.get('currentLevelSetId');
+            const newLevelSetId = this.game.registry.get('levelSetId') || 'default';
+            
+            // Reload all settings from the registry
+            this.reloadAllSettings();
+            
+            // If level set has changed, load the first level of the new level set
+            if (currentLevelSetId !== newLevelSetId) {
+                const levelSet = LEVEL_SETS.find(set => set.id === newLevelSetId);
+                if (levelSet && levelSet.levelIds.length > 0) {
+                    this.loadLevel(newLevelSetId, levelSet.levelIds[0]);
+                }
+            } else {
+                // For other setting changes, just update the UI
+                this.updatePlayerIndicator();
+                this.updateLevelInfo();
+            }
+        }
+        // If settings haven't changed but we're not in a game state, reload
+        else if (!this.stateManager.hasSavedState()) {
+            this.loadLevelNoState();
+        }
+    }
+
+    /**
+     * Reload all settings from the registry
+     */
+    private reloadAllSettings(): void {
+        // Reload player color
+        const playerColor = this.game.registry.get('playerColor') || 'red';
+        this.humanPlayer = playerColor as 'red' | 'blue';
+        const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
+
+        // Reload difficulty level
+        const difficulty = this.game.registry.get('difficultyLevel') || 'Easy';
+        this.computerPlayer = new ComputerPlayer(difficulty, computerColor);
+
+        // Reload who goes first
+        const whoGoesFirst = this.game.registry.get('whoGoesFirst') || 'player';
+        if (whoGoesFirst === 'player') {
+            this.currentPlayer = this.humanPlayer;
+        } else {
+            this.currentPlayer = computerColor;
+        }
+
+        console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${whoGoesFirst} goes first`);
+    }
+
+    // Phaser scenes don't have a shutdown method by default, so we can remove this
 }
