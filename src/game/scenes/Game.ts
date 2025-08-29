@@ -25,7 +25,7 @@ export class Game extends Scene
     gridStartY: number;
     grid: Phaser.GameObjects.Rectangle[][];
     dots: any[][][]; // Now 3D array: [row][col][dotIndex]
-    gameState: GameState[][];
+    boardState: GameState[][];
     currentPlayer: 'red' | 'blue' = 'red';
     humanPlayer: 'red' | 'blue' = 'red';
     currentPlayerText: Phaser.GameObjects.Text;
@@ -144,12 +144,12 @@ export class Game extends Scene
 
         this.grid = [];
         this.dots = [];
-        this.gameState = [];
+        this.boardState = [];
 
         for (let row = 0; row < this.gridSize; row++) {
             this.grid[row] = [];
             this.dots[row] = [];
-            this.gameState[row] = [];
+            this.boardState[row] = [];
 
             for (let col = 0; col < this.gridSize; col++) {
                 const x = this.gridStartX + col * this.cellSize;
@@ -161,12 +161,12 @@ export class Game extends Scene
                 // Calculate capacity based on adjacent cells (0 if blocked)
                 const capacity = isBlocked ? 0 : this.calculateCellCapacity(row, col);
 
-                // Initialize game state for this cell
-                if (!this.gameState[row]) {
-                    this.gameState[row] = [];
+                // Initialize board state for this cell
+                if (!this.boardState[row]) {
+                    this.boardState[row] = [];
                 }
-                if (!this.gameState[row][col]) {
-                    this.gameState[row][col] = { 
+                if (!this.boardState[row][col]) {
+                    this.boardState[row][col] = { 
                         dotCount: 0, 
                         owner: null, 
                         capacity: capacity,
@@ -185,7 +185,7 @@ export class Game extends Scene
 
                     // Add hover effects
                     cell.on('pointerover', () => {
-                        const cellState = this.gameState[row][col];
+                        const cellState = this.boardState[row][col];
                         if (cellState.owner === 'red') {
                             cell.setFillStyle(0x885555);
                         } else if (cellState.owner === 'blue') {
@@ -294,7 +294,7 @@ export class Game extends Scene
 
     async placeDot(row: number, col: number, isComputerMove: boolean = false)
     {
-        const cellState = this.gameState[row][col];
+        const cellState = this.boardState[row][col];
         
         // Check if cell is blocked
         if (cellState.isBlocked) {
@@ -307,7 +307,7 @@ export class Game extends Scene
         if ((cellState.dotCount === 0 || cellState.owner === this.currentPlayer) && 
             (isComputerMove || this.currentPlayer === this.humanPlayer)) {
             // Save current state to history before making the move
-            this.stateManager.saveMove(this.gameState, this.currentPlayer);
+            this.stateManager.saveMove(this.boardState, this.currentPlayer);
             // Update game state first
             cellState.dotCount++;
             cellState.owner = this.currentPlayer;
@@ -349,9 +349,9 @@ export class Game extends Scene
             this.updatePlayerIndicator();
             this.updateUndoButton();
 
-            // Save game state after each move
+            // Save board state after each move
             this.stateManager.saveToRegistry(
-                this.gameState,
+                this.boardState,
                 this.currentPlayer,
                 this.humanPlayer,
                 this.computerPlayer?.getColor() || 'blue'
@@ -448,7 +448,7 @@ export class Game extends Scene
 
     updateCellOwnership(row: number, col: number)
     {
-        const cellState = this.gameState[row][col];
+        const cellState = this.boardState[row][col];
         const cell = this.grid[row][col];
 
         if (cellState.owner === 'red') {
@@ -476,7 +476,7 @@ export class Game extends Scene
 
             for (let row = 0; row < this.gridSize; row++) {
                 for (let col = 0; col < this.gridSize; col++) {
-                    const cellState = this.gameState[row][col];
+                    const cellState = this.boardState[row][col];
 
                     // Check if this cell should explode
                     if (cellState.dotCount > cellState.capacity) {
@@ -508,7 +508,7 @@ export class Game extends Scene
 
     explodeCell(row: number, col: number)
     {
-        const cellState = this.gameState[row][col];
+        const cellState = this.boardState[row][col];
         const explodingPlayer = cellState.owner;
 
         console.log(`Cell at ${row},${col} exploding! (${cellState.dotCount} > ${cellState.capacity})`);
@@ -536,7 +536,7 @@ export class Game extends Scene
             if (newRow >= 0 && newRow < this.gridSize && 
                 newCol >= 0 && newCol < this.gridSize) {
 
-                const adjacentCell = this.gameState[newRow][newCol];
+                const adjacentCell = this.boardState[newRow][newCol];
 
                 // Add one dot to the adjacent cell
                 adjacentCell.dotCount++;
@@ -555,7 +555,7 @@ export class Game extends Scene
 
     updateCellVisualDots(row: number, col: number)
     {
-        const cellState = this.gameState[row][col];
+        const cellState = this.boardState[row][col];
         const currentDots = this.dots[row][col];
 
         // Remove all existing visual dots
@@ -647,8 +647,8 @@ export class Game extends Scene
         const lastState = this.stateManager.undoLastMove();
         if (!lastState) return;
 
-        // Restore the game state
-        this.gameState = lastState.gameState;
+        // Restore the board state
+        this.boardState = lastState.boardState;
         this.currentPlayer = lastState.currentPlayer;
 
         // Clear all visual elements and recreate them
@@ -658,9 +658,9 @@ export class Game extends Scene
         this.updatePlayerIndicator();
         this.updateUndoButton();
 
-        // Save updated game state after undo
+        // Save updated board state after undo
         this.stateManager.saveToRegistry(
-            this.gameState,
+            this.boardState,
             this.currentPlayer,
             this.humanPlayer,
             this.computerPlayer?.getColor() || 'blue'
@@ -700,7 +700,7 @@ export class Game extends Scene
     {
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
-                const cellState = this.gameState[row][col];
+                const cellState = this.boardState[row][col];
                 if (cellState.owner && cellState.dotCount > 0) {
                     for (let i = 0; i < cellState.dotCount; i++) {
                         this.addVisualDot(row, col, cellState.owner);
@@ -725,7 +725,7 @@ export class Game extends Scene
         const savedState = this.stateManager.loadFromRegistry();
         if (!savedState) return;
 
-        this.gameState = savedState.gameState;
+        this.boardState = savedState.boardState;
         this.currentPlayer = savedState.currentPlayer;
         this.humanPlayer = savedState.humanPlayer;
         const computerColor = savedState.computerPlayerColor;
@@ -758,7 +758,7 @@ export class Game extends Scene
         // Count cells owned by each player
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
-                const cellState = this.gameState[row][col];
+                const cellState = this.boardState[row][col];
                 
                 if (cellState.owner === 'red') {
                     redCells++;
@@ -812,7 +812,7 @@ export class Game extends Scene
 
         try {
             // Get the computer's move
-            const move = this.computerPlayer.findMove(this.gameState, this.gridSize);
+            const move = this.computerPlayer.findMove(this.boardState, this.gridSize);
             console.log(`Computer (${this.computerPlayer.getColor()}) choosing move: ${move.row}, ${move.col}`);
 
             // Make the move (pass true to indicate this is a computer move)

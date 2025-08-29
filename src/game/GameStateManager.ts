@@ -22,12 +22,12 @@ export interface GameState {
 }
 
 export interface MoveHistoryEntry {
-    gameState: GameState[][];
+    boardState: GameState[][];
     currentPlayer: 'red' | 'blue';
 }
 
 export interface SavedGameState {
-    gameState: GameState[][];
+    boardState: GameState[][];
     currentPlayer: 'red' | 'blue';
     humanPlayer: 'red' | 'blue';
     computerPlayerColor: 'red' | 'blue';
@@ -50,15 +50,15 @@ export class GameStateManager {
     /**
      * Save a move to the history before it's made
      */
-    saveMove(gameState: GameState[][], currentPlayer: 'red' | 'blue'): void {
-        // Deep copy the current game state
-        const gameStateCopy = gameState.map(row => 
+    saveMove(boardState: GameState[][], currentPlayer: 'red' | 'blue'): void {
+        // Deep copy the current board state
+        const boardStateCopy = boardState.map(row => 
             row.map(cell => ({ ...cell }))
         );
 
         // Save the state and current player
         this.moveHistory.push({
-            gameState: gameStateCopy,
+            boardState: boardStateCopy,
             currentPlayer: currentPlayer
         });
 
@@ -82,7 +82,7 @@ export class GameStateManager {
 
         // Return deep copy to prevent mutation
         return {
-            gameState: lastState.gameState.map(row => 
+            boardState: lastState.boardState.map(row => 
                 row.map(cell => ({ ...cell }))
             ),
             currentPlayer: lastState.currentPlayer
@@ -100,7 +100,7 @@ export class GameStateManager {
      * Save current game state to persistent storage
      */
     saveToRegistry(
-        gameState: GameState[][],
+        boardState: GameState[][],
         currentPlayer: 'red' | 'blue',
         humanPlayer: 'red' | 'blue',
         computerPlayerColor: 'red' | 'blue',
@@ -108,12 +108,12 @@ export class GameStateManager {
         winner: string | null = null
     ): void {
         const savedState: SavedGameState = {
-            gameState: gameState.map(row => row.map(cell => ({ ...cell }))),
+            boardState: boardState.map(row => row.map(cell => ({ ...cell }))),
             currentPlayer,
             humanPlayer,
             computerPlayerColor,
             moveHistory: this.moveHistory.map(move => ({
-                gameState: move.gameState.map(row => row.map(cell => ({ ...cell }))),
+                boardState: move.boardState.map(row => row.map(cell => ({ ...cell }))),
                 currentPlayer: move.currentPlayer
             })),
             gameOver,
@@ -132,13 +132,13 @@ export class GameStateManager {
 
         // Restore move history
         this.moveHistory = savedState.moveHistory.map((move: MoveHistoryEntry) => ({
-            gameState: move.gameState.map((row: GameState[]) => row.map((cell: GameState) => ({ ...cell }))),
+            boardState: move.boardState.map((row: GameState[]) => row.map((cell: GameState) => ({ ...cell }))),
             currentPlayer: move.currentPlayer
         }));
 
         // Return deep copy to prevent mutation
         return {
-            gameState: savedState.gameState.map((row: GameState[]) => row.map((cell: GameState) => ({ ...cell }))),
+            boardState: savedState.boardState.map((row: GameState[]) => row.map((cell: GameState) => ({ ...cell }))),
             currentPlayer: savedState.currentPlayer,
             humanPlayer: savedState.humanPlayer,
             computerPlayerColor: savedState.computerPlayerColor,
