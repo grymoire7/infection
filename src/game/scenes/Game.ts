@@ -12,8 +12,6 @@ export class Game extends Scene
     private static readonly DEFAULT_GRID_SIZE = 5;
     private static readonly MAX_CELL_SIZE = 80;
     private static readonly MIN_CELL_SIZE = 40;
-    private static readonly DOT_RADIUS = 12;
-    private static readonly DOT_STROKE_WIDTH = 2;
     private static readonly COMPUTER_MOVE_DELAY = 1000;
     private static readonly EXPLOSION_DELAY = 300;
 
