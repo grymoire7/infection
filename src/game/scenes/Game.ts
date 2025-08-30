@@ -390,16 +390,7 @@ export class Game extends Scene
             cellState.dotCount++;
             cellState.owner = this.currentPlayer;
 
-            const dot = this.add.sprite(0, 0, this.currentPlayer === 'red' ? 'good-sprite' : 'evil-sprite');                                                                                 
-                                                               
-            // Temporarily disable while we test sprite animation
-            // Create new dot with current player's color
-            // const color = this.currentPlayer === 'red' ? 0xff0000 : 0x0000ff;
-            // const dot = this.add.circle(0, 0, Game.DOT_RADIUS, color);
-            // dot.setStrokeStyle(Game.DOT_STROKE_WIDTH, 0x000000);
-
-            // Add dot to the cell's dot array
-            this.dots[row][col].push(dot);
+            this.addVisualDot(row, col, this.currentPlayer);
 
             // Arrange all dots in this cell visually
             this.arrangeDots(row, col);
@@ -621,12 +612,9 @@ export class Game extends Scene
 
     addVisualDot(row: number, col: number, owner: string)
     {
-        const dot = this.add.sprite(0, 0, this.currentPlayer === 'red' ? 'good-sprite' : 'evil-sprite');                                                                                 
-                                                               
-        // Temporarily disable while we test sprite animation
-        // const color = owner === 'red' ? 0xff0000 : 0x0000ff;
-        // const dot = this.add.circle(0, 0, Game.DOT_RADIUS, color);
-        // dot.setStrokeStyle(Game.DOT_STROKE_WIDTH, 0x000000);
+        const dot = this.add.sprite(0, 0, owner === 'red' ? 'good-sprite' : 'evil-sprite');                                                                                 
+        dot.setScale(1.5);
+        dot.play(owner === 'red' ? 'good-dot-pulse' : 'evil-dot-pulse');
 
         this.dots[row][col].push(dot);
     }
