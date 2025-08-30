@@ -9,8 +9,9 @@ export class DotPositioner {
      */
     static calculateDotPositions(count: number, centerX: number, centerY: number): { x: number, y: number }[] {
         const positions: { x: number, y: number }[] = [];
+        const visualDotCount = Math.min(count, DotPositioner.MAX_VISUAL_DOTS);
 
-        switch (count) {
+        switch (visualDotCount) {
             case 1:
                 positions.push({ x: centerX, y: centerY });
                 break;

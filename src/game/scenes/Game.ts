@@ -450,19 +450,11 @@ export class Game extends Scene
         const cellCenterX = this.gridStartX + col * this.cellSize;
         const cellCenterY = this.gridStartY + row * this.cellSize;
 
-        // Only render up to max visual dots, even if more exist
-        const visualDotCount = Math.min(dotCount, DotPositioner.getMaxVisualDots());
-
-        const positions = DotPositioner.calculateDotPositions(visualDotCount, cellCenterX, cellCenterY);
+        const positions = DotPositioner.calculateDotPositions(dotCount, cellCenterX, cellCenterY);
         
         // Apply positions to dots
-        for (let i = 0; i < visualDotCount; i++) {
+        for (let i = 0; i < positions.length; i++) {
             cellDots[i].setPosition(positions[i].x, positions[i].y);
-        }
-
-        // Hide any dots beyond the max visual count
-        for (let i = DotPositioner.getMaxVisualDots(); i < cellDots.length; i++) {
-            cellDots[i].setVisible(false);
         }
     }
 
@@ -612,9 +604,9 @@ export class Game extends Scene
 
     addVisualDot(row: number, col: number, owner: string)
     {
-        const dot = this.add.sprite(0, 0, owner === 'red' ? 'good-sprite' : 'evil-sprite');                                                                                 
+        const dot = this.add.sprite(0, 0, owner === 'red' ? 'evil-sprite' : 'good-sprite');                                                                                 
         dot.setScale(1.5);
-        dot.play(owner === 'red' ? 'good-dot-pulse' : 'evil-dot-pulse');
+        dot.play(owner === 'red' ? 'evil-dot-pulse' : 'good-dot-pulse');
 
         this.dots[row][col].push(dot);
     }
