@@ -46,6 +46,7 @@ export class Game extends Scene
     create() {
         this.initializeCamera();
         this.initializeBackground();
+        this.createAnimations();
         this.initializeManagers();
         this.initializeUI();
         this.initializeGameSettings();
@@ -65,6 +66,23 @@ export class Game extends Scene
         this.background = this.add.image(512, 384, 'background');
         this.background.setAlpha(0.3);
     }
+
+    private createAnimations(): void {                                                                                                                                                      
+        this.anims.create({                                                                                                                                                                 
+            key: 'good-dot-pulse',                                                                                                                                                          
+            frames: this.anims.generateFrameNumbers('good-sprite', { frames: [0, 1, 2] }),                                                                                                  
+            frameRate: 8,                                                                                                                                                                   
+            repeat: -1,                                                                                                                                                                     
+            repeatDelay: 2000                                                                                                                                                               
+        });                                                                                                                                                                                 
+        this.anims.create({                                                                                                                                                                 
+            key: 'evil-dot-pulse',                                                                                                                                                          
+            frames: this.anims.generateFrameNumbers('evil-sprite', { frames: [0, 1, 2] }),                                                                                                  
+            frameRate: 8,                                                                                                                                                                   
+            repeat: -1,                                                                                                                                                                     
+            repeatDelay: 2000                                                                                                                                                               
+        });                                                                                                                                                                                 
+    }     
 
     private initializeManagers(): void {
         this.stateManager = new GameStateManager(this.game.registry);
@@ -372,10 +390,13 @@ export class Game extends Scene
             cellState.dotCount++;
             cellState.owner = this.currentPlayer;
 
+            const dot = this.add.sprite(0, 0, this.currentPlayer === 'red' ? 'good-sprite' : 'evil-sprite');                                                                                 
+                                                               
+            // Temporarily disable while we test sprite animation
             // Create new dot with current player's color
-            const color = this.currentPlayer === 'red' ? 0xff0000 : 0x0000ff;
-            const dot = this.add.circle(0, 0, Game.DOT_RADIUS, color);
-            dot.setStrokeStyle(Game.DOT_STROKE_WIDTH, 0x000000);
+            // const color = this.currentPlayer === 'red' ? 0xff0000 : 0x0000ff;
+            // const dot = this.add.circle(0, 0, Game.DOT_RADIUS, color);
+            // dot.setStrokeStyle(Game.DOT_STROKE_WIDTH, 0x000000);
 
             // Add dot to the cell's dot array
             this.dots[row][col].push(dot);
@@ -600,9 +621,12 @@ export class Game extends Scene
 
     addVisualDot(row: number, col: number, owner: string)
     {
-        const color = owner === 'red' ? 0xff0000 : 0x0000ff;
-        const dot = this.add.circle(0, 0, Game.DOT_RADIUS, color);
-        dot.setStrokeStyle(Game.DOT_STROKE_WIDTH, 0x000000);
+        const dot = this.add.sprite(0, 0, this.currentPlayer === 'red' ? 'good-sprite' : 'evil-sprite');                                                                                 
+                                                               
+        // Temporarily disable while we test sprite animation
+        // const color = owner === 'red' ? 0xff0000 : 0x0000ff;
+        // const dot = this.add.circle(0, 0, Game.DOT_RADIUS, color);
+        // dot.setStrokeStyle(Game.DOT_STROKE_WIDTH, 0x000000);
 
         this.dots[row][col].push(dot);
     }

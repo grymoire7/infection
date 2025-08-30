@@ -228,17 +228,19 @@ This section outlines an incremental development process for building the Dots g
     - blocked cells are never counted when determining another cell's capacity
     - bloacked cells should be visually distinct (e.g., a bright gray color)
 - [ ] Add board size options (3x3 to 9x9)
-- [ ] Create board template system
 - [ ] Add game statistics tracking
 - [ ] Implement save/load game functionality
-- [ ] Add animations for explosions and dot placement
 - [ ] Create multiple level sets with different themes
-- [ ] Add level completion tracking and unlocking system
 - [ ] Implement player progress saving and loading
 - [ ] Add scoring system based on performance across levels
 
-### Phase 7: Polish and Accessibility
-- [ ] Create tutorial/help system
+### Phase 7: Use sprites and animations
+- [ ] Add sprite animations for dot placement instead of simple circles
+- [ ] Add explosion animations
+
+
+### Phase 8: Polish and Accessibility
+- [ ] Create tutorial/help levels
 - [ ] Add keyboard controls for accessibility
 - [ ] Implement screen reader support
 - [ ] Add background music and enhanced sound effects

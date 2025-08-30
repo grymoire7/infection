@@ -31,11 +31,13 @@ export class Preloader extends Scene
     {
         //  Load the assets for the game - Replace with your own assets
         this.load.setPath('assets');
-
         this.load.image('logo', 'logo.png');
         this.load.image('star', 'star.png');
         this.load.audio('placement', 'placement.wav');
         this.load.audio('propagate', 'propagate.wav');
+                                                                                                                                                                                        
+        this.load.spritesheet('evil-sprite', 'animations/SlimeRed.png', { frameWidth: 16, frameHeight: 16 });                                                                                          
+        this.load.spritesheet('good-sprite', 'animations/SlimeBlue.png', { frameWidth: 16, frameHeight: 16 });      
     }
 
     create ()
