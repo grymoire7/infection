@@ -14,6 +14,12 @@ export class Game extends Scene
     private static readonly MIN_CELL_SIZE = 40;
     private static readonly COMPUTER_MOVE_DELAY = 1000;
     private static readonly EXPLOSION_DELAY = 300;
+    private static readonly CELL_STYLES = {
+        default: { fillColor: 0x444444, strokeColor: 0x666666, hoverFillColor: 0x555555, hoverStrokeColor: 0x888888 },
+        red:     { fillColor: 0x664444, strokeColor: 0x888888, hoverFillColor: 0x885555, hoverStrokeColor: 0x888888 },
+        blue:    { fillColor: 0x444466, strokeColor: 0x888888, hoverFillColor: 0x555588, hoverStrokeColor: 0x888888 },
+        blocked: { fillColor: 0xCCCCCC, strokeColor: 0x999999, hoverFillColor: 0xCCCCCC, hoverStrokeColor: 0x999999 }
+    };
 
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.Image;
@@ -196,9 +202,8 @@ export class Game extends Scene
         // First pass: initialize all cell states with temporary capacities
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
-                const isBlocked = this.isCellBlocked(row, col);
                 // Initialize with temporary capacity, we'll update it later
-                this.initializeCellState(row, col, 0, isBlocked);
+                this.initializeCellState(row, col, 0);
             }
         }
         
@@ -222,7 +227,9 @@ export class Game extends Scene
         return this.blockedCells.some(cell => cell.row === row && cell.col === col);
     }
 
-    private initializeCellState(row: number, col: number, capacity: number, isBlocked: boolean): void {
+    private initializeCellState(row: number, col: number, capacity: number): void {
+        const isBlocked = this.isCellBlocked(row, col);
+
         this.boardState[row][col] = { 
             dotCount: 0, 
             owner: null, 
@@ -232,11 +239,11 @@ export class Game extends Scene
     }
 
     private createCellVisual(row: number, col: number, x: number, y: number, isBlocked: boolean): void {
-        // Use a bright gray color for blocked cells to make them more distinctive
-        const cellColor = isBlocked ? 0xCCCCCC : 0x444444;
-        const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, cellColor);
-        // Use a darker stroke for blocked cells to make them stand out
-        cell.setStrokeStyle(2, isBlocked ? 0x999999 : 0x666666);
+
+        const cellStyle = isBlocked ? Game.CELL_STYLES.blocked : Game.CELL_STYLES.default;
+
+        const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, cellStyle.fillColor);
+        cell.setStrokeStyle(2, cellStyle.strokeColor);
         
         if (!isBlocked) {
             this.makeCellInteractive(row, col, cell);
@@ -258,19 +265,16 @@ export class Game extends Scene
 
     private handleCellHover(row: number, col: number, cell: Phaser.GameObjects.Rectangle): void {
         const cellState = this.boardState[row][col];
+
         // Don't change appearance for blocked cells
         if (cellState.isBlocked) {
             return;
         }
-        
-        if (cellState.owner === 'red') {
-            cell.setFillStyle(0x885555);
-        } else if (cellState.owner === 'blue') {
-            cell.setFillStyle(0x555588);
-        } else {
-            cell.setFillStyle(0x555555);
-        }
-        cell.setStrokeStyle(2, 0x888888);
+
+        const cellStyle = cellState.owner ? Game.CELL_STYLES[cellState.owner] : Game.CELL_STYLES.default;
+
+        cell.setFillStyle(cellStyle.hoverFillColor);
+        cell.setStrokeStyle(2, cellStyle.hoverStrokeColor);
     }
 
 
@@ -455,7 +459,6 @@ export class Game extends Scene
             cellDots[i].setPosition(positions[i].x, positions[i].y);
         }
     }
-
 
     updateCellOwnership(row: number, col: number)
     {
