@@ -1,7 +1,7 @@
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 import { ComputerPlayer } from '../ComputerPlayer';
-import { GameStateManager, GameState } from '../GameStateManager';
+import { GameStateManager, CellState } from '../GameStateManager';
 import { GameUIManager } from '../GameUIManager';
 import { LEVEL_SETS, getLevelById } from '../LevelDefinitions';
 import { DotPositioner } from '../utils/DotPositioner';
@@ -29,7 +29,7 @@ export class Game extends Scene
     gridStartY: number;
     grid: Phaser.GameObjects.Rectangle[][];
     dots: any[][][]; // Now 3D array: [row][col][dotIndex]
-    boardState: GameState[][];
+    boardState: CellState[][];
     currentPlayer: 'red' | 'blue' = 'red';
     humanPlayer: 'red' | 'blue' = 'red';
     currentPlayerText: Phaser.GameObjects.Text;

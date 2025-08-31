@@ -14,7 +14,7 @@ export interface LevelSet {
     levelIds: string[];
 }
 
-export interface GameState {
+export interface CellState {
     dotCount: number;
     owner: 'red' | 'blue' | 'default' | 'blocked';
     capacity: number;
@@ -22,12 +22,12 @@ export interface GameState {
 }
 
 export interface MoveHistoryEntry {
-    boardState: GameState[][];
+    boardState: CellState[][];
     currentPlayer: 'red' | 'blue';
 }
 
 export interface SavedGameState {
-    boardState: GameState[][];
+    boardState: CellState[][];
     currentPlayer: 'red' | 'blue';
     humanPlayer: 'red' | 'blue';
     computerPlayerColor: 'red' | 'blue';
@@ -50,7 +50,7 @@ export class GameStateManager {
     /**
      * Save a move to the history before it's made
      */
-    saveMove(boardState: GameState[][], currentPlayer: 'red' | 'blue'): void {
+    saveMove(boardState: CellState[][], currentPlayer: 'red' | 'blue'): void {
         // Deep copy the current board state
         const boardStateCopy = boardState.map(row => 
             row.map(cell => ({ ...cell }))
@@ -100,7 +100,7 @@ export class GameStateManager {
      * Save current game state to persistent storage
      */
     saveToRegistry(
-        boardState: GameState[][],
+        boardState: CellState[][],
         currentPlayer: 'red' | 'blue',
         humanPlayer: 'red' | 'blue',
         computerPlayerColor: 'red' | 'blue',
@@ -132,13 +132,13 @@ export class GameStateManager {
 
         // Restore move history
         this.moveHistory = savedState.moveHistory.map((move: MoveHistoryEntry) => ({
-            boardState: move.boardState.map((row: GameState[]) => row.map((cell: GameState) => ({ ...cell }))),
+            boardState: move.boardState.map((row: CellState[]) => row.map((cell: CellState) => ({ ...cell }))),
             currentPlayer: move.currentPlayer
         }));
 
         // Return deep copy to prevent mutation
         return {
-            boardState: savedState.boardState.map((row: GameState[]) => row.map((cell: GameState) => ({ ...cell }))),
+            boardState: savedState.boardState.map((row: CellState[]) => row.map((cell: CellState) => ({ ...cell }))),
             currentPlayer: savedState.currentPlayer,
             humanPlayer: savedState.humanPlayer,
             computerPlayerColor: savedState.computerPlayerColor,

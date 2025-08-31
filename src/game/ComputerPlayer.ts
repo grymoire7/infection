@@ -1,4 +1,4 @@
-import { GameState } from './GameStateManager';
+import { CellState } from './GameStateManager';
 
 export class ComputerPlayer {
     private difficulty: string;
@@ -11,39 +11,39 @@ export class ComputerPlayer {
 
     /**
      * Find the next move for the computer player based on difficulty level
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @returns {row: number, col: number} - The chosen move coordinates
      */
-    findMove(gameState: GameState[][], gridSize: number): { row: number, col: number } {
+    findMove(boardState: CellState[][], gridSize: number): { row: number, col: number } {
         let move: { row: number, col: number } | null = null;
         
         switch (this.difficulty.toLowerCase()) {
             case 'easy':
-                move = this.getRandomValidMove(gameState, gridSize);
+                move = this.getRandomValidMove(boardState, gridSize);
                 break;
             case 'medium':
-                move = this.getMediumMove(gameState, gridSize);
+                move = this.getMediumMove(boardState, gridSize);
                 break;
             case 'hard':
-                move = this.getHardMove(gameState, gridSize);
+                move = this.getHardMove(boardState, gridSize);
                 break;
             case 'expert':
-                move = this.getExpertMove(gameState, gridSize);
+                move = this.getExpertMove(boardState, gridSize);
                 break;
             default:
-                move = this.getRandomValidMove(gameState, gridSize);
+                move = this.getRandomValidMove(boardState, gridSize);
                 break;
         }
         
         // Validate the move
-        if (move && this.isValidMove(gameState, move.row, move.col)) {
+        if (move && this.isValidMove(boardState, move.row, move.col)) {
             return move;
         }
         
         // If the move is invalid, fall back to a random valid move
         try {
-            return this.getRandomValidMove(gameState, gridSize);
+            return this.getRandomValidMove(boardState, gridSize);
         } catch (error) {
             // If no valid moves are available, throw the error
             throw error;
@@ -53,25 +53,25 @@ export class ComputerPlayer {
     /**
      * Check if a move is valid
      */
-    private isValidMove(gameState: GameState[][], row: number, col: number): boolean {
+    private isValidMove(boardState: CellState[][], row: number, col: number): boolean {
         // Check if the cell is within bounds
-        if (row < 0 || row >= gameState.length || col < 0 || col >= gameState[0].length) {
+        if (row < 0 || row >= boardState.length || col < 0 || col >= boardState[0].length) {
             return false;
         }
         
-        const cell = gameState[row][col];
+        const cell = boardState[row][col];
         // A move is valid if the cell is not blocked and (empty or owned by this player)
         return cell && !cell.isBlocked && (cell.dotCount === 0 || cell.owner === this.color);
     }
 
     /**
      * Get a random valid move from the available moves
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @returns A random valid move coordinate
      */
-    private getRandomValidMove(gameState: GameState[][], gridSize: number): { row: number, col: number } {
-        const validMoves = this.getValidMoves(gameState, gridSize);
+    private getRandomValidMove(boardState: CellState[][], gridSize: number): { row: number, col: number } {
+        const validMoves = this.getValidMoves(boardState, gridSize);
         
         if (validMoves.length === 0) {
             throw new Error('No valid moves available');
@@ -83,16 +83,16 @@ export class ComputerPlayer {
 
     /**
      * Get all valid moves for the current player
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @returns Array of valid move coordinates
      */
-    private getValidMoves(gameState: GameState[][], gridSize: number): { row: number, col: number }[] {
+    private getValidMoves(boardState: CellState[][], gridSize: number): { row: number, col: number }[] {
         const validMoves: { row: number, col: number }[] = [];
 
         for (let row = 0; row < gridSize; row++) {
             for (let col = 0; col < gridSize; col++) {
-                const cell = gameState[row][col];
+                const cell = boardState[row][col];
                 
                 // A move is valid if the cell is not blocked and (empty or owned by this player)
                 // Blocked cells always have capacity 0 and can't be interacted with
@@ -129,37 +129,37 @@ export class ComputerPlayer {
 
     /**
      * Get a move using Medium AI strategy
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @returns The chosen move coordinate
      */
-    private getMediumMove(gameState: GameState[][], gridSize: number): { row: number, col: number } {
+    private getMediumMove(boardState: CellState[][], gridSize: number): { row: number, col: number } {
         // 1. Look for a fully loaded cell (owned by this player)
-        const fullyLoadedCell = this.findFullyLoadedCell(gameState, gridSize);
+        const fullyLoadedCell = this.findFullyLoadedCell(boardState, gridSize);
         if (fullyLoadedCell) {
             return fullyLoadedCell;
         }
 
         // 2. Look for a low capacity free cell (corner or edge cell)
-        const lowCapacityCell = this.findLowCapacityFreeCell(gameState, gridSize);
+        const lowCapacityCell = this.findLowCapacityFreeCell(boardState, gridSize);
         if (lowCapacityCell) {
             return lowCapacityCell;
         }
 
         // 3. Fall back to random valid move
-        return this.getRandomValidMove(gameState, gridSize);
+        return this.getRandomValidMove(boardState, gridSize);
     }
 
     /**
      * Find a fully loaded cell owned by this player
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @returns Coordinate of fully loaded cell or null
      */
-    private findFullyLoadedCell(gameState: GameState[][], gridSize: number): { row: number, col: number } | null {
+    private findFullyLoadedCell(boardState: CellState[][], gridSize: number): { row: number, col: number } | null {
         for (let row = 0; row < gridSize; row++) {
             for (let col = 0; col < gridSize; col++) {
-                const cell = gameState[row][col];
+                const cell = boardState[row][col];
                 // Make sure cell exists and is not blocked
                 if (cell && !cell.isBlocked && cell.owner === this.color && cell.dotCount === cell.capacity) {
                     return { row, col };
@@ -171,16 +171,16 @@ export class ComputerPlayer {
 
     /**
      * Find a low capacity free cell (corner or edge cells)
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @returns Coordinate of low capacity free cell or null
      */
-    private findLowCapacityFreeCell(gameState: GameState[][], gridSize: number): { row: number, col: number } | null {
+    private findLowCapacityFreeCell(boardState: CellState[][], gridSize: number): { row: number, col: number } | null {
         const lowCapacityCells: { row: number, col: number }[] = [];
 
         for (let row = 0; row < gridSize; row++) {
             for (let col = 0; col < gridSize; col++) {
-                const cell = gameState[row][col];
+                const cell = boardState[row][col];
                 
                 // Only consider empty cells
                 if (cell.dotCount === 0) {
@@ -194,7 +194,7 @@ export class ComputerPlayer {
 
         if (lowCapacityCells.length > 0) {
             // Prefer corner cells (capacity 2) over edge cells (capacity 3)
-            const cornerCells = lowCapacityCells.filter(pos => gameState[pos.row][pos.col].capacity === 2);
+            const cornerCells = lowCapacityCells.filter(pos => boardState[pos.row][pos.col].capacity === 2);
             if (cornerCells.length > 0) {
                 const randomIndex = Math.floor(Math.random() * cornerCells.length);
                 return cornerCells[randomIndex];
@@ -210,56 +210,56 @@ export class ComputerPlayer {
 
     /**
      * Get a move using Hard AI strategy
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @returns The chosen move coordinate
      */
-    private getHardMove(gameState: GameState[][], gridSize: number): { row: number, col: number } {
+    private getHardMove(boardState: CellState[][], gridSize: number): { row: number, col: number } {
         // 1. Look for a full cell next to an opponent's full cell
-        const fullCellNextToOpponentFull = this.findFullCellNextToOpponentFull(gameState, gridSize);
+        const fullCellNextToOpponentFull = this.findFullCellNextToOpponentFull(boardState, gridSize);
         if (fullCellNextToOpponentFull) {
             return fullCellNextToOpponentFull;
         }
 
         // 2. Look for a fully loaded cell next to an opponent's cell
-        const fullCellNextToOpponent = this.findFullCellNextToOpponent(gameState, gridSize);
+        const fullCellNextToOpponent = this.findFullCellNextToOpponent(boardState, gridSize);
         if (fullCellNextToOpponent) {
             return fullCellNextToOpponent;
         }
 
         // 3. Look for any fully loaded cell (owned by this player)
-        const fullyLoadedCell = this.findFullyLoadedCell(gameState, gridSize);
+        const fullyLoadedCell = this.findFullyLoadedCell(boardState, gridSize);
         if (fullyLoadedCell) {
             return fullyLoadedCell;
         }
 
         // 4. Look for a low capacity free cell (corner or edge cell)
-        const lowCapacityCell = this.findLowCapacityFreeCell(gameState, gridSize);
+        const lowCapacityCell = this.findLowCapacityFreeCell(boardState, gridSize);
         if (lowCapacityCell) {
             return lowCapacityCell;
         }
 
         // 5. Fall back to random valid move
-        return this.getRandomValidMove(gameState, gridSize);
+        return this.getRandomValidMove(boardState, gridSize);
     }
 
     /**
      * Find a full cell owned by this player that is next to an opponent's full cell
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @returns Coordinate of full cell next to opponent's full cell or null
      */
-    private findFullCellNextToOpponentFull(gameState: GameState[][], gridSize: number): { row: number, col: number } | null {
+    private findFullCellNextToOpponentFull(boardState: CellState[][], gridSize: number): { row: number, col: number } | null {
         const opponentColor = this.color === 'red' ? 'blue' : 'red';
 
         for (let row = 0; row < gridSize; row++) {
             for (let col = 0; col < gridSize; col++) {
-                const cell = gameState[row][col];
+                const cell = boardState[row][col];
                 
                 // Check if this is our full cell
                 if (cell.owner === this.color && cell.dotCount === cell.capacity) {
                     // Check if any adjacent cell is an opponent's full cell
-                    if (this.hasAdjacentOpponentFullCell(gameState, gridSize, row, col, opponentColor)) {
+                    if (this.hasAdjacentOpponentFullCell(boardState, gridSize, row, col, opponentColor)) {
                         return { row, col };
                     }
                 }
@@ -270,21 +270,21 @@ export class ComputerPlayer {
 
     /**
      * Find a fully loaded cell owned by this player that is next to any opponent's cell
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @returns Coordinate of full cell next to opponent cell or null
      */
-    private findFullCellNextToOpponent(gameState: GameState[][], gridSize: number): { row: number, col: number } | null {
+    private findFullCellNextToOpponent(boardState: CellState[][], gridSize: number): { row: number, col: number } | null {
         const opponentColor = this.color === 'red' ? 'blue' : 'red';
 
         for (let row = 0; row < gridSize; row++) {
             for (let col = 0; col < gridSize; col++) {
-                const cell = gameState[row][col];
+                const cell = boardState[row][col];
                 
                 // Check if this is our full cell
                 if (cell.owner === this.color && cell.dotCount === cell.capacity) {
                     // Check if any adjacent cell is owned by opponent
-                    if (this.hasAdjacentOpponentCell(gameState, gridSize, row, col, opponentColor)) {
+                    if (this.hasAdjacentOpponentCell(boardState, gridSize, row, col, opponentColor)) {
                         return { row, col };
                     }
                 }
@@ -295,14 +295,14 @@ export class ComputerPlayer {
 
     /**
      * Check if a cell has an adjacent opponent's full cell
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @param row - Row of the cell to check
      * @param col - Column of the cell to check
      * @param opponentColor - Color of the opponent
      * @returns True if there's an adjacent opponent's full cell
      */
-    private hasAdjacentOpponentFullCell(gameState: GameState[][], gridSize: number, row: number, col: number, opponentColor: string): boolean {
+    private hasAdjacentOpponentFullCell(boardState: CellState[][], gridSize: number, row: number, col: number, opponentColor: string): boolean {
         const directions = [
             [-1, 0], // up
             [1, 0],  // down
@@ -316,7 +316,7 @@ export class ComputerPlayer {
 
             // Check if the adjacent cell is within grid bounds
             if (newRow >= 0 && newRow < gridSize && newCol >= 0 && newCol < gridSize) {
-                const adjacentCell = gameState[newRow][newCol];
+                const adjacentCell = boardState[newRow][newCol];
                 
                 // Check if it's an opponent's full cell
                 if (adjacentCell.owner === opponentColor && adjacentCell.dotCount === adjacentCell.capacity) {
@@ -329,14 +329,14 @@ export class ComputerPlayer {
 
     /**
      * Check if a cell has an adjacent opponent's cell
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @param row - Row of the cell to check
      * @param col - Column of the cell to check
      * @param opponentColor - Color of the opponent
      * @returns True if there's an adjacent opponent's cell
      */
-    private hasAdjacentOpponentCell(gameState: GameState[][], gridSize: number, row: number, col: number, opponentColor: string): boolean {
+    private hasAdjacentOpponentCell(boardState: CellState[][], gridSize: number, row: number, col: number, opponentColor: string): boolean {
         const directions = [
             [-1, 0], // up
             [1, 0],  // down
@@ -350,7 +350,7 @@ export class ComputerPlayer {
 
             // Check if the adjacent cell is within grid bounds
             if (newRow >= 0 && newRow < gridSize && newCol >= 0 && newCol < gridSize) {
-                const adjacentCell = gameState[newRow][newCol];
+                const adjacentCell = boardState[newRow][newCol];
                 
                 // Check if it's owned by opponent
                 if (adjacentCell.owner === opponentColor) {
@@ -363,64 +363,64 @@ export class ComputerPlayer {
 
     /**
      * Get a move using Expert AI strategy
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @returns The chosen move coordinate
      */
-    private getExpertMove(gameState: GameState[][], gridSize: number): { row: number, col: number } {
+    private getExpertMove(boardState: CellState[][], gridSize: number): { row: number, col: number } {
         // 1. Look for a full cell next to an opponent's full cell
-        const fullCellNextToOpponentFull = this.findFullCellNextToOpponentFull(gameState, gridSize);
+        const fullCellNextToOpponentFull = this.findFullCellNextToOpponentFull(boardState, gridSize);
         if (fullCellNextToOpponentFull) {
             return fullCellNextToOpponentFull;
         }
 
         // 2. Look for a fully loaded cell next to an opponent's cell
-        const fullCellNextToOpponent = this.findFullCellNextToOpponent(gameState, gridSize);
+        const fullCellNextToOpponent = this.findFullCellNextToOpponent(boardState, gridSize);
         if (fullCellNextToOpponent) {
             return fullCellNextToOpponent;
         }
 
         // 3. Look for any fully loaded cell (owned by this player)
-        const fullyLoadedCell = this.findFullyLoadedCell(gameState, gridSize);
+        const fullyLoadedCell = this.findFullyLoadedCell(boardState, gridSize);
         if (fullyLoadedCell) {
             return fullyLoadedCell;
         }
 
         // 4. Look for an advantage cell
-        const advantageCell = this.findAdvantageCell(gameState, gridSize);
+        const advantageCell = this.findAdvantageCell(boardState, gridSize);
         if (advantageCell) {
             return advantageCell;
         }
 
         // 5. Look for a low capacity free cell (corner or edge cell)
-        const lowCapacityCell = this.findLowCapacityFreeCell(gameState, gridSize);
+        const lowCapacityCell = this.findLowCapacityFreeCell(boardState, gridSize);
         if (lowCapacityCell) {
             return lowCapacityCell;
         }
 
         // 6. Fall back to random valid move
-        return this.getRandomValidMove(gameState, gridSize);
+        return this.getRandomValidMove(boardState, gridSize);
     }
 
     /**
      * Find an advantage cell - a cell owned by this player that has ullage equal to or less than all adjacent opponent cells
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @returns Coordinate of advantage cell or null
      */
-    private findAdvantageCell(gameState: GameState[][], gridSize: number): { row: number, col: number } | null {
+    private findAdvantageCell(boardState: CellState[][], gridSize: number): { row: number, col: number } | null {
         const opponentColor = this.color === 'red' ? 'blue' : 'red';
 
         for (let row = 0; row < gridSize; row++) {
             for (let col = 0; col < gridSize; col++) {
-                const cell = gameState[row][col];
+                const cell = boardState[row][col];
                 
                 // Only consider cells owned by this player
                 if (cell.owner === this.color) {
                     const cellUllage = cell.capacity - cell.dotCount;
                     
                     // Check if this cell has advantage over adjacent opponent cells
-                    if (this.hasAdvantageOverAdjacentOpponents(gameState, gridSize, row, col, cellUllage, opponentColor)) {
+                    if (this.hasAdvantageOverAdjacentOpponents(boardState, gridSize, row, col, cellUllage, opponentColor)) {
                         return { row, col };
                     }
                 }
@@ -431,7 +431,7 @@ export class ComputerPlayer {
 
     /**
      * Check if a cell has advantage over all adjacent opponent cells
-     * @param gameState - Current state of the game board
+     * @param boardState - Current state of the game board
      * @param gridSize - Size of the game grid
      * @param row - Row of the cell to check
      * @param col - Column of the cell to check
@@ -439,7 +439,7 @@ export class ComputerPlayer {
      * @param opponentColor - Color of the opponent
      * @returns True if this cell has advantage over all adjacent opponent cells
      */
-    private hasAdvantageOverAdjacentOpponents(gameState: GameState[][], gridSize: number, row: number, col: number, cellUllage: number, opponentColor: string): boolean {
+    private hasAdvantageOverAdjacentOpponents(boardState: CellState[][], gridSize: number, row: number, col: number, cellUllage: number, opponentColor: string): boolean {
         const directions = [
             [-1, 0], // up
             [1, 0],  // down
@@ -455,7 +455,7 @@ export class ComputerPlayer {
 
             // Check if the adjacent cell is within grid bounds
             if (newRow >= 0 && newRow < gridSize && newCol >= 0 && newCol < gridSize) {
-                const adjacentCell = gameState[newRow][newCol];
+                const adjacentCell = boardState[newRow][newCol];
                 
                 // If it's an opponent's cell or empty cell
                 if (adjacentCell.owner === opponentColor || adjacentCell.owner === null) {
