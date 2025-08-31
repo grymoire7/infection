@@ -38,7 +38,7 @@ export class Preloader extends Scene
                                                                                                                                                                                         
         this.load.spritesheet('evil-sprite', 'animations/SlimeRed.png', { frameWidth: 16, frameHeight: 16 });                                                                                          
         this.load.spritesheet('good-sprite', 'animations/SlimeBlue.png', { frameWidth: 16, frameHeight: 16 });      
-        this.load.spritesheet('blocked-earth', 'animations/EarthA.png', { frameWidth: 16, frameHeight: 16 });      
+        this.load.spritesheet('blocked-sprite', 'animations/EarthA.png', { frameWidth: 16, frameHeight: 16 });      
     }
 
     create ()
@@ -73,7 +73,7 @@ export class Preloader extends Scene
         
         this.anims.create({
             key: 'blocked-pulse',
-            frames: this.anims.generateFrameNumbers('blocked-earth', { frames: [0, 1, 2, 3] }),
+            frames: this.anims.generateFrameNumbers('blocked-sprite', { frames: [0, 1, 2, 3] }),
             frameRate: 2,
             repeat: -1,
             repeatDelay: 0

@@ -49,12 +49,12 @@ export class MainMenu extends Scene
 
     createAnimatedDots()
     {
-        // Create 4 red dots and 4 blue dots
-        const spriteKeys = ['evil-sprite', 'good-sprite']; // red (evil), blue (good)
-        const animationKeys = ['evil-dot-pulse', 'good-dot-pulse']; // red (evil), blue (good)
+        // Create 4 evil dots and 4 good dots
+        const spriteKeys = ['evil-sprite', 'good-sprite', 'blocked-sprite'];
+        const animationKeys = ['evil-dot-pulse', 'good-dot-pulse', 'blocked-pulse'];
         
         for (let i = 0; i < 8; i++) {
-            const spriteIndex = i % 2; // Alternate between red and blue
+            const spriteIndex = i % spriteKeys.length; // Alternate between sprites
             
             // Create animated sprite instead of circle
             const dot = this.add.sprite(0, 0, spriteKeys[spriteIndex]);

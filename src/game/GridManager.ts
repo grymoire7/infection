@@ -92,8 +92,7 @@ export class GridManager {
         cell.setStrokeStyle(2, cellStyle.strokeColor);
         
         if (isBlocked) {
-            const wall = this.scene.add.sprite(x + 2, y + 2, 'blocked-earth');                                                                                 
-            // wall.setSize(this.cellSize * 0.6, this.cellSize * 0.6);
+            const wall = this.scene.add.sprite(x + 2, y + 2, 'blocked-sprite');                                                                                 
             const scaleFactor = (this.cellSize - 2) / wall.width;
             wall.setScale(scaleFactor);
             if (Math.random() < 0.5) {
