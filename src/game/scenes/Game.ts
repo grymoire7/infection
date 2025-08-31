@@ -232,7 +232,7 @@ export class Game extends Scene
 
         this.boardState[row][col] = { 
             dotCount: 0, 
-            owner: null, 
+            owner: 'default', 
             capacity,
             isBlocked
         };
@@ -741,7 +741,8 @@ export class Game extends Scene
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 const cellState = this.boardState[row][col];
-                if (cellState.owner && cellState.dotCount > 0) {
+                const playerOwned = (cellState.owner === 'red' || cellState.owner === 'blue');
+                if (playerOwned && cellState.dotCount > 0) {
                     for (let i = 0; i < cellState.dotCount; i++) {
                         this.addVisualDot(row, col, cellState.owner);
                     }

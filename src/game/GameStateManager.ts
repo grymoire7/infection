@@ -16,7 +16,7 @@ export interface LevelSet {
 
 export interface GameState {
     dotCount: number;
-    owner: 'red' | 'blue' | null;
+    owner: 'red' | 'blue' | 'default' | 'blocked';
     capacity: number;
     isBlocked: boolean;
 }
