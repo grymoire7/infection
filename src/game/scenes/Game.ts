@@ -5,26 +5,19 @@ import { GameStateManager, CellState } from '../GameStateManager';
 import { GameUIManager } from '../GameUIManager';
 import { LEVEL_SETS, getLevelById } from '../LevelDefinitions';
 import { DotPositioner } from '../utils/DotPositioner';
+import { GridManager } from '../GridManager';
 
 export class Game extends Scene
 {
     // Game configuration constants
     private static readonly DEFAULT_GRID_SIZE = 5;
-    private static readonly MAX_CELL_SIZE = 80;
-    private static readonly MIN_CELL_SIZE = 40;
     private static readonly COMPUTER_MOVE_DELAY = 1000;
     private static readonly EXPLOSION_DELAY = 300;
-    private static readonly CELL_STYLES = {
-        default: { fillColor: 0x444444, strokeColor: 0x666666, hoverFillColor: 0x555555, hoverStrokeColor: 0x888888 },
-        red:     { fillColor: 0x664444, strokeColor: 0x888888, hoverFillColor: 0x885555, hoverStrokeColor: 0x888888 },
-        blue:    { fillColor: 0x444466, strokeColor: 0x888888, hoverFillColor: 0x555588, hoverStrokeColor: 0x888888 },
-        blocked: { fillColor: 0xCCCCCC, strokeColor: 0x999999, hoverFillColor: 0xCCCCCC, hoverStrokeColor: 0x999999 }
-    };
 
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.Image;
     gridSize: number = Game.DEFAULT_GRID_SIZE;
-    cellSize: number = Game.MAX_CELL_SIZE;
+    cellSize: number;
     gridStartX: number;
     gridStartY: number;
     grid: Phaser.GameObjects.Rectangle[][];
@@ -39,6 +32,7 @@ export class Game extends Scene
     computerPlayer: ComputerPlayer | null = null;
     stateManager: GameStateManager;
     uiManager: GameUIManager;
+    gridManager: GridManager;
     // Level-related properties
     private blockedCells: { row: number; col: number }[] = [];
 
@@ -91,6 +85,7 @@ export class Game extends Scene
     private initializeManagers(): void {
         this.stateManager = new GameStateManager(this.game.registry);
         this.uiManager = new GameUIManager(this);
+        this.gridManager = new GridManager(this);
     }
 
     private initializeUI(): void {
@@ -183,13 +178,11 @@ export class Game extends Scene
     }
 
     private createGrid(): void {
-        this.calculateGridDimensions();
         this.initializeGridArrays();
         this.createGridCells();
     }
 
     private initializeGridArrays(): void {
-        this.grid = Array(this.gridSize).fill(null).map(() => []);
         this.dots = Array(this.gridSize).fill(null).map(() => []);
         // Initialize boardState with empty arrays for each row
         this.boardState = Array(this.gridSize);
@@ -199,29 +192,44 @@ export class Game extends Scene
     }
 
     private createGridCells(): void {
+        // Create the visual grid using GridManager
+        const gridResult = this.gridManager.createGrid(this.gridSize, this.blockedCells);
+        this.grid = gridResult.grid;
+        this.gridStartX = gridResult.gridStartX;
+        this.gridStartY = gridResult.gridStartY;
+        this.cellSize = gridResult.cellSize;
+
+        // Initialize dots array for each cell
+        for (let row = 0; row < this.gridSize; row++) {
+            for (let col = 0; col < this.gridSize; col++) {
+                this.dots[row][col] = [];
+            }
+        }
+
         // First pass: initialize all cell states with temporary capacities
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
-                // Initialize with temporary capacity, we'll update it later
                 this.initializeCellState(row, col, 0);
             }
         }
         
-        // Second pass: calculate actual capacities and update cell states
+        // Second pass: calculate actual capacities and set up interactivity
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 const cellState = this.boardState[row][col];
                 if (!cellState.isBlocked) {
-                    cellState.capacity = this.calculateCellCapacity(row, col);
+                    cellState.capacity = this.gridManager.calculateCellCapacity(row, col, this.boardState);
+                    // Make cell interactive
+                    this.gridManager.makeCellInteractive(
+                        row, col,
+                        () => this.gridManager.handleCellHover(row, col, cellState),
+                        () => this.updateCellOwnership(row, col),
+                        () => this.placeDot(row, col)
+                    );
                 }
-                // Create visual elements
-                const x = this.gridStartX + col * this.cellSize;
-                const y = this.gridStartY + row * this.cellSize;
-                this.createCellVisual(row, col, x, y, cellState.isBlocked);
             }
         }
     }
-
 
     private isCellBlocked(row: number, col: number): boolean {
         return this.blockedCells.some(cell => cell.row === row && cell.col === col);
@@ -236,69 +244,6 @@ export class Game extends Scene
             capacity,
             isBlocked: initialOwner === 'blocked'
         };
-    }
-
-    private createCellVisual(row: number, col: number, x: number, y: number, isBlocked: boolean): void {
-
-        const cellStyle = isBlocked ? Game.CELL_STYLES.blocked : Game.CELL_STYLES.default;
-
-        const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, cellStyle.fillColor);
-        cell.setStrokeStyle(2, cellStyle.strokeColor);
-        
-        if (isBlocked) {
-            // Make sure blocked cells are not interactive and have a distinct appearance
-            cell.disableInteractive();
-        } else {
-            this.makeCellInteractive(row, col, cell);
-        }
-
-        this.grid[row][col] = cell;
-        this.dots[row][col] = [];
-    }
-
-    private makeCellInteractive(row: number, col: number, cell: Phaser.GameObjects.Rectangle): void {
-        cell.setInteractive();
-        cell.on('pointerover', () => this.handleCellHover(row, col, cell));
-        cell.on('pointerout', () => this.updateCellOwnership(row, col));
-        cell.on('pointerdown', () => this.placeDot(row, col));
-    }
-
-    private handleCellHover(row: number, col: number, cell: Phaser.GameObjects.Rectangle): void {
-        const cellState = this.boardState[row][col];
-
-        // Don't change appearance for blocked cells
-        if (cellState.isBlocked) {
-            return;
-        }
-
-        const cellStyle = cellState.owner ? Game.CELL_STYLES[cellState.owner] : Game.CELL_STYLES.default;
-
-        cell.setFillStyle(cellStyle.hoverFillColor);
-        cell.setStrokeStyle(2, cellStyle.hoverStrokeColor);
-    }
-
-
-    private calculateGridDimensions(): void {
-        const screenWidth = this.cameras.main.width;
-        const screenHeight = this.cameras.main.height;
-        
-        // Reserve space for UI elements (title, player indicator, instructions)
-        const availableWidth = screenWidth * 0.9;
-        const availableHeight = screenHeight * 0.7;
-        
-        // Calculate cell size that fits within available space
-        const maxCellSizeByWidth = Math.floor(availableWidth / this.gridSize);
-        const maxCellSizeByHeight = Math.floor(availableHeight / this.gridSize);
-        this.cellSize = Math.min(maxCellSizeByWidth, maxCellSizeByHeight, Game.MAX_CELL_SIZE);
-        
-        // Ensure minimum cell size for playability
-        this.cellSize = Math.max(this.cellSize, Game.MIN_CELL_SIZE);
-        
-        // Calculate centered grid position
-        const totalGridWidth = this.gridSize * this.cellSize;
-        const totalGridHeight = this.gridSize * this.cellSize;
-        this.gridStartX = (screenWidth - totalGridWidth) / 2 + this.cellSize / 2;
-        this.gridStartY = (screenHeight - totalGridHeight) / 2 + this.cellSize / 2 + 60;
     }
 
     updateUndoButton()
@@ -338,38 +283,6 @@ export class Game extends Scene
         }
     }
 
-    calculateCellCapacity(row: number, col: number): number
-    {
-        let capacity = 0;
-
-        // Check all four orthogonal directions
-        const directions = [
-            [-1, 0], // up
-            [1, 0],  // down
-            [0, -1], // left
-            [0, 1]   // right
-        ];
-
-        for (const [deltaRow, deltaCol] of directions) {
-            const newRow = row + deltaRow;
-            const newCol = col + deltaCol;
-
-            // Check if the adjacent cell is within grid bounds
-            if (newRow >= 0 && newRow < this.gridSize && 
-                newCol >= 0 && newCol < this.gridSize) {
-                // Make sure the cell exists in boardState
-                if (this.boardState[newRow] && this.boardState[newRow][newCol]) {
-                    const adjacentCell = this.boardState[newRow][newCol];
-                    // Only count non-blocked adjacent cells
-                    if (!adjacentCell.isBlocked) {
-                        capacity++;
-                    }
-                }
-            }
-        }
-
-        return capacity;
-    }
 
     async placeDot(row: number, col: number, isComputerMove: boolean = false)
     {
@@ -463,11 +376,7 @@ export class Game extends Scene
     updateCellOwnership(row: number, col: number)
     {
         const cellState = this.boardState[row][col];
-        const cell = this.grid[row][col];
-        const cellStyle = Game.CELL_STYLES[cellState.owner || 'default'];
-
-        cell.setFillStyle(cellStyle.fillColor);
-        cell.setStrokeStyle(2, cellStyle.strokeColor);
+        this.gridManager.updateCellOwnership(row, col, cellState);
     }
 
     async checkAndHandleExplosions()
