@@ -23,19 +23,13 @@ export class MainMenu extends Scene
         
         this.background = this.add.image(centerX, centerY, 'background');
 
-        this.logo = this.add.image(centerX, centerY * 0.7, 'logo').setDepth(100);
+        this.logo = this.add.image(centerX, centerY, 'logo').setDepth(100);
         
         // Scale logo based on screen size
         const logoScale = Math.min(1, this.cameras.main.width / 1024);
         this.logo.setScale(logoScale);
 
-        const titleFontSize = Math.min(38, this.cameras.main.width / 20);
-        this.title = this.add.text(centerX, centerY * 1.2, 'Main Menu', {
-            fontFamily: 'Arial Black', fontSize: titleFontSize, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 6,
-            align: 'center'
-        }).setOrigin(0.5).setDepth(100);
-
+        this.createAnimations();
         this.createAnimatedDots();
 
         EventBus.emit('current-scene-ready', this);
@@ -54,18 +48,36 @@ export class MainMenu extends Scene
         this.scene.start('Game');
     }
 
+    createAnimations(): void {
+        this.anims.create({
+            key: 'good-dot-pulse',
+            frames: this.anims.generateFrameNumbers('good-sprite', { frames: [0, 1, 2] }),
+            frameRate: 8,
+            repeat: -1,
+            repeatDelay: 2000
+        });
+        this.anims.create({
+            key: 'evil-dot-pulse',
+            frames: this.anims.generateFrameNumbers('evil-sprite', { frames: [0, 1, 2] }),
+            frameRate: 8,
+            repeat: -1,
+            repeatDelay: 2000
+        });
+    }
+
     createAnimatedDots()
     {
         // Create 4 red dots and 4 blue dots
-        const colors = [0xff0000, 0x0000ff]; // red, blue
-        const dotRadius = 12; // Same size as game dots
+        const spriteKeys = ['evil-sprite', 'good-sprite']; // red (evil), blue (good)
+        const animationKeys = ['evil-dot-pulse', 'good-dot-pulse']; // red (evil), blue (good)
         
         for (let i = 0; i < 8; i++) {
-            const color = colors[i % 2]; // Alternate between red and blue
+            const spriteIndex = i % 2; // Alternate between red and blue
             
-            // Create dot with stroke like in the game
-            const dot = this.add.circle(0, 0, dotRadius, color);
-            dot.setStrokeStyle(2, 0x000000);
+            // Create animated sprite instead of circle
+            const dot = this.add.sprite(0, 0, spriteKeys[spriteIndex]);
+            dot.setScale(2); // Bigger scale than in Game.ts
+            dot.play(animationKeys[spriteIndex]);
             dot.setDepth(50); // Behind logo (100) and title (100), in front of background
             
             this.animatedDots.push(dot);
