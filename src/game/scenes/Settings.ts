@@ -1,21 +1,20 @@
 import { GameObjects, Scene } from 'phaser';
 import { EventBus } from '../EventBus';
 import { LEVEL_SETS } from '../LevelDefinitions';
+import { SettingsManager, GameSettings } from '../SettingsManager';
 
 export class Settings extends Scene
 {
     background: GameObjects.Image;
     title: GameObjects.Text;
-    soundEffectsEnabled: boolean = true;
     soundToggleButton: GameObjects.Text;
-    difficultyLevel: string = 'Easy';
     difficultyButton: GameObjects.Text;
-    playerColor: string = 'red';
     playerColorButton: GameObjects.Text;
-    whoGoesFirst: string = 'player';
     whoGoesFirstButton: GameObjects.Text;
-    levelSetId: string = 'default';
     levelSetButton: GameObjects.Text;
+    
+    private settingsManager: SettingsManager;
+    private currentSettings: GameSettings;
 
     constructor ()
     {
@@ -24,6 +23,10 @@ export class Settings extends Scene
 
     create ()
     {
+        // Initialize settings manager
+        this.settingsManager = new SettingsManager(this.game.registry);
+        this.currentSettings = this.settingsManager.loadSettings();
+        
         const centerX = this.cameras.main.width / 2;
         const centerY = this.cameras.main.height / 2;
         
@@ -40,8 +43,6 @@ export class Settings extends Scene
             align: 'center'
         }).setOrigin(0.5);
 
-        // Load saved settings
-        this.loadSettings();
 
         // Responsive Sound Effects Toggle
         const labelFontSize = Math.min(24, this.cameras.main.width / 30);
@@ -208,101 +209,37 @@ export class Settings extends Scene
         EventBus.emit('current-scene-ready', this);
     }
 
-    loadSettings()
-    {
-        // Load sound effects setting from localStorage
-        const savedSoundSetting = localStorage.getItem('dotsGame_soundEffects');
-        if (savedSoundSetting !== null) {
-            this.soundEffectsEnabled = savedSoundSetting === 'true';
-        }
-
-        // Load difficulty level setting from localStorage
-        const savedDifficulty = localStorage.getItem('dotsGame_difficultyLevel');
-        if (savedDifficulty !== null) {
-            this.difficultyLevel = savedDifficulty;
-        }
-
-        // Load player color setting from localStorage
-        const savedPlayerColor = localStorage.getItem('dotsGame_playerColor');
-        if (savedPlayerColor !== null) {
-            this.playerColor = savedPlayerColor;
-        }
-
-        // Load who goes first setting from localStorage
-        const savedWhoGoesFirst = localStorage.getItem('dotsGame_whoGoesFirst');
-        if (savedWhoGoesFirst !== null) {
-            this.whoGoesFirst = savedWhoGoesFirst;
-        }
-
-        // Load level set setting from localStorage
-        const savedLevelSetId = localStorage.getItem('dotsGame_levelSetId');
-        if (savedLevelSetId !== null) {
-            this.levelSetId = savedLevelSetId;
-        }
-    }
-
-    saveSettings()
-    {
-        // Save sound effects setting to localStorage
-        localStorage.setItem('dotsGame_soundEffects', this.soundEffectsEnabled.toString());
-        
-        // Save difficulty level setting to localStorage
-        localStorage.setItem('dotsGame_difficultyLevel', this.difficultyLevel);
-        
-        // Save player color setting to localStorage
-        localStorage.setItem('dotsGame_playerColor', this.playerColor);
-        
-        // Save who goes first setting to localStorage
-        localStorage.setItem('dotsGame_whoGoesFirst', this.whoGoesFirst);
-        
-        // Save level set setting to localStorage
-        localStorage.setItem('dotsGame_levelSetId', this.levelSetId);
-    }
-
     toggleSoundEffects()
     {
-        this.soundEffectsEnabled = !this.soundEffectsEnabled;
+        this.currentSettings.soundEffectsEnabled = !this.currentSettings.soundEffectsEnabled;
+        this.settingsManager.updateSetting('soundEffectsEnabled', this.currentSettings.soundEffectsEnabled);
         this.updateSoundToggleButton();
-        this.saveSettings();
         
-        // Update global sound setting
-        this.game.registry.set('soundEffectsEnabled', this.soundEffectsEnabled);
-        // Set flag to indicate settings have changed
-        this.game.registry.set('settingsDirty', true);
-        
-        console.log(`Sound effects ${this.soundEffectsEnabled ? 'enabled' : 'disabled'}`);
+        console.log(`Sound effects ${this.currentSettings.soundEffectsEnabled ? 'enabled' : 'disabled'}`);
     }
 
     updateSoundToggleButton()
     {
-        this.soundToggleButton.setText(this.soundEffectsEnabled ? 'ON' : 'OFF');
-        this.soundToggleButton.setColor(this.soundEffectsEnabled ? '#00ff00' : '#ff0000');
-        
-        // Set global registry value
-        this.game.registry.set('soundEffectsEnabled', this.soundEffectsEnabled);
+        this.soundToggleButton.setText(this.currentSettings.soundEffectsEnabled ? 'ON' : 'OFF');
+        this.soundToggleButton.setColor(this.currentSettings.soundEffectsEnabled ? '#00ff00' : '#ff0000');
     }
 
     cycleDifficultyLevel()
     {
         const difficulties = ['Easy', 'Medium', 'Hard', 'Expert'];
-        const currentIndex = difficulties.indexOf(this.difficultyLevel);
+        const currentIndex = difficulties.indexOf(this.currentSettings.difficultyLevel);
         const nextIndex = (currentIndex + 1) % difficulties.length;
-        this.difficultyLevel = difficulties[nextIndex];
+        this.currentSettings.difficultyLevel = difficulties[nextIndex];
         
+        this.settingsManager.updateSetting('difficultyLevel', this.currentSettings.difficultyLevel);
         this.updateDifficultyButton();
-        this.saveSettings();
         
-        // Update global difficulty setting
-        this.game.registry.set('difficultyLevel', this.difficultyLevel);
-        // Set flag to indicate settings have changed
-        this.game.registry.set('settingsDirty', true);
-        
-        console.log(`AI Difficulty set to: ${this.difficultyLevel}`);
+        console.log(`AI Difficulty set to: ${this.currentSettings.difficultyLevel}`);
     }
 
     updateDifficultyButton()
     {
-        this.difficultyButton.setText(this.difficultyLevel);
+        this.difficultyButton.setText(this.currentSettings.difficultyLevel);
         
         // Color code difficulty levels
         const difficultyColors = {
@@ -312,85 +249,58 @@ export class Settings extends Scene
             'Expert': '#ff0000'   // Red
         };
         
-        this.difficultyButton.setColor((difficultyColors as any)[this.difficultyLevel] || '#ffffff');
-        
-        // Set global registry value
-        this.game.registry.set('difficultyLevel', this.difficultyLevel);
+        this.difficultyButton.setColor((difficultyColors as any)[this.currentSettings.difficultyLevel] || '#ffffff');
     }
 
     togglePlayerColor()
     {
-        this.playerColor = this.playerColor === 'red' ? 'blue' : 'red';
+        this.currentSettings.playerColor = this.currentSettings.playerColor === 'red' ? 'blue' : 'red';
+        this.settingsManager.updateSetting('playerColor', this.currentSettings.playerColor);
         this.updatePlayerColorButton();
-        this.saveSettings();
         
-        // Update global player color setting
-        this.game.registry.set('playerColor', this.playerColor);
-        // Set flag to indicate settings have changed
-        this.game.registry.set('settingsDirty', true);
-        
-        console.log(`Player color set to: ${this.playerColor}`);
+        console.log(`Player color set to: ${this.currentSettings.playerColor}`);
     }
 
     updatePlayerColorButton()
     {
-        this.playerColorButton.setText(this.playerColor.charAt(0).toUpperCase() + this.playerColor.slice(1));
-        this.playerColorButton.setColor(this.playerColor === 'red' ? '#ff0000' : '#0000ff');
-        
-        // Set global registry value
-        this.game.registry.set('playerColor', this.playerColor);
+        this.playerColorButton.setText(this.currentSettings.playerColor.charAt(0).toUpperCase() + this.currentSettings.playerColor.slice(1));
+        this.playerColorButton.setColor(this.currentSettings.playerColor === 'red' ? '#ff0000' : '#0000ff');
     }
 
     toggleWhoGoesFirst()
     {
-        this.whoGoesFirst = this.whoGoesFirst === 'player' ? 'computer' : 'player';
+        this.currentSettings.whoGoesFirst = this.currentSettings.whoGoesFirst === 'player' ? 'computer' : 'player';
+        this.settingsManager.updateSetting('whoGoesFirst', this.currentSettings.whoGoesFirst);
         this.updateWhoGoesFirstButton();
-        this.saveSettings();
         
-        // Update global who goes first setting
-        this.game.registry.set('whoGoesFirst', this.whoGoesFirst);
-        // Set flag to indicate settings have changed
-        this.game.registry.set('settingsDirty', true);
-        
-        console.log(`Who goes first set to: ${this.whoGoesFirst}`);
+        console.log(`Who goes first set to: ${this.currentSettings.whoGoesFirst}`);
     }
 
     cycleLevelSet()
     {
         const levelSets = LEVEL_SETS;
-        const currentIndex = levelSets.findIndex(set => set.id === this.levelSetId);
+        const currentIndex = levelSets.findIndex(set => set.id === this.currentSettings.levelSetId);
         const nextIndex = (currentIndex + 1) % levelSets.length;
-        this.levelSetId = levelSets[nextIndex].id;
+        this.currentSettings.levelSetId = levelSets[nextIndex].id;
         
+        this.settingsManager.updateSetting('levelSetId', this.currentSettings.levelSetId);
         this.updateLevelSetButton();
-        this.saveSettings();
         
-        // Update global level set setting
-        this.game.registry.set('levelSetId', this.levelSetId);
-        // Set flag to indicate settings have changed
-        this.game.registry.set('settingsDirty', true);
-        
-        console.log(`Level Set changed to: ${this.levelSetId}`);
+        console.log(`Level Set changed to: ${this.currentSettings.levelSetId}`);
     }
 
     updateLevelSetButton()
     {
-        const levelSet = LEVEL_SETS.find(set => set.id === this.levelSetId);
+        const levelSet = LEVEL_SETS.find(set => set.id === this.currentSettings.levelSetId);
         const displayText = levelSet ? levelSet.name : 'Default Levels';
         this.levelSetButton.setText(displayText);
         this.levelSetButton.setColor('#ffffff');
-        
-        // Set global registry value
-        this.game.registry.set('levelSetId', this.levelSetId);
     }
 
     updateWhoGoesFirstButton()
     {
-        const displayText = this.whoGoesFirst === 'player' ? 'Player' : 'Computer';
+        const displayText = this.currentSettings.whoGoesFirst === 'player' ? 'Player' : 'Computer';
         this.whoGoesFirstButton.setText(displayText);
-        this.whoGoesFirstButton.setColor(this.whoGoesFirst === 'player' ? '#00ff00' : '#ffaa00');
-        
-        // Set global registry value
-        this.game.registry.set('whoGoesFirst', this.whoGoesFirst);
+        this.whoGoesFirstButton.setColor(this.currentSettings.whoGoesFirst === 'player' ? '#00ff00' : '#ffaa00');
     }
 }

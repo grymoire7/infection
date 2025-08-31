@@ -6,6 +6,7 @@ import { GameUIManager } from '../GameUIManager';
 import { LEVEL_SETS, getLevelById } from '../LevelDefinitions';
 import { DotPositioner } from '../utils/DotPositioner';
 import { GridManager } from '../GridManager';
+import { SettingsManager } from '../SettingsManager';
 
 export class Game extends Scene
 {
@@ -33,6 +34,7 @@ export class Game extends Scene
     stateManager: GameStateManager;
     uiManager: GameUIManager;
     gridManager: GridManager;
+    settingsManager: SettingsManager;
     // Level-related properties
     private blockedCells: { row: number; col: number }[] = [];
 
@@ -86,6 +88,7 @@ export class Game extends Scene
         this.stateManager = new GameStateManager(this.game.registry);
         this.uiManager = new GameUIManager(this);
         this.gridManager = new GridManager(this);
+        this.settingsManager = new SettingsManager(this.game.registry);
     }
 
     private initializeUI(): void {
@@ -106,8 +109,8 @@ export class Game extends Scene
             this.recreateAllVisualDots();
             this.updateAllCellOwnership();
         } else {
-            // Always load the level based on the current level set in the registry
-            const levelSetId = this.game.registry.get('levelSetId') || 'default';
+            // Always load the level based on the current level set in the settings
+            const levelSetId = this.settingsManager.getSetting('levelSetId');
             const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
             
             // Load the first level of the current level set
@@ -258,8 +261,8 @@ export class Game extends Scene
 
     updateLevelInfo()
     {
-        // Always use the current level set from the registry
-        const levelSetId = this.game.registry.get('levelSetId') || 'default';
+        // Always use the current level set from the settings
+        const levelSetId = this.settingsManager.getSetting('levelSetId');
         const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
         
         // Get the current level ID from the registry
@@ -506,72 +509,24 @@ export class Game extends Scene
 
     initializeGameSettings()
     {
-        // Load settings from localStorage first to ensure they're up to date
-        this.loadSettingsFromLocalStorage();
+        // Load all settings using SettingsManager
+        const settings = this.settingsManager.loadSettings();
         
-        // Ensure level set ID is set in the registry
-        const levelSetId = this.game.registry.get('levelSetId');
-        if (!levelSetId) {
-            // If not set, get it from localStorage or use default
-            const savedLevelSetId = localStorage.getItem('dotsGame_levelSetId') || 'default';
-            this.game.registry.set('levelSetId', savedLevelSetId);
-        }
-        
-        // Get player color preference from settings (default to red)
-        const playerColor = this.game.registry.get('playerColor') || 'red';
-        this.humanPlayer = playerColor as 'red' | 'blue';
+        // Set up game based on loaded settings
+        this.humanPlayer = settings.playerColor;
         const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
 
-        // Get difficulty level from settings (default to Easy)
-        const difficulty = this.game.registry.get('difficultyLevel') || 'Easy';
-
         // Create computer player instance
-        this.computerPlayer = new ComputerPlayer(difficulty, computerColor);
+        this.computerPlayer = new ComputerPlayer(settings.difficultyLevel, computerColor);
 
-        // Get who goes first preference from settings (default to player)
-        const whoGoesFirst = this.game.registry.get('whoGoesFirst') || 'player';
-        
-        if (whoGoesFirst === 'player') {
+        // Set starting player
+        if (settings.whoGoesFirst === 'player') {
             this.currentPlayer = this.humanPlayer;
         } else {
             this.currentPlayer = computerColor;
         }
 
-        console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${whoGoesFirst} goes first`);
-    }
-
-    loadSettingsFromLocalStorage()
-    {
-        // Load sound effects setting from localStorage
-        const savedSoundSetting = localStorage.getItem('dotsGame_soundEffects');
-        if (savedSoundSetting !== null) {
-            const soundEffectsEnabled = savedSoundSetting === 'true';
-            this.game.registry.set('soundEffectsEnabled', soundEffectsEnabled);
-        }
-
-        // Load difficulty level setting from localStorage
-        const savedDifficulty = localStorage.getItem('dotsGame_difficultyLevel');
-        if (savedDifficulty !== null) {
-            this.game.registry.set('difficultyLevel', savedDifficulty);
-        }
-
-        // Load player color setting from localStorage
-        const savedPlayerColor = localStorage.getItem('dotsGame_playerColor');
-        if (savedPlayerColor !== null) {
-            this.game.registry.set('playerColor', savedPlayerColor);
-        }
-
-        // Load who goes first setting from localStorage
-        const savedWhoGoesFirst = localStorage.getItem('dotsGame_whoGoesFirst');
-        if (savedWhoGoesFirst !== null) {
-            this.game.registry.set('whoGoesFirst', savedWhoGoesFirst);
-        }
-
-        // Load level set setting from localStorage
-        const savedLevelSetId = localStorage.getItem('dotsGame_levelSetId');
-        if (savedLevelSetId !== null) {
-            this.game.registry.set('levelSetId', savedLevelSetId);
-        }
+        console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${settings.whoGoesFirst} goes first`);
     }
 
     undoLastMove()
@@ -796,20 +751,7 @@ export class Game extends Scene
     }
 
     areSoundEffectsEnabled(): boolean {
-        // Check registry first, then fall back to localStorage
-        const registryValue = this.game.registry.get('soundEffectsEnabled');
-        if (registryValue !== undefined) {
-            return registryValue;
-        }
-        
-        // Fall back to localStorage
-        const savedSoundSetting = localStorage.getItem('dotsGame_soundEffects');
-        if (savedSoundSetting !== null) {
-            return savedSoundSetting === 'true';
-        }
-        
-        // Default to true if no setting found
-        return true;
+        return this.settingsManager.getSetting('soundEffectsEnabled');
     }
 
     loadLevel(levelSetId: string, levelId: string) {
@@ -865,7 +807,7 @@ export class Game extends Scene
             
             // Check if level set has changed
             const currentLevelSetId = this.game.registry.get('currentLevelSetId');
-            const newLevelSetId = this.game.registry.get('levelSetId') || 'default';
+            const newLevelSetId = this.settingsManager.getSetting('levelSetId');
             
             // Reload all settings from the registry
             this.reloadAllSettings();
@@ -889,26 +831,25 @@ export class Game extends Scene
     }
 
     /**
-     * Reload all settings from the registry
+     * Reload all settings from the settings manager
      */
     private reloadAllSettings(): void {
+        const settings = this.settingsManager.getCurrentSettings();
+        
         // Reload player color
-        const playerColor = this.game.registry.get('playerColor') || 'red';
-        this.humanPlayer = playerColor as 'red' | 'blue';
+        this.humanPlayer = settings.playerColor;
         const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
 
         // Reload difficulty level
-        const difficulty = this.game.registry.get('difficultyLevel') || 'Easy';
-        this.computerPlayer = new ComputerPlayer(difficulty, computerColor);
+        this.computerPlayer = new ComputerPlayer(settings.difficultyLevel, computerColor);
 
         // Reload who goes first
-        const whoGoesFirst = this.game.registry.get('whoGoesFirst') || 'player';
-        if (whoGoesFirst === 'player') {
+        if (settings.whoGoesFirst === 'player') {
             this.currentPlayer = this.humanPlayer;
         } else {
             this.currentPlayer = computerColor;
         }
 
-        console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${whoGoesFirst} goes first`);
+        console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${settings.whoGoesFirst} goes first`);
     }
 }
