@@ -15,7 +15,11 @@ export const LEVELS: Record<string, Level> = {
         name: 'Edge Challenge',
         description: 'Focus on edge strategies',
         gridSize: 5,
-        blockedCells: [],
+        blockedCells: [
+            { row: 0, col: 2 },
+            { row: 2, col: 0 }, { row: 2, col: 4 },
+            { row: 4, col: 2 }
+        ],
         difficulty: 2
     },
     'level-3': {
@@ -36,6 +40,18 @@ export const LEVELS: Record<string, Level> = {
             { row: 1, col: 2 }, { row: 3, col: 2 }
         ],
         difficulty: 4
+    },
+    'advanced-2': {
+        id: 'advanced-2',
+        name: 'Sparkle',
+        description: 'A grid with sparkle blocks',
+        gridSize: 5,
+        blockedCells: [
+            { row: 0, col: 2 }, { row: 1, col: 2 },
+            { row: 2, col: 0 }, { row: 2, col: 4 },
+            { row: 3, col: 2 }, { row: 4, col: 2 }
+        ],
+        difficulty: 4
     }
 };
 
@@ -51,7 +67,7 @@ export const ADVANCED_LEVEL_SET: LevelSet = {
     id: 'advanced',
     name: 'Advanced Levels',
     description: 'Challenging levels for experienced players',
-    levelIds: ['advanced-1']
+    levelIds: ['advanced-1', 'advanced-2']
 };
 
 export const LEVEL_SETS: LevelSet[] = [

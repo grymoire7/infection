@@ -49,20 +49,26 @@ export class MainMenu extends Scene
     }
 
     createAnimations(): void {
-        this.anims.create({
-            key: 'good-dot-pulse',
-            frames: this.anims.generateFrameNumbers('good-sprite', { frames: [0, 1, 2] }),
-            frameRate: 8,
-            repeat: -1,
-            repeatDelay: 2000
-        });
-        this.anims.create({
-            key: 'evil-dot-pulse',
-            frames: this.anims.generateFrameNumbers('evil-sprite', { frames: [0, 1, 2] }),
-            frameRate: 8,
-            repeat: -1,
-            repeatDelay: 2000
-        });
+        // Only create animations if they don't already exist
+        if (!this.anims.exists('good-dot-pulse')) {
+            this.anims.create({
+                key: 'good-dot-pulse',
+                frames: this.anims.generateFrameNumbers('good-sprite', { frames: [0, 1, 2] }),
+                frameRate: 8,
+                repeat: -1,
+                repeatDelay: 2000
+            });
+        }
+        
+        if (!this.anims.exists('evil-dot-pulse')) {
+            this.anims.create({
+                key: 'evil-dot-pulse',
+                frames: this.anims.generateFrameNumbers('evil-sprite', { frames: [0, 1, 2] }),
+                frameRate: 8,
+                repeat: -1,
+                repeatDelay: 2000
+            });
+        }
     }
 
     createAnimatedDots()

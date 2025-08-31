@@ -67,22 +67,28 @@ export class Game extends Scene
         this.background.setAlpha(0.3);
     }
 
-    private createAnimations(): void {                                                                                                                                                      
-        this.anims.create({                                                                                                                                                                 
-            key: 'good-dot-pulse',                                                                                                                                                          
-            frames: this.anims.generateFrameNumbers('good-sprite', { frames: [0, 1, 2] }),                                                                                                  
-            frameRate: 8,                                                                                                                                                                   
-            repeat: -1,                                                                                                                                                                     
-            repeatDelay: 2000                                                                                                                                                               
-        });                                                                                                                                                                                 
-        this.anims.create({                                                                                                                                                                 
-            key: 'evil-dot-pulse',                                                                                                                                                          
-            frames: this.anims.generateFrameNumbers('evil-sprite', { frames: [0, 1, 2] }),                                                                                                  
-            frameRate: 8,                                                                                                                                                                   
-            repeat: -1,                                                                                                                                                                     
-            repeatDelay: 2000                                                                                                                                                               
-        });                                                                                                                                                                                 
-    }     
+    private createAnimations(): void {
+        // Only create animations if they don't already exist
+        if (!this.anims.exists('good-dot-pulse')) {
+            this.anims.create({
+                key: 'good-dot-pulse',
+                frames: this.anims.generateFrameNumbers('good-sprite', { frames: [0, 1, 2] }),
+                frameRate: 8,
+                repeat: -1,
+                repeatDelay: 2000
+            });
+        }
+        
+        if (!this.anims.exists('evil-dot-pulse')) {
+            this.anims.create({
+                key: 'evil-dot-pulse',
+                frames: this.anims.generateFrameNumbers('evil-sprite', { frames: [0, 1, 2] }),
+                frameRate: 8,
+                repeat: -1,
+                repeatDelay: 2000
+            });
+        }
+    }
 
     private initializeManagers(): void {
         this.stateManager = new GameStateManager(this.game.registry);
@@ -105,21 +111,13 @@ export class Game extends Scene
     private loadGameStateOrLevel(): void {
         // If we have a saved state, load it
         if (this.stateManager.hasSavedState()) {
+            console.log('Loading saved game state');
             this.loadGameState();
             this.recreateAllVisualDots();
             this.updateAllCellOwnership();
         } else {
-            // Always load the level based on the current level set in the settings
-            const levelSetId = this.settingsManager.getSetting('levelSetId');
-            const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
-            
-            // Load the first level of the current level set
-            if (levelSet && levelSet.levelIds.length > 0) {
-                this.loadLevel(levelSetId, levelSet.levelIds[0]);
-            } else {
-                // Fallback to default level
-                this.loadLevel('default', 'level-1');
-            }
+            console.log('No saved state, determining which level to load');
+            this.loadLevelNoState();
         }
     }
 
@@ -132,18 +130,22 @@ export class Game extends Scene
     private loadLevelNoState(): void {
         if (this.stateManager.hasSavedState()) return;
 
-        // Always use the level set from the registry
-        const selectedLevelSetId = this.game.registry.get('levelSetId') || 'default';
+        // Always use the level set from the settings
+        const selectedLevelSetId = this.settingsManager.getSetting('levelSetId');
         
         if (this.shouldLoadNextLevel()) {
+            console.log('Should load next level');
             this.loadNextLevelOrFallback(selectedLevelSetId);
         } else {
+            console.log('Loading first level of set:', selectedLevelSetId);
             this.loadFirstLevelOfSet(selectedLevelSetId);
         }
     }
 
     private shouldLoadNextLevel(): boolean {
-        return this.game.registry.get('loadNextLevel') === true;
+        const shouldLoad = this.game.registry.get('loadNextLevel') === true;
+        console.log('shouldLoadNextLevel check:', shouldLoad);
+        return shouldLoad;
     }
 
     private loadNextLevelOrFallback(selectedLevelSetId: string): void {
@@ -166,7 +168,10 @@ export class Game extends Scene
         if (currentIndex !== -1 && currentIndex + 1 < levelSet.levelIds.length) {
             const nextLevelId = levelSet.levelIds[currentIndex + 1];
             this.loadLevel(levelSetId, nextLevelId);
+            console.log(`Loading next level: ${nextLevelId} from level set: ${levelSetId}`);
         } else {
+            // If we've completed all levels in the set, start over from the first level
+            console.log(`Completed all levels in ${levelSetId}, restarting from first level`);
             this.loadFirstLevelOfSet(selectedLevelSetId);
         }
     }

@@ -236,7 +236,7 @@ This section outlines an incremental development process for building the Dots g
 
 ### Phase 7: Use sprites and animations
 - [x] Add sprite animations for dot placement instead of simple circles
-- [ ] Use sprite animations for main menu instead of simple circles
+- [x] Use sprite animations for main menu instead of simple circles
 - [ ] Add explosion animations
 
 
