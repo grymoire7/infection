@@ -29,6 +29,13 @@ export class MainMenu extends Scene
         const logoScale = Math.min(1, this.cameras.main.width / 1024);
         this.logo.setScale(logoScale);
 
+        const titleFontSize = Math.min(38, this.cameras.main.width / 20);
+        this.title = this.add.text(centerX, centerY * 1.2, 'Infection!', {
+            fontFamily: 'Arial Black', fontSize: titleFontSize, color: '#44ff44',
+            stroke: '#005500', strokeThickness: 6,
+            align: 'center'
+        }).setOrigin(0.5).setDepth(100);
+
         this.createAnimatedDots();
 
         EventBus.emit('current-scene-ready', this);
