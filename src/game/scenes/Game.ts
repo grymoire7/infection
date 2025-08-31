@@ -464,27 +464,10 @@ export class Game extends Scene
     {
         const cellState = this.boardState[row][col];
         const cell = this.grid[row][col];
+        const cellStyle = Game.CELL_STYLES[cellState.owner || 'default'];
 
-        // Blocked cells always maintain their bright gray appearance
-        if (cellState.isBlocked) {
-            cell.setFillStyle(0xCCCCCC);
-            cell.setStrokeStyle(2, 0x999999);
-            return;
-        }
-
-        if (cellState.owner === 'red') {
-            // Light red background for red-owned cells
-            cell.setFillStyle(0x664444);
-            cell.setStrokeStyle(2, 0x888888);
-        } else if (cellState.owner === 'blue') {
-            // Light blue background for blue-owned cells
-            cell.setFillStyle(0x444466);
-            cell.setStrokeStyle(2, 0x888888);
-        } else {
-            // Default gray for unowned cells
-            cell.setFillStyle(0x444444);
-            cell.setStrokeStyle(2, 0x666666);
-        }
+        cell.setFillStyle(cellStyle.fillColor);
+        cell.setStrokeStyle(2, cellStyle.strokeColor);
     }
 
     async checkAndHandleExplosions()
@@ -1019,6 +1002,3 @@ export class Game extends Scene
 
         console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${whoGoesFirst} goes first`);
     }
-
-    // Phaser scenes don't have a shutdown method by default, so we can remove this
-}

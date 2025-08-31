@@ -235,7 +235,7 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Add scoring system based on performance across levels
 
 ### Phase 7: Use sprites and animations
-- [ ] Add sprite animations for dot placement instead of simple circles
+- [x] Add sprite animations for dot placement instead of simple circles
 - [ ] Add explosion animations
 
 
