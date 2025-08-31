@@ -1002,3 +1002,4 @@ export class Game extends Scene
 
         console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${whoGoesFirst} goes first`);
     }
+}
