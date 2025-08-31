@@ -222,7 +222,7 @@ export class Game extends Scene
                 const cellState = this.boardState[row][col];
                 if (!cellState.isBlocked) {
                     cellState.capacity = this.gridManager.calculateCellCapacity(row, col, this.boardState);
-                    // Make cell interactive
+                    // Make cell interactive only if not blocked
                     this.gridManager.makeCellInteractive(
                         row, col,
                         () => this.gridManager.handleCellHover(row, col, cellState),

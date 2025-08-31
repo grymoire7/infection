@@ -240,6 +240,7 @@ This section outlines an incremental development process for building the Dots g
 
 
 ### Phase 8: Polish and Accessibility
+- [ ] Improve computer AI
 - [ ] Create tutorial/help levels
 - [ ] Add keyboard controls for accessibility
 - [ ] Implement screen reader support

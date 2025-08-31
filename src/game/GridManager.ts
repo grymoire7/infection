@@ -100,7 +100,8 @@ export class GridManager {
 
     makeCellInteractive(row: number, col: number, onHover: () => void, onOut: () => void, onClick: () => void): void {
         const cell = this.grid[row][col];
-        if (cell) {
+        // Only make cell interactive if it exists and is not blocked
+        if (cell && !this.isCellBlocked(row, col)) {
             cell.setInteractive();
             cell.on('pointerover', onHover);
             cell.on('pointerout', onOut);
@@ -119,7 +120,8 @@ export class GridManager {
 
     handleCellHover(row: number, col: number, cellState: CellState): void {
         const cell = this.grid[row][col];
-        if (!cell || cellState.isBlocked) return;
+        // Early return for blocked cells or if cell doesn't exist
+        if (!cell || cellState.isBlocked || this.isCellBlocked(row, col)) return;
 
         const cellStyle = cellState.owner ? GridManager.CELL_STYLES[cellState.owner] : GridManager.CELL_STYLES.default;
         cell.setFillStyle(cellStyle.hoverFillColor);
