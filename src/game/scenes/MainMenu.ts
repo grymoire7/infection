@@ -59,6 +59,9 @@ export class MainMenu extends Scene
             // Create animated sprite instead of circle
             const dot = this.add.sprite(0, 0, spriteKeys[spriteIndex]);
             dot.setScale(2); // Bigger scale than in Game.ts
+            if (Math.random() < 0.5) {
+                dot.toggleFlipX(); // Randomly flip for variety
+            }
             dot.play(animationKeys[spriteIndex]);
             dot.setDepth(50); // Behind logo (100) and title (100), in front of background
             

@@ -484,6 +484,9 @@ export class Game extends Scene
     {
         const dot = this.add.sprite(0, 0, owner === 'red' ? 'evil-sprite' : 'good-sprite');                                                                                 
         dot.setScale(1.5);
+        if (Math.random() < 0.5) {
+            dot.toggleFlipX(); // Randomly flip for variety
+        }
         dot.play(owner === 'red' ? 'evil-dot-pulse' : 'good-dot-pulse');
 
         this.dots[row][col].push(dot);

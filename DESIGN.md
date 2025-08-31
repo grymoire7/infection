@@ -1,7 +1,7 @@
-# Dots - a grid game
+# Infection! Germs vs White Cells - Game Design Document
 
 ## Overview
-Dots is a two-plyer game (one human, one computer) played on grids of varying
+Infection is a two-plyer game (one human, one computer) played on grids of varying
 sizes and designs. Players take turns adding one dot to an available cell in the grid.
 Play continues until one player owns all the cells on the board.
 
@@ -230,7 +230,6 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Add board size options (3x3 to 9x9)
 - [ ] Add game statistics tracking
 - [ ] Implement save/load game functionality
-- [ ] Create multiple level sets with different themes
 - [ ] Implement player progress saving and loading
 - [ ] Add scoring system based on performance across levels
 
@@ -242,8 +241,10 @@ This section outlines an incremental development process for building the Dots g
 
 
 ### Phase 8: Polish and Accessibility
-- [ ] Improve computer AI
+- [ ] Create About scene with game information and credits
 - [ ] Create tutorial/help levels
+- [ ] Improve computer AI
+- [ ] Create multiple level sets with different themes
 - [ ] Add keyboard controls for accessibility
 - [ ] Implement screen reader support
 - [ ] Add background music and enhanced sound effects
