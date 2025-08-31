@@ -27,7 +27,10 @@ export const LEVELS: Record<string, Level> = {
         name: 'Corner Tactics',
         description: 'Master corner control',
         gridSize: 5,
-        blockedCells: [],
+        blockedCells: [
+            { row: 1, col: 1 }, { row: 1, col: 3 },
+            { row: 3, col: 1 }, { row: 3, col: 3 }
+        ],
         difficulty: 3
     },
     'advanced-1': {
@@ -56,9 +59,9 @@ export const LEVELS: Record<string, Level> = {
 };
 
 // Sample level sets
-export const DEFAULT_LEVEL_SET: LevelSet = {
+export const BASIC_LEVEL_SET: LevelSet = {
     id: 'default',
-    name: 'Default Levels',
+    name: 'Basic Levels',
     description: 'The standard set of levels to learn and master the game',
     levelIds: ['level-1', 'level-2', 'level-3']
 };
@@ -71,7 +74,7 @@ export const ADVANCED_LEVEL_SET: LevelSet = {
 };
 
 export const LEVEL_SETS: LevelSet[] = [
-    DEFAULT_LEVEL_SET,
+    BASIC_LEVEL_SET,
     ADVANCED_LEVEL_SET
 ];
 

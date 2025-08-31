@@ -56,7 +56,7 @@ export class Preloader extends Scene
         // Create dot pulse animations for use in Game and MainMenu scenes
         this.anims.create({
             key: 'good-dot-pulse',
-            frames: this.anims.generateFrameNumbers('good-sprite', { frames: [0, 1, 2] }),
+            frames: this.anims.generateFrameNumbers('good-sprite', { frames: [0, 1, 2, 3, 4, 5, 6, 7, 8] }),
             frameRate: 8,
             repeat: -1,
             repeatDelay: 2000
@@ -64,7 +64,7 @@ export class Preloader extends Scene
         
         this.anims.create({
             key: 'evil-dot-pulse',
-            frames: this.anims.generateFrameNumbers('evil-sprite', { frames: [0, 1, 2] }),
+            frames: this.anims.generateFrameNumbers('evil-sprite', { frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] }),
             frameRate: 8,
             repeat: -1,
             repeatDelay: 2000
