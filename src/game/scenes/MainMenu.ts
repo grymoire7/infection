@@ -29,7 +29,6 @@ export class MainMenu extends Scene
         const logoScale = Math.min(1, this.cameras.main.width / 1024);
         this.logo.setScale(logoScale);
 
-        this.createAnimations();
         this.createAnimatedDots();
 
         EventBus.emit('current-scene-ready', this);
@@ -46,29 +45,6 @@ export class MainMenu extends Scene
         this.stopAnimatedDots();
 
         this.scene.start('Game');
-    }
-
-    createAnimations(): void {
-        // Only create animations if they don't already exist
-        if (!this.anims.exists('good-dot-pulse')) {
-            this.anims.create({
-                key: 'good-dot-pulse',
-                frames: this.anims.generateFrameNumbers('good-sprite', { frames: [0, 1, 2] }),
-                frameRate: 8,
-                repeat: -1,
-                repeatDelay: 2000
-            });
-        }
-        
-        if (!this.anims.exists('evil-dot-pulse')) {
-            this.anims.create({
-                key: 'evil-dot-pulse',
-                frames: this.anims.generateFrameNumbers('evil-sprite', { frames: [0, 1, 2] }),
-                frameRate: 8,
-                repeat: -1,
-                repeatDelay: 2000
-            });
-        }
     }
 
     createAnimatedDots()

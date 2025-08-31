@@ -46,7 +46,6 @@ export class Game extends Scene
     create() {
         this.initializeCamera();
         this.initializeBackground();
-        this.createAnimations();
         this.initializeManagers();
         this.initializeUI();
         this.initializeGameSettings();
@@ -67,28 +66,6 @@ export class Game extends Scene
         this.background.setAlpha(0.3);
     }
 
-    private createAnimations(): void {
-        // Only create animations if they don't already exist
-        if (!this.anims.exists('good-dot-pulse')) {
-            this.anims.create({
-                key: 'good-dot-pulse',
-                frames: this.anims.generateFrameNumbers('good-sprite', { frames: [0, 1, 2] }),
-                frameRate: 8,
-                repeat: -1,
-                repeatDelay: 2000
-            });
-        }
-        
-        if (!this.anims.exists('evil-dot-pulse')) {
-            this.anims.create({
-                key: 'evil-dot-pulse',
-                frames: this.anims.generateFrameNumbers('evil-sprite', { frames: [0, 1, 2] }),
-                frameRate: 8,
-                repeat: -1,
-                repeatDelay: 2000
-            });
-        }
-    }
 
     private initializeManagers(): void {
         this.stateManager = new GameStateManager(this.game.registry);

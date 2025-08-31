@@ -45,7 +45,29 @@ export class Preloader extends Scene
         //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
         //  For example, you can define global animations here, so we can use them in other scenes.
 
+        // Create global animations that will be used across multiple scenes
+        this.createGlobalAnimations();
+
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
         this.scene.start('MainMenu');
+    }
+
+    private createGlobalAnimations(): void {
+        // Create dot pulse animations for use in Game and MainMenu scenes
+        this.anims.create({
+            key: 'good-dot-pulse',
+            frames: this.anims.generateFrameNumbers('good-sprite', { frames: [0, 1, 2] }),
+            frameRate: 8,
+            repeat: -1,
+            repeatDelay: 2000
+        });
+        
+        this.anims.create({
+            key: 'evil-dot-pulse',
+            frames: this.anims.generateFrameNumbers('evil-sprite', { frames: [0, 1, 2] }),
+            frameRate: 8,
+            repeat: -1,
+            repeatDelay: 2000
+        });
     }
 }
