@@ -228,13 +228,13 @@ export class Game extends Scene
     }
 
     private initializeCellState(row: number, col: number, capacity: number): void {
-        const isBlocked = this.isCellBlocked(row, col);
+        const initialOwner = this.isCellBlocked(row, col) ? 'blocked' : 'default';
 
         this.boardState[row][col] = { 
             dotCount: 0, 
-            owner: 'default', 
+            owner: initialOwner, 
             capacity,
-            isBlocked
+            isBlocked: initialOwner === 'blocked'
         };
     }
 
@@ -245,11 +245,11 @@ export class Game extends Scene
         const cell = this.add.rectangle(x, y, this.cellSize - 2, this.cellSize - 2, cellStyle.fillColor);
         cell.setStrokeStyle(2, cellStyle.strokeColor);
         
-        if (!isBlocked) {
-            this.makeCellInteractive(row, col, cell);
-        } else {
+        if (isBlocked) {
             // Make sure blocked cells are not interactive and have a distinct appearance
             cell.disableInteractive();
+        } else {
+            this.makeCellInteractive(row, col, cell);
         }
 
         this.grid[row][col] = cell;
