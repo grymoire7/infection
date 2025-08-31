@@ -7,7 +7,7 @@ export class GridManager {
         default: { fillColor: 0x444444, strokeColor: 0x666666, hoverFillColor: 0x555555, hoverStrokeColor: 0x888888 },
         red:     { fillColor: 0x664444, strokeColor: 0x888888, hoverFillColor: 0x885555, hoverStrokeColor: 0x888888 },
         blue:    { fillColor: 0x444466, strokeColor: 0x888888, hoverFillColor: 0x555588, hoverStrokeColor: 0x888888 },
-        blocked: { fillColor: 0xCCCCCC, strokeColor: 0x999999, hoverFillColor: 0xCCCCCC, hoverStrokeColor: 0x999999 }
+        blocked: { fillColor: 0x444444, strokeColor: 0x999999, hoverFillColor: 0x444444, hoverStrokeColor: 0x999999 }
     };
 
     private scene: Phaser.Scene;
@@ -92,6 +92,15 @@ export class GridManager {
         cell.setStrokeStyle(2, cellStyle.strokeColor);
         
         if (isBlocked) {
+            const wall = this.scene.add.sprite(x + 2, y + 2, 'blocked-earth');                                                                                 
+            // wall.setSize(this.cellSize * 0.6, this.cellSize * 0.6);
+            const scaleFactor = (this.cellSize - 2) / wall.width;
+            wall.setScale(scaleFactor);
+            if (Math.random() < 0.5) {
+                wall.toggleFlipX(); // Randomly flip for variety
+            }
+            wall.play('blocked-pulse');
+
             cell.disableInteractive();
         }
 
