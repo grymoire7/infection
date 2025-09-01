@@ -30,10 +30,11 @@ export class GameUIManager {
 
     private createTitle(): void {
         const titleFontSize = Math.min(32, this.scene.cameras.main.width / 25);
-        this.scene.add.text(this.scene.cameras.main.width / 2, 30, 'Dots Game', {
+        this.scene.add.text(this.scene.cameras.main.width / 2, 30, 'Dots Infection', {
             fontFamily: 'Arial Black', 
             fontSize: titleFontSize, 
-            color: '#ffffff'
+            stroke: '#005500', strokeThickness: 6,
+            color: '#44ff44'
         }).setOrigin(0.5);
     }
 
