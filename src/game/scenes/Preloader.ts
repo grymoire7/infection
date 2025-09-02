@@ -49,12 +49,12 @@ export class Preloader extends Scene
         // Create global animations that will be used across multiple scenes
         this.createGlobalAnimations();
 
-        //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
-        this.scene.start('MainMenu');
+        //  Move to the Splash. You could also swap this for a Scene Transition, such as a camera fade.
+        this.scene.start('Splash');
     }
 
     private createGlobalAnimations(): void {
-        // Create dot pulse animations for use in Game and MainMenu scenes
+        // Create dot pulse animations for use in Game and Splash scenes
         this.anims.create({
             key: 'good-dot-pulse',
             frames: this.anims.generateFrameNumbers('good-sprite', { frames: [0, 1, 2, 3, 4, 5, 6, 7, 8] }),

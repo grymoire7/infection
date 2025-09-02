@@ -5,6 +5,7 @@ import { MainMenu } from './scenes/MainMenu';
 import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
 import { Settings } from './scenes/Settings';
+import { Splash } from './scenes/Splash';
 
 // Find out more information about the Game Config at:
 // https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
@@ -29,6 +30,7 @@ const config: Phaser.Types.Core.GameConfig = {
     scene: [
         Boot,
         Preloader,
+        Splash,
         MainMenu,
         Settings,
         MainGame,

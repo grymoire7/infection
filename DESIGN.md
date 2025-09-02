@@ -244,7 +244,7 @@ This section outlines an incremental development process for building the Dots g
 - [x] Add sprite animations for dot placement instead of simple circles
 - [x] Use sprite animations for main menu instead of simple circles
 - [x] Improve dot pulse animation
-- [ ] Add explosion animations
+- [ ] Add explosion animations ?
 
 ### Phase 9: Scene Creation and Management
 - [ ] Move current MainMenu code to a Splash scene
@@ -253,7 +253,7 @@ This section outlines an incremental development process for building the Dots g
     - Tutorial
     - Splash
     - Settings
-    - Start Game
+    - Play Game
     - High Scores (future)
 - [ ] Create About scene with game information and credits
 - [ ] Create Tutorial scene with game instructions
