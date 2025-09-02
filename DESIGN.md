@@ -97,14 +97,21 @@ production-ready builds.
 
 The game is played in a browser. The user interface includes:
 
-- A main menu with options to start a new game, view instructions, and adjust settings.
+- A main menu with options:
+    - About
+    - Tutorial
+    - Splash
+    - Settings
+    - Start Game
+    - High Scores (future)
 - A game board that displays the grid, dots, and player turns.
 - A sidebar or overlay that shows the current player's turn, scores, and game status.
 - A settings menu to adjust game options such as board size and design.
-- A game over screen that announces the winner and offers options to restart or return to the main menu.
-- Sound effects and background music to enhance the gaming experience.
+- Level over and game over scenes that announce the winner and offers options.
+- Sound effects and possibly background music to enhance the gaming experience.
 - Responsive design to ensure the game is playable on various screen sizes and devices.
 - Accessibility features such as keyboard controls and screen reader support.
+- See more in the "Game plan" section below.
 
 
 ## Difficulty levels
@@ -202,7 +209,7 @@ This section outlines an incremental development process for building the Dots g
 - [x] Develop Hard AI (see "Difficulty levels" section above)
 - [x] Create Expert AI (see "Difficulty levels" section above)
 
-### Phase 4a: Fixups
+### Phase 5: Fixups
 - [x] We have a GameOver scene and we should use it. When the game ends:
     - [x] Reset the game state
     - [x] Display the GameOver scene with the winner announcement (and later the score and/or stats)
@@ -210,7 +217,7 @@ This section outlines an incremental development process for building the Dots g
     - [x] Reset the game state
     - [x] Display the GameOver scene with "Game Abandoned" instead of a winner announcement
 
-### Phase 5: Levels and Level Sets
+### Phase 6: Levels and Level Sets
 - [x] Create level set and level data structures and level definitions (see "Game levels and level sets" section above)
 - [x] Implement level progression system through a level set for gameplay (see "Game levels and level sets" section above)
 - [x] Display current LevelSet and Level name in the game scene
@@ -220,7 +227,7 @@ This section outlines an incremental development process for building the Dots g
 - [x] Add LevelSet selection menu in Settings scene
     - This should be labeled "Level Set:" and be a dropdown list of available level sets by name.
 
-### Phase 6: Advanced Features
+### Phase 7: Advanced Features
 - [x] Implement game flow with blocked cells
     - currently blocked cells do not work correctly as part of the game flow
     - blocked cells cannot accept dots from an explosion or be owned by either player
@@ -233,17 +240,48 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Implement player progress saving and loading
 - [ ] Add scoring system based on performance across levels
 
-### Phase 7: Use sprites and animations
+### Phase 8: Use sprites and animations
 - [x] Add sprite animations for dot placement instead of simple circles
 - [x] Use sprite animations for main menu instead of simple circles
 - [x] Improve dot pulse animation
 - [ ] Add explosion animations
 
-
-### Phase 8: Polish and Accessibility
+### Phase 9: Scene Creation and Management
+- [ ] Move current MainMenu code to a Splash scene
+- [ ] Create a MainMenu scene with options
+    - About
+    - Tutorial
+    - Splash
+    - Settings
+    - Start Game
+    - High Scores (future)
 - [ ] Create About scene with game information and credits
-- [ ] Create tutorial/help levels
+- [ ] Create Tutorial scene with game instructions
+- [ ] Create seperate LevelOver and GameOver scenes
+
+### Phase 10: Finish Rebranding
+- [ ] Change game name from "Dots" to "Infection! Germs vs White Cells" ?
+- [ ] Change spash screen logo
+
+### Phase 11: Scene content
+- [ ] Add content to About scene
+- [ ] Add content to Tutorial scene
+- [ ] Recreate Splash scene with new logo
+- [ ] Rearrange Game scene
+    - [ ] Move level set and level name to top left
+    - [ ] Move turn indicator to top left as tile with appropriate sprite
+    - [ ] Add level description top center above the board
+
+### Phase 12: Ship it!
+- [ ] Final testing and bug fixing
+- [ ] Deploy to production environment
+- [ ] Announce release on social media, Phaser, and gaming forums
+
+### Phase 13: Polish and Accessibility
 - [ ] Improve computer AI
+    - [ ] The level definition has a 'difficulty' field that is not currently used. Possibly use it to adjust the computer AI strategy.
+    - [ ] If we do this, we could remove the 'difficulty' selection from the settings menu.
+- [ ] Add tutorial level set with guided instructions <-- Would this be better or worse than a tutorial scene?
 - [ ] Create multiple level sets with different themes
 - [ ] Add keyboard controls for accessibility
 - [ ] Implement screen reader support
