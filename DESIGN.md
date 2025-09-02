@@ -247,7 +247,7 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Add explosion animations ?
 
 ### Phase 9: Scene Creation and Management
-- [ ] Move current MainMenu code to a Splash scene
+- [x] Move current MainMenu code to a Splash scene
 - [ ] Create a MainMenu scene with options
     - About
     - Tutorial

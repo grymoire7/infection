@@ -7,7 +7,6 @@ export class MainMenu extends Scene
     background: GameObjects.Image;
     logo: GameObjects.Image;
     title: GameObjects.Text;
-    logoTween: Phaser.Tweens.Tween | null;
     animatedDots: any[] = [];
     dotTweens: Phaser.Tweens.Tween[] = [];
 
@@ -23,18 +22,20 @@ export class MainMenu extends Scene
         
         this.background = this.add.image(centerX, centerY, 'background');
 
-        this.logo = this.add.image(centerX, centerY, 'logo').setDepth(100);
-        
-        // Scale logo based on screen size
-        const logoScale = Math.min(1, this.cameras.main.width / 1024);
-        this.logo.setScale(logoScale);
-
-        const titleFontSize = Math.min(38, this.cameras.main.width / 20);
-        this.title = this.add.text(centerX, centerY * 1.2, 'Infection!', {
+        const titleFontSize = Math.min(84, this.cameras.main.width * .5);
+        this.title = this.add.text(centerX, centerY * .2, 'Infection!', {
             fontFamily: 'Arial Black', fontSize: titleFontSize, color: '#44ff44',
-            stroke: '#005500', strokeThickness: 6,
+            stroke: '#005500', strokeThickness: 10,
             align: 'center'
         }).setOrigin(0.5).setDepth(100);
+
+        const subtitleFontSize = Math.min(24, this.cameras.main.width * .25);
+        this.title = this.add.text(centerX, centerY * .35, 'Germs vs White Cells', {
+            fontFamily: 'Arial Black', fontSize: subtitleFontSize, color: '#44ff44',
+            stroke: '#005500', strokeThickness: 5,
+            align: 'center'
+        }).setOrigin(0.5).setDepth(100);
+
 
         this.createAnimatedDots();
 
@@ -43,12 +44,6 @@ export class MainMenu extends Scene
     
     changeScene ()
     {
-        if (this.logoTween)
-        {
-            this.logoTween.stop();
-            this.logoTween = null;
-        }
-
         this.stopAnimatedDots();
 
         this.scene.start('Game');
@@ -130,39 +125,5 @@ export class MainMenu extends Scene
             }
         });
         this.animatedDots = [];
-    }
-
-    moveLogo (vueCallback: ({ x, y }: { x: number, y: number }) => void)
-    {
-        if (this.logoTween)
-        {
-            if (this.logoTween.isPlaying())
-            {
-                this.logoTween.pause();
-            }
-            else
-            {
-                this.logoTween.play();
-            }
-        } 
-        else
-        {
-            this.logoTween = this.tweens.add({
-                targets: this.logo,
-                x: { value: 750, duration: 3000, ease: 'Back.easeInOut' },
-                y: { value: 80, duration: 1500, ease: 'Sine.easeOut' },
-                yoyo: true,
-                repeat: -1,
-                onUpdate: () => {
-                    if (vueCallback)
-                    {
-                        vueCallback({
-                            x: Math.floor(this.logo.x),
-                            y: Math.floor(this.logo.y)
-                        });
-                    }
-                }
-            });
-        }
     }
 }
