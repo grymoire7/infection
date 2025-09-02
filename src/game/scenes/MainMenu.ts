@@ -9,6 +9,7 @@ export class MainMenu extends Scene
     title: GameObjects.Text;
     animatedDots: any[] = [];
     dotTweens: Phaser.Tweens.Tween[] = [];
+    menuItems: GameObjects.Text[] = [];
 
     constructor ()
     {
@@ -38,6 +39,7 @@ export class MainMenu extends Scene
 
 
         this.createAnimatedDots();
+        this.createMenu();
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -106,6 +108,57 @@ export class MainMenu extends Scene
             
             this.dotTweens.push(tween);
         }
+    }
+
+    createMenu()
+    {
+        const centerX = this.cameras.main.width / 2;
+        const centerY = this.cameras.main.height / 2;
+        
+        const menuOptions = [
+            { text: 'Play Game', action: () => this.scene.start('Game') },
+            { text: 'Tutorial', action: () => console.log('Tutorial not implemented yet') },
+            { text: 'Settings', action: () => this.scene.start('Settings') },
+            { text: 'Splash', action: () => this.scene.start('Splash') },
+            { text: 'About', action: () => console.log('About not implemented yet') }
+        ];
+
+        const menuFontSize = Math.min(32, this.cameras.main.width / 25);
+        const menuSpacing = menuFontSize + 20;
+        const startY = centerY - 100;
+
+        menuOptions.forEach((option, index) => {
+            const menuItem = this.add.text(centerX, startY + (index * menuSpacing), option.text, {
+                fontFamily: 'Arial Black',
+                fontSize: menuFontSize,
+                color: '#ffffff',
+                stroke: '#000000',
+                strokeThickness: 3,
+                align: 'center'
+            }).setOrigin(0.5).setDepth(100);
+
+            // Make menu item interactive
+            menuItem.setInteractive();
+            
+            // Hover effects
+            menuItem.on('pointerover', () => {
+                menuItem.setColor('#44ff44');
+                menuItem.setScale(1.1);
+            });
+
+            menuItem.on('pointerout', () => {
+                menuItem.setColor('#ffffff');
+                menuItem.setScale(1.0);
+            });
+
+            // Click handler
+            menuItem.on('pointerdown', () => {
+                this.stopAnimatedDots();
+                option.action();
+            });
+
+            this.menuItems.push(menuItem);
+        });
     }
 
     stopAnimatedDots()

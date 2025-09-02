@@ -248,7 +248,7 @@ This section outlines an incremental development process for building the Dots g
 
 ### Phase 9: Scene Creation and Management
 - [x] Move current MainMenu code to a Splash scene
-- [ ] Create a MainMenu scene with options
+- [x] Create a MainMenu scene with options
     - About
     - Tutorial
     - Splash
