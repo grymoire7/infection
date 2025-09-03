@@ -120,7 +120,7 @@ export class MainMenu extends Scene
             { text: 'Tutorial', action: () => console.log('Tutorial not implemented yet') },
             { text: 'Settings', action: () => this.scene.start('Settings') },
             { text: 'Splash', action: () => this.scene.start('Splash') },
-            { text: 'About', action: () => console.log('About not implemented yet') }
+            { text: 'About', action: () => this.scene.start('About') }
         ];
 
         const menuFontSize = Math.min(32, this.cameras.main.width / 25);
