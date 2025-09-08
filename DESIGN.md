@@ -255,7 +255,7 @@ This section outlines an incremental development process for building the Dots g
     - Settings
     - Play Game
     - High Scores (future)
-- [ ] Create About scene with game information and credits
+- [x] Create About scene with game information and credits
 - [ ] Create Tutorial scene with game instructions
 - [ ] Create seperate LevelOver and GameOver scenes
 
@@ -271,8 +271,14 @@ This section outlines an incremental development process for building the Dots g
     - [ ] Move level set and level name to top left
     - [ ] Move turn indicator to top left as tile with appropriate sprite
     - [ ] Add level description top center above the board
+- [ ] Improve Settings scene
+    - [ ] Remove "Who goes first" option. The player should always go first.
+    - [ ] Remove "AI Difficulty" option. This should be part of the level definition.
+    - [ ] Change "Player color" option to "Player side" with options "Germs" and "White Cells"
+        - [ ] Add associated sprite to the option
 
 ### Phase 12: Ship it!
+- [ ] Add more chohesive level sets and levels
 - [ ] Final testing and bug fixing
 - [ ] Deploy to production environment
 - [ ] Announce release on social media, Phaser, and gaming forums
@@ -293,4 +299,3 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Add social features for sharing progress
 
 Each phase builds upon the previous one, allowing for incremental testing and refinement of game mechanics.
-
