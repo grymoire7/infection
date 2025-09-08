@@ -192,14 +192,6 @@ export class Settings extends Scene
             this.whoGoesFirstButton.setBackgroundColor('#666666');
         });
 
-        // Responsive placeholder for future settings
-        const placeholderFontSize = Math.min(18, this.cameras.main.width / 45);
-        this.add.text(centerX, centerY * 1.4, 'More settings coming soon...', {
-            fontFamily: 'Arial', 
-            fontSize: placeholderFontSize, 
-            color: '#888888'
-        }).setOrigin(0.5);
-
         this.updateSoundToggleButton();
         this.updateDifficultyButton();
         this.updatePlayerColorButton();
