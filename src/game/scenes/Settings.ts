@@ -8,7 +8,6 @@ export class Settings extends Scene
     background: GameObjects.Image;
     title: GameObjects.Text;
     soundToggleButton: GameObjects.Text;
-    difficultyButton: GameObjects.Text;
     playerColorButton: GameObjects.Text;
     whoGoesFirstButton: GameObjects.Text;
     levelSetButton: GameObjects.Text;
@@ -76,37 +75,8 @@ export class Settings extends Scene
             this.soundToggleButton.setBackgroundColor('#666666');
         });
 
-        // Difficulty Level Selection
-        const difficultyLabelY = centerY * 0.8;
-        this.add.text(labelX, difficultyLabelY, 'AI Difficulty:', {
-            fontFamily: 'Arial', 
-            fontSize: labelFontSize, 
-            color: '#ffffff'
-        }).setOrigin(0, 0.5);
-
-        this.difficultyButton = this.add.text(labelX + 170, difficultyLabelY, '', {
-            fontFamily: 'Arial', 
-            fontSize: labelFontSize, 
-            color: '#ffffff',
-            backgroundColor: '#666666',
-            padding: { x: 15, y: 8 }
-        }).setOrigin(0, 0.5);
-
-        this.difficultyButton.setInteractive();
-        this.difficultyButton.on('pointerdown', () => {
-            this.cycleDifficultyLevel();
-        });
-
-        this.difficultyButton.on('pointerover', () => {
-            this.difficultyButton.setBackgroundColor('#888888');
-        });
-
-        this.difficultyButton.on('pointerout', () => {
-            this.difficultyButton.setBackgroundColor('#666666');
-        });
-
         // Player Color Selection
-        const playerColorLabelY = centerY * 0.95;
+        const playerColorLabelY = centerY * 0.8;
         this.add.text(labelX, playerColorLabelY, 'Player Color:', {
             fontFamily: 'Arial', 
             fontSize: labelFontSize, 
@@ -135,7 +105,7 @@ export class Settings extends Scene
         });
 
         // Level Set Selection
-        const levelSetLabelY = centerY * 1.1;
+        const levelSetLabelY = centerY * 0.95;
         this.add.text(labelX, levelSetLabelY, 'Level Set:', {
             fontFamily: 'Arial', 
             fontSize: labelFontSize, 
@@ -164,7 +134,7 @@ export class Settings extends Scene
         });
 
         // Who Goes First Selection
-        const whoGoesFirstLabelY = centerY * 1.25;
+        const whoGoesFirstLabelY = centerY * 1.1;
         this.add.text(labelX, whoGoesFirstLabelY, 'Who Goes First:', {
             fontFamily: 'Arial', 
             fontSize: labelFontSize, 
@@ -193,7 +163,6 @@ export class Settings extends Scene
         });
 
         this.updateSoundToggleButton();
-        this.updateDifficultyButton();
         this.updatePlayerColorButton();
         this.updateLevelSetButton();
         this.updateWhoGoesFirstButton();
@@ -216,33 +185,6 @@ export class Settings extends Scene
         this.soundToggleButton.setColor(this.currentSettings.soundEffectsEnabled ? '#00ff00' : '#ff0000');
     }
 
-    cycleDifficultyLevel()
-    {
-        const difficulties = ['Easy', 'Medium', 'Hard', 'Expert'];
-        const currentIndex = difficulties.indexOf(this.currentSettings.difficultyLevel);
-        const nextIndex = (currentIndex + 1) % difficulties.length;
-        this.currentSettings.difficultyLevel = difficulties[nextIndex];
-        
-        this.settingsManager.updateSetting('difficultyLevel', this.currentSettings.difficultyLevel);
-        this.updateDifficultyButton();
-        
-        console.log(`AI Difficulty set to: ${this.currentSettings.difficultyLevel}`);
-    }
-
-    updateDifficultyButton()
-    {
-        this.difficultyButton.setText(this.currentSettings.difficultyLevel);
-        
-        // Color code difficulty levels
-        const difficultyColors = {
-            'Easy': '#00ff00',    // Green
-            'Medium': '#ffff00',  // Yellow
-            'Hard': '#ff8800',    // Orange
-            'Expert': '#ff0000'   // Red
-        };
-        
-        this.difficultyButton.setColor((difficultyColors as any)[this.currentSettings.difficultyLevel] || '#ffffff');
-    }
 
     togglePlayerColor()
     {

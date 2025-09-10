@@ -159,7 +159,6 @@ The computer opponent can be set to different difficulty levels:
 ## Game levels and level sets
 - Each game will be comprised of multiple levels, called a level set.
 - Each level will have a different board design and/or size.
-- Each level will increase in difficulty.
 - Each level will have a name and a brief description.
 - Each level set will have a name and a brief description.
 - Levels and level sets will be defined in JSON files to facilitate easy creation and modification.
@@ -273,7 +272,7 @@ This section outlines an incremental development process for building the Dots g
     - [ ] Add level description top center above the board
 - [ ] Improve Settings scene
     - [ ] Remove "Who goes first" option. The player should always go first.
-    - [ ] Remove "AI Difficulty" option. This should be part of the level definition.
+    - [x] Remove "AI Difficulty" option. This should be part of the level definition.
     - [ ] Change "Player color" option to "Player side" with options "Germs" and "White Cells"
         - [ ] Add associated sprite to the option
 
@@ -285,8 +284,9 @@ This section outlines an incremental development process for building the Dots g
 
 ### Phase 13: Polish and Accessibility
 - [ ] Improve computer AI
+    - [ ] The expert level AI could be improved further.
     - [x] The level definition has a 'difficulty' field that is not currently used. Possibly use it to adjust the computer AI strategy.
-    - [ ] If we do this, we could remove the 'difficulty' selection from the settings menu.
+    - [x] If we do this, we could remove the 'difficulty' selection from the settings menu.
 - [ ] Add tutorial level set with guided instructions <-- Would this be better or worse than a tutorial scene?
 - [ ] Create multiple level sets with different themes
 - [ ] Add keyboard controls for accessibility

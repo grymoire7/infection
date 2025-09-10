@@ -501,8 +501,8 @@ export class Game extends Scene
         this.humanPlayer = settings.playerColor;
         const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
 
-        // Create computer player instance
-        this.computerPlayer = new ComputerPlayer(settings.difficultyLevel, computerColor);
+        // Create computer player instance with default difficulty (will be overridden by level-specific difficulty)
+        this.computerPlayer = new ComputerPlayer('easy', computerColor);
 
         // Set starting player
         if (settings.whoGoesFirst === 'player') {
