@@ -84,8 +84,8 @@ export class GameOver extends Scene
         if (winner !== 'Abandoned' && levelSetId && levelId) {
             const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
             if (levelSet) {
-                const currentIndex = levelSet.levelIds.indexOf(levelId);
-                if (currentIndex !== -1 && currentIndex + 1 < levelSet.levelIds.length) {
+                const currentIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === levelId);
+                if (currentIndex !== -1 && currentIndex + 1 < levelSet.levelEntries.length) {
                     this.nextLevelButton = this.add.text(centerX, centerY * 0.7, 'Next Level', {
                         fontFamily: 'Arial', 
                         fontSize: buttonFontSize, 

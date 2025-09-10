@@ -3,7 +3,7 @@ import { Scene } from 'phaser';
 import { ComputerPlayer } from '../ComputerPlayer';
 import { GameStateManager, CellState } from '../GameStateManager';
 import { GameUIManager } from '../GameUIManager';
-import { LEVEL_SETS, getLevelById } from '../LevelDefinitions';
+import { LEVEL_SETS, getLevelById, getAIDifficultyForLevel } from '../LevelDefinitions';
 import { DotPositioner } from '../utils/DotPositioner';
 import { GridManager } from '../GridManager';
 import { SettingsManager } from '../SettingsManager';
@@ -141,9 +141,9 @@ export class Game extends Scene
             return;
         }
 
-        const currentIndex = levelSet.levelIds.indexOf(levelId);
-        if (currentIndex !== -1 && currentIndex + 1 < levelSet.levelIds.length) {
-            const nextLevelId = levelSet.levelIds[currentIndex + 1];
+        const currentIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === levelId);
+        if (currentIndex !== -1 && currentIndex + 1 < levelSet.levelEntries.length) {
+            const nextLevelId = levelSet.levelEntries[currentIndex + 1].levelId;
             this.loadLevel(levelSetId, nextLevelId);
             console.log(`Loading next level: ${nextLevelId} from level set: ${levelSetId}`);
         } else {
@@ -155,8 +155,8 @@ export class Game extends Scene
 
     private loadFirstLevelOfSet(levelSetId: string): void {
         const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
-        if (levelSet && levelSet.levelIds.length > 0) {
-            this.loadLevel(levelSetId, levelSet.levelIds[0]);
+        if (levelSet && levelSet.levelEntries.length > 0) {
+            this.loadLevel(levelSetId, levelSet.levelEntries[0].levelId);
         } else {
             this.loadLevel('default', 'level-1');
         }
@@ -256,8 +256,8 @@ export class Game extends Scene
         }
         
         // If level is not found, use the first level of the current level set
-        if (!level && levelSet && levelSet.levelIds.length > 0) {
-            level = getLevelById(levelSet.levelIds[0]);
+        if (!level && levelSet && levelSet.levelEntries.length > 0) {
+            level = getLevelById(levelSet.levelEntries[0].levelId);
         }
         
         if (levelSet && level) {
@@ -514,6 +514,31 @@ export class Game extends Scene
         console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${settings.whoGoesFirst} goes first`);
     }
 
+    initializeGameSettingsForLevel(levelSetId: string, levelId: string)
+    {
+        // Load settings using SettingsManager
+        const settings = this.settingsManager.loadSettings();
+        
+        // Set up game based on loaded settings
+        this.humanPlayer = settings.playerColor;
+        const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
+
+        // Get AI difficulty specific to this level
+        const aiDifficulty = getAIDifficultyForLevel(levelSetId, levelId);
+
+        // Create computer player instance with level-specific difficulty
+        this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
+
+        // Set starting player
+        if (settings.whoGoesFirst === 'player') {
+            this.currentPlayer = this.humanPlayer;
+        } else {
+            this.currentPlayer = computerColor;
+        }
+
+        console.log(`Game initialized for level: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty}), ${settings.whoGoesFirst} goes first`);
+    }
+
     undoLastMove()
     {
         const lastState = this.stateManager.undoLastMove();
@@ -603,8 +628,12 @@ export class Game extends Scene
         this.humanPlayer = savedState.humanPlayer;
         const computerColor = savedState.computerPlayerColor;
 
-        const difficulty = this.game.registry.get('difficultyLevel') || 'Easy';
-        this.computerPlayer = new ComputerPlayer(difficulty, computerColor);
+        // Get AI difficulty from current level context
+        const levelSetId = this.game.registry.get('currentLevelSetId') || 'default';
+        const levelId = this.game.registry.get('currentLevelId') || 'level-1';
+        const aiDifficulty = getAIDifficultyForLevel(levelSetId, levelId);
+        
+        this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
         
         // Check if the game was over when saved
         if (savedState.gameOver && savedState.winner) {
@@ -758,8 +787,8 @@ export class Game extends Scene
         this.recreateAllVisualDots();
         this.updateAllCellOwnership();
         
-        // Reset player turn
-        this.initializeGameSettings();
+        // Reset player turn with level-specific AI difficulty
+        this.initializeGameSettingsForLevel(levelSetId, levelId);
         
         // Update UI only if UI elements exist
         if (this.currentPlayerText) {
@@ -800,8 +829,8 @@ export class Game extends Scene
             // If level set has changed, load the first level of the new level set
             if (currentLevelSetId !== newLevelSetId) {
                 const levelSet = LEVEL_SETS.find(set => set.id === newLevelSetId);
-                if (levelSet && levelSet.levelIds.length > 0) {
-                    this.loadLevel(newLevelSetId, levelSet.levelIds[0]);
+                if (levelSet && levelSet.levelEntries.length > 0) {
+                    this.loadLevel(newLevelSetId, levelSet.levelEntries[0].levelId);
                 }
             } else {
                 // For other setting changes, just update the UI
@@ -825,8 +854,13 @@ export class Game extends Scene
         this.humanPlayer = settings.playerColor;
         const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
 
-        // Reload difficulty level
-        this.computerPlayer = new ComputerPlayer(settings.difficultyLevel, computerColor);
+        // Get AI difficulty from current level context
+        const levelSetId = this.game.registry.get('currentLevelSetId') || 'default';
+        const levelId = this.game.registry.get('currentLevelId') || 'level-1';
+        const aiDifficulty = getAIDifficultyForLevel(levelSetId, levelId);
+
+        // Reload difficulty level (now level-specific)
+        this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
 
         // Reload who goes first
         if (settings.whoGoesFirst === 'player') {
@@ -835,6 +869,6 @@ export class Game extends Scene
             this.currentPlayer = computerColor;
         }
 
-        console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${settings.whoGoesFirst} goes first`);
+        console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty}), ${settings.whoGoesFirst} goes first`);
     }
 }

@@ -285,7 +285,7 @@ This section outlines an incremental development process for building the Dots g
 
 ### Phase 13: Polish and Accessibility
 - [ ] Improve computer AI
-    - [ ] The level definition has a 'difficulty' field that is not currently used. Possibly use it to adjust the computer AI strategy.
+    - [x] The level definition has a 'difficulty' field that is not currently used. Possibly use it to adjust the computer AI strategy.
     - [ ] If we do this, we could remove the 'difficulty' selection from the settings menu.
 - [ ] Add tutorial level set with guided instructions <-- Would this be better or worse than a tutorial scene?
 - [ ] Create multiple level sets with different themes

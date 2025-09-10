@@ -4,14 +4,13 @@ export interface Level {
     description: string;
     gridSize: number;
     blockedCells: { row: number; col: number }[];
-    difficulty: number;
 }
 
 export interface LevelSet {
     id: string;
     name: string;
     description: string;
-    levelIds: string[];
+    levelEntries: { levelId: string; aiDifficulty: 'easy' | 'medium' | 'hard' | 'expert' }[];
 }
 
 export interface CellState {
