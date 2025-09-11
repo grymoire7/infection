@@ -255,7 +255,7 @@ This section outlines an incremental development process for building the Dots g
     - Play Game
     - High Scores (future)
 - [x] Create About scene with game information and credits
-- [ ] Create Tutorial scene with game instructions
+- [x] Create Tutorial scene with game instructions
 - [ ] Create seperate LevelOver and GameOver scenes
 
 ### Phase 10: Finish Rebranding
@@ -263,8 +263,8 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Change spash screen logo
 
 ### Phase 11: Scene content
-- [ ] Add content to About scene
-- [ ] Add content to Tutorial scene
+- [x] Add content to About scene
+- [x] Add content to Tutorial scene
 - [ ] Recreate Splash scene with new logo
 - [ ] Rearrange Game scene
     - [ ] Move level set and level name to top left

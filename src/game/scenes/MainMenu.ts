@@ -117,7 +117,7 @@ export class MainMenu extends Scene
         
         const menuOptions = [
             { text: 'Play Game', action: () => this.scene.start('Game') },
-            { text: 'Tutorial', action: () => console.log('Tutorial not implemented yet') },
+            { text: 'Tutorial', action: () => this.scene.start('Tutorial') },
             { text: 'Settings', action: () => this.scene.start('Settings') },
             { text: 'Splash', action: () => this.scene.start('Splash') },
             { text: 'About', action: () => this.scene.start('About') }

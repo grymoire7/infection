@@ -1,7 +1,7 @@
 import { GameObjects, Scene } from 'phaser';
 import { EventBus } from '../EventBus';
 
-export class About extends Scene
+export class Tutorial extends Scene
 {
     background: GameObjects.Image;
     title: GameObjects.Text;
@@ -10,7 +10,7 @@ export class About extends Scene
 
     constructor ()
     {
-        super('About');
+        super('Tutorial');
     }
 
     create ()
@@ -22,7 +22,7 @@ export class About extends Scene
         this.background.setAlpha(0.3);
 
         const titleFontSize = Math.min(48, this.cameras.main.width / 15);
-        this.title = this.add.text(centerX, 50, 'About Infection!', {
+        this.title = this.add.text(centerX, 50, 'Tutorial', {
             fontFamily: 'Arial Black', 
             fontSize: titleFontSize, 
             color: '#ffffff',
@@ -94,19 +94,32 @@ export class About extends Scene
         this.htmlElement.style.right = '5%';
 
         this.htmlElement.innerHTML = `
-            <h2 style="color: #44ff44; margin-top: 0;">Welcome to Infection!</h2>
+            <h2 style="color: #44ff44; margin-top: 0;">How Infection! works</h2>
             
             <p>Infection is a strategic grid-based game where you compete
                 against an AI opponent to control the board through chain
                 reactions and tactical placement.
             </p>
             
-            <h3 style="color: #44ff44;">Credits</h3>
-            <p> Infection was originally inspired by a game I saw once that was very
-                similar to <a style="color: #aaaaff" href="https://apps.kde.org/kjumpingcube/" target="_blank" >KJumpingcubes</a>, a classic
-                chain reaction game. It was developed by Tracy Atteberry using Phaser 3,
-                TypeScript, and often Aider.
-            </p>
+            <h3 style="color: #44ff44;">How to Play</h3>
+            <ul>
+                <li><strong>Objective:</strong> Control all cells on the grid</li>
+                <li><strong>Placement:</strong> Click on empty cells or cells you own to add dots</li>
+                <li><strong>Capacity:</strong> Each cell has a capacity based on its number of neighbors (2-4)</li>
+                <li><strong>Explosions:</strong> When a cell exceeds its capacity, it explodes and infects adjacent cells</li>
+                <li><strong>Chain Reactions:</strong> Explosions can trigger more explosions, creating powerful combos</li>
+                <li><strong>Victory:</strong> Win by owning all non-blocked cells on the board</li>
+            </ul>
+            
+            <h3 style="color: #44ff44;">Strategy Tips</h3>
+            <ul>
+                <li><strong>Corner Control:</strong> Corner cells have low capacity (2) and are easier to fill</li>
+                <li><strong>Edge Advantage:</strong> Edge cells have medium capacity (3) and good strategic value</li>
+                <li><strong>Center Power:</strong> Center cells have high capacity (4) but can create big chain reactions</li>
+                <li><strong>Defensive Play:</strong> Sometimes it's better to block opponent moves than to expand</li>
+                <li><strong>Chain Planning:</strong> Look for opportunities to create cascading explosions</li>
+                <li><strong>Timing:</strong> Know when to trigger explosions for maximum impact</li>
+            </ul>
             
             <p style="margin-top: 40px; text-align: center; color: #888888;">
                 <em>Thank you for playing Infection! May the best strategist win!</em>
