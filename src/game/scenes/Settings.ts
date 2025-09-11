@@ -9,7 +9,6 @@ export class Settings extends Scene
     title: GameObjects.Text;
     soundToggleButton: GameObjects.Text;
     playerColorButton: GameObjects.Text;
-    whoGoesFirstButton: GameObjects.Text;
     levelSetButton: GameObjects.Text;
     
     private settingsManager: SettingsManager;
@@ -133,39 +132,9 @@ export class Settings extends Scene
             this.levelSetButton.setBackgroundColor('#666666');
         });
 
-        // Who Goes First Selection
-        const whoGoesFirstLabelY = centerY * 1.1;
-        this.add.text(labelX, whoGoesFirstLabelY, 'Who Goes First:', {
-            fontFamily: 'Arial', 
-            fontSize: labelFontSize, 
-            color: '#ffffff'
-        }).setOrigin(0, 0.5);
-
-        this.whoGoesFirstButton = this.add.text(labelX + 180, whoGoesFirstLabelY, '', {
-            fontFamily: 'Arial', 
-            fontSize: labelFontSize, 
-            color: '#ffffff',
-            backgroundColor: '#666666',
-            padding: { x: 15, y: 8 }
-        }).setOrigin(0, 0.5);
-
-        this.whoGoesFirstButton.setInteractive();
-        this.whoGoesFirstButton.on('pointerdown', () => {
-            this.toggleWhoGoesFirst();
-        });
-
-        this.whoGoesFirstButton.on('pointerover', () => {
-            this.whoGoesFirstButton.setBackgroundColor('#888888');
-        });
-
-        this.whoGoesFirstButton.on('pointerout', () => {
-            this.whoGoesFirstButton.setBackgroundColor('#666666');
-        });
-
         this.updateSoundToggleButton();
         this.updatePlayerColorButton();
         this.updateLevelSetButton();
-        this.updateWhoGoesFirstButton();
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -201,15 +170,6 @@ export class Settings extends Scene
         this.playerColorButton.setColor(this.currentSettings.playerColor === 'red' ? '#ff0000' : '#0000ff');
     }
 
-    toggleWhoGoesFirst()
-    {
-        this.currentSettings.whoGoesFirst = this.currentSettings.whoGoesFirst === 'player' ? 'computer' : 'player';
-        this.settingsManager.updateSetting('whoGoesFirst', this.currentSettings.whoGoesFirst);
-        this.updateWhoGoesFirstButton();
-        
-        console.log(`Who goes first set to: ${this.currentSettings.whoGoesFirst}`);
-    }
-
     cycleLevelSet()
     {
         const levelSets = LEVEL_SETS;
@@ -229,12 +189,5 @@ export class Settings extends Scene
         const displayText = levelSet ? levelSet.name : 'Default Levels';
         this.levelSetButton.setText(displayText);
         this.levelSetButton.setColor('#ffffff');
-    }
-
-    updateWhoGoesFirstButton()
-    {
-        const displayText = this.currentSettings.whoGoesFirst === 'player' ? 'Player' : 'Computer';
-        this.whoGoesFirstButton.setText(displayText);
-        this.whoGoesFirstButton.setColor(this.currentSettings.whoGoesFirst === 'player' ? '#00ff00' : '#ffaa00');
     }
 }

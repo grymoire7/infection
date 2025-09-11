@@ -503,15 +503,9 @@ export class Game extends Scene
 
         // Create computer player instance with default difficulty (will be overridden by level-specific difficulty)
         this.computerPlayer = new ComputerPlayer('easy', computerColor);
+        this.currentPlayer = this.humanPlayer;
 
-        // Set starting player
-        if (settings.whoGoesFirst === 'player') {
-            this.currentPlayer = this.humanPlayer;
-        } else {
-            this.currentPlayer = computerColor;
-        }
-
-        console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${computerColor}, ${settings.whoGoesFirst} goes first`);
+        console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${computerColor}`);
     }
 
     initializeGameSettingsForLevel(levelSetId: string, levelId: string)
@@ -528,15 +522,9 @@ export class Game extends Scene
 
         // Create computer player instance with level-specific difficulty
         this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
+        this.currentPlayer = this.humanPlayer;
 
-        // Set starting player
-        if (settings.whoGoesFirst === 'player') {
-            this.currentPlayer = this.humanPlayer;
-        } else {
-            this.currentPlayer = computerColor;
-        }
-
-        console.log(`Game initialized for level: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty}), ${settings.whoGoesFirst} goes first`);
+        console.log(`Game initialized for level: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty})`);
     }
 
     undoLastMove()
@@ -861,14 +849,8 @@ export class Game extends Scene
 
         // Reload difficulty level (now level-specific)
         this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
+        this.currentPlayer = this.humanPlayer;
 
-        // Reload who goes first
-        if (settings.whoGoesFirst === 'player') {
-            this.currentPlayer = this.humanPlayer;
-        } else {
-            this.currentPlayer = computerColor;
-        }
-
-        console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty}), ${settings.whoGoesFirst} goes first`);
+        console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty})`);
     }
 }

@@ -1,7 +1,6 @@
 export interface GameSettings {
     soundEffectsEnabled: boolean;
     playerColor: 'red' | 'blue';
-    whoGoesFirst: 'player' | 'computer';
     levelSetId: string;
 }
 
@@ -10,7 +9,6 @@ export class SettingsManager {
     private static readonly DEFAULT_SETTINGS: GameSettings = {
         soundEffectsEnabled: true,
         playerColor: 'red',
-        whoGoesFirst: 'player',
         levelSetId: 'default'
     };
 
@@ -27,7 +25,6 @@ export class SettingsManager {
         const settings: GameSettings = {
             soundEffectsEnabled: this.loadBooleanSetting('soundEffects', SettingsManager.DEFAULT_SETTINGS.soundEffectsEnabled),
             playerColor: this.loadStringSetting('playerColor', SettingsManager.DEFAULT_SETTINGS.playerColor) as 'red' | 'blue',
-            whoGoesFirst: this.loadStringSetting('whoGoesFirst', SettingsManager.DEFAULT_SETTINGS.whoGoesFirst) as 'player' | 'computer',
             levelSetId: this.loadStringSetting('levelSetId', SettingsManager.DEFAULT_SETTINGS.levelSetId)
         };
 
@@ -43,7 +40,6 @@ export class SettingsManager {
     saveSettings(settings: GameSettings): void {
         this.saveBooleanSetting('soundEffects', settings.soundEffectsEnabled);
         this.saveStringSetting('playerColor', settings.playerColor);
-        this.saveStringSetting('whoGoesFirst', settings.whoGoesFirst);
         this.saveStringSetting('levelSetId', settings.levelSetId);
 
         // Sync with game registry
@@ -60,7 +56,6 @@ export class SettingsManager {
         return {
             soundEffectsEnabled: this.gameRegistry.get('soundEffectsEnabled') ?? this.loadBooleanSetting('soundEffects', SettingsManager.DEFAULT_SETTINGS.soundEffectsEnabled),
             playerColor: this.gameRegistry.get('playerColor') ?? this.loadStringSetting('playerColor', SettingsManager.DEFAULT_SETTINGS.playerColor),
-            whoGoesFirst: this.gameRegistry.get('whoGoesFirst') ?? this.loadStringSetting('whoGoesFirst', SettingsManager.DEFAULT_SETTINGS.whoGoesFirst),
             levelSetId: this.gameRegistry.get('levelSetId') ?? this.loadStringSetting('levelSetId', SettingsManager.DEFAULT_SETTINGS.levelSetId)
         };
     }
@@ -88,7 +83,6 @@ export class SettingsManager {
     private syncToRegistry(settings: GameSettings): void {
         this.gameRegistry.set('soundEffectsEnabled', settings.soundEffectsEnabled);
         this.gameRegistry.set('playerColor', settings.playerColor);
-        this.gameRegistry.set('whoGoesFirst', settings.whoGoesFirst);
         this.gameRegistry.set('levelSetId', settings.levelSetId);
     }
 
