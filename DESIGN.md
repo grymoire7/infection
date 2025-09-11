@@ -267,11 +267,11 @@ This section outlines an incremental development process for building the Dots g
 - [x] Add content to Tutorial scene
 - [ ] Recreate Splash scene with new logo
 - [ ] Rearrange Game scene
-    - [ ] Move level set and level name to top left
-    - [ ] Move turn indicator to top left as tile with appropriate sprite
+    - [x] Move turn indicator to top left as tile with appropriate sprite
+    - [ ] Move level set and level name to top left ?
     - [ ] Add level description top center above the board
 - [ ] Improve Settings scene
-    - [ ] Remove "Who goes first" option. The player should always go first.
+    - [x] Remove "Who goes first" option. The player should always go first.
     - [x] Remove "AI Difficulty" option. This should be part of the level definition.
     - [ ] Change "Player color" option to "Player side" with options "Germs" and "White Cells"
         - [ ] Add associated sprite to the option

@@ -1,9 +1,9 @@
 export class GameUIManager {
     private scene: Phaser.Scene;
-    private currentPlayerText: Phaser.GameObjects.Text;
     private levelInfoText: Phaser.GameObjects.Text;
     private undoButton: Phaser.GameObjects.Text;
     private quitButton: Phaser.GameObjects.Text;
+    private currentPlayerSprite: Phaser.GameObjects.Sprite;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -12,19 +12,19 @@ export class GameUIManager {
     /**
      * Create all UI elements for the game
      */
-    createUI(): { currentPlayerText: Phaser.GameObjects.Text, levelInfoText: Phaser.GameObjects.Text, undoButton: Phaser.GameObjects.Text, quitButton: Phaser.GameObjects.Text } {
+    createUI(): { levelInfoText: Phaser.GameObjects.Text, undoButton: Phaser.GameObjects.Text, quitButton: Phaser.GameObjects.Text, currentPlayerSprite: Phaser.GameObjects.Sprite } {
         this.createTitle();
         this.createInstructions();
-        this.createPlayerIndicator();
         this.createLevelInfo();
+        this.createCurrentPlayerSprite();
         this.createUndoButton();
         this.createQuitButton();
 
         return {
-            currentPlayerText: this.currentPlayerText,
             levelInfoText: this.levelInfoText,
             undoButton: this.undoButton,
-            quitButton: this.quitButton
+            quitButton: this.quitButton,
+            currentPlayerSprite: this.currentPlayerSprite
         };
     }
 
@@ -48,28 +48,30 @@ export class GameUIManager {
         }).setOrigin(0.5);
     }
 
-    private createPlayerIndicator(): void {
-        const indicatorFontSize = Math.min(24, this.scene.cameras.main.width / 35);
-        this.currentPlayerText = this.scene.add.text(this.scene.cameras.main.width / 2, 70, '', {
-            fontFamily: 'Arial Black', 
-            fontSize: indicatorFontSize, 
-            color: '#ffffff'
-        }).setOrigin(0.5);
-    }
-
     private createLevelInfo(): void {
         const levelInfoFontSize = Math.min(18, this.scene.cameras.main.width / 45);
-        this.levelInfoText = this.scene.add.text(this.scene.cameras.main.width / 2, 100, '', {
+        this.levelInfoText = this.scene.add.text(this.scene.cameras.main.width / 2, 70, '', {
             fontFamily: 'Arial', 
             fontSize: levelInfoFontSize, 
             color: '#ffffff'
         }).setOrigin(0.5);
     }
 
+    private createCurrentPlayerSprite(): void {
+        const spriteSize = Math.min(3.0, this.scene.cameras.main.width / 200);
+        const spriteX = Math.min(80, this.scene.cameras.main.width * 0.08);
+        const spriteY = Math.min(80, this.scene.cameras.main.height * 0.12);
+        
+        // Start with red sprite by default
+        this.currentPlayerSprite = this.scene.add.sprite(spriteX, spriteY, 'evil-sprite');
+        this.currentPlayerSprite.setScale(spriteSize);
+        this.currentPlayerSprite.play('evil-dot-pulse');
+    }
+
     private createUndoButton(): void {
         const buttonFontSize = Math.min(20, this.scene.cameras.main.width / 40);
         const buttonX = Math.min(50, this.scene.cameras.main.width * 0.05);
-        const buttonY = Math.min(50, this.scene.cameras.main.height * 0.08);
+        const buttonY = Math.min(150, this.scene.cameras.main.height * 0.22);
         
         this.undoButton = this.scene.add.text(buttonX, buttonY, 'Undo', {
             fontFamily: 'Arial', 
@@ -93,7 +95,7 @@ export class GameUIManager {
     private createQuitButton(): void {
         const buttonFontSize = Math.min(20, this.scene.cameras.main.width / 40);
         const buttonX = Math.min(50, this.scene.cameras.main.width * 0.05);
-        const buttonY = Math.min(100, this.scene.cameras.main.height * 0.15);
+        const buttonY = Math.min(200, this.scene.cameras.main.height * 0.29);
         
         this.quitButton = this.scene.add.text(buttonX, buttonY, 'Quit', {
             fontFamily: 'Arial', 
@@ -118,11 +120,14 @@ export class GameUIManager {
      * Update the player indicator display
      */
     updatePlayerIndicator(currentPlayer: 'red' | 'blue'): void {
-        const playerColor = currentPlayer === 'red' ? '#ff0000' : '#0000ff';
-        const playerName = currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1);
-
-        this.currentPlayerText.setText(`Current Player: ${playerName}`);
-        this.currentPlayerText.setColor(playerColor);
+        // Update the sprite to match the current player
+        if (currentPlayer === 'red') {
+            this.currentPlayerSprite.setTexture('evil-sprite');
+            this.currentPlayerSprite.play('evil-dot-pulse');
+        } else {
+            this.currentPlayerSprite.setTexture('good-sprite');
+            this.currentPlayerSprite.play('good-dot-pulse');
+        }
     }
 
     /**

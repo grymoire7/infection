@@ -26,10 +26,10 @@ export class Game extends Scene
     boardState: CellState[][];
     currentPlayer: 'red' | 'blue' = 'red';
     humanPlayer: 'red' | 'blue' = 'red';
-    currentPlayerText: Phaser.GameObjects.Text;
     levelInfoText: Phaser.GameObjects.Text;
     undoButton: Phaser.GameObjects.Text;
     quitButton: Phaser.GameObjects.Text;
+    currentPlayerSprite: Phaser.GameObjects.Sprite;
     computerPlayer: ComputerPlayer | null = null;
     stateManager: GameStateManager;
     uiManager: GameUIManager;
@@ -76,10 +76,10 @@ export class Game extends Scene
 
     private initializeUI(): void {
         const uiElements = this.uiManager.createUI();
-        this.currentPlayerText = uiElements.currentPlayerText;
         this.levelInfoText = uiElements.levelInfoText;
         this.undoButton = uiElements.undoButton;
         this.quitButton = uiElements.quitButton;
+        this.currentPlayerSprite = uiElements.currentPlayerSprite;
         
         this.uiManager.setUndoButtonHandler(() => this.undoLastMove());
         this.uiManager.setQuitButtonHandler(() => this.quitGame());
@@ -779,15 +779,13 @@ export class Game extends Scene
         this.initializeGameSettingsForLevel(levelSetId, levelId);
         
         // Update UI only if UI elements exist
-        if (this.currentPlayerText) {
-            this.updatePlayerIndicator();
-        }
         if (this.levelInfoText) {
             this.updateLevelInfo();
         }
         if (this.undoButton) {
             this.updateUndoButton();
         }
+        this.updatePlayerIndicator();
         
         // Save level info to registry
         this.game.registry.set('currentLevelSetId', levelSetId);
