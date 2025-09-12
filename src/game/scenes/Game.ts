@@ -617,8 +617,13 @@ export class Game extends Scene
         if (levelId) {
             const level = getLevelById(levelId);
             if (level) {
-                this.gridSize = level.gridSize;
+                this.gridSize = Math.min(level.gridSize, 9);
                 this.blockedCells = level.blockedCells;
+                
+                // Log warning if grid size was clamped
+                if (level.gridSize > 9) {
+                    console.warn(`Level ${levelId} grid size ${level.gridSize} exceeds maximum of 9, clamped to 9`);
+                }
             }
         }
 
@@ -774,9 +779,14 @@ export class Game extends Scene
         const level = getLevelById(levelId);
         if (!level) return;
         
-        // Set level properties
-        this.gridSize = level.gridSize;
+        // Set level properties with maximum grid size constraint
+        this.gridSize = Math.min(level.gridSize, 9);
         this.blockedCells = level.blockedCells;
+        
+        // Log warning if grid size was clamped
+        if (level.gridSize > 9) {
+            console.warn(`Level ${levelId} grid size ${level.gridSize} exceeds maximum of 9, clamped to 9`);
+        }
         
         // Reset game state
         this.clearSavedGameState();

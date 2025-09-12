@@ -2,6 +2,20 @@ import { Level, LevelSet } from './GameStateManager';
 
 // Define all levels separately
 export const LEVELS: Record<string, Level> = {
+    'level-x': {
+        id: 'level-x',
+        name: '19x19 Grid',
+        description: 'A simple 19x19 grid to get started',
+        gridSize: 19,
+        blockedCells: []
+    },
+    'level-9': {
+        id: 'level-9',
+        name: '9x9 Grid',
+        description: 'A simple 9x9 grid to get started',
+        gridSize: 9,
+        blockedCells: []
+    },
     'level-a': {
         id: 'level-a',
         name: '3x3 Grid',
@@ -73,8 +87,8 @@ export const BASIC_LEVEL_SET: LevelSet = {
     name: 'Basic Levels',
     description: 'The standard set of levels to learn and master the game',
     levelEntries: [
+        { levelId: 'level-x', aiDifficulty: 'easy' },
         { levelId: 'level-a', aiDifficulty: 'easy' },
-        { levelId: 'level-b', aiDifficulty: 'easy' },
         { levelId: 'level-1', aiDifficulty: 'easy' },
         { levelId: 'level-2', aiDifficulty: 'easy' },
         { levelId: 'level-3', aiDifficulty: 'medium' }

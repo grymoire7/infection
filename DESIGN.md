@@ -233,7 +233,7 @@ This section outlines an incremental development process for building the Dots g
     - blocked cells have a capacity of 0
     - blocked cells are never counted when determining another cell's capacity
     - bloacked cells should be visually distinct (e.g., a bright gray color)
-- [ ] Add board size options (3x3 to 9x9)
+- [x] Add board size options (3x3 to 9x9)
 - [x] Implement save/load game functionality -- state is tracked in local storage
 
 ### Phase 8: Use sprites and animations
