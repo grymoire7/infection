@@ -87,11 +87,9 @@ export const BASIC_LEVEL_SET: LevelSet = {
     name: 'Basic Levels',
     description: 'The standard set of levels to learn and master the game',
     levelEntries: [
-        { levelId: 'level-x', aiDifficulty: 'easy' },
         { levelId: 'level-a', aiDifficulty: 'easy' },
-        { levelId: 'level-1', aiDifficulty: 'easy' },
-        { levelId: 'level-2', aiDifficulty: 'easy' },
-        { levelId: 'level-3', aiDifficulty: 'medium' }
+        { levelId: 'level-b', aiDifficulty: 'easy' },
+        { levelId: 'level-3', aiDifficulty: 'easy' }
     ]
 };
 

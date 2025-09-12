@@ -2,19 +2,20 @@ import { GameObjects, Scene } from 'phaser';
 import { EventBus } from '../EventBus';
 import { LEVEL_SETS, getLevelById } from '../LevelDefinitions';
 
-export class GameOver extends Scene
+export class LevelOver extends Scene
 {
     camera: Phaser.Cameras.Scene2D.Camera;
     background: GameObjects.Image;
-    gameOverText: GameObjects.Text;
+    levelCompleteText: GameObjects.Text;
     winnerText: GameObjects.Text;
+    levelInfoText: GameObjects.Text;
+    nextLevelButton: GameObjects.Text;
     restartButton: GameObjects.Text;
     mainMenuButton: GameObjects.Text;
-    nextLevelButton: GameObjects.Text;
 
     constructor ()
     {
-        super('GameOver');
+        super('LevelOver');
     }
 
     create ()
@@ -28,53 +29,25 @@ export class GameOver extends Scene
         this.background = this.add.image(centerX, centerY, 'background');
         this.background.setAlpha(0.3);
 
-        // Get winner from registry
+        // Get winner and level info from registry
         const winner = this.game.registry.get('gameWinner') || 'Unknown';
         const levelSetId = this.game.registry.get('currentLevelSetId');
         const levelId = this.game.registry.get('currentLevelId');
 
-        // Determine the type of game over
-        const isAbandoned = winner === 'Abandoned';
-        const isLevelSetComplete = !isAbandoned && levelSetId && levelId && this.isLevelSetComplete(levelSetId, levelId);
-
-        // Game Over title
+        // Level Complete title
         const titleFontSize = Math.min(48, this.cameras.main.width / 15);
-        let titleText = 'Game Over';
-        let titleColor = '#ffffff';
-        
-        if (isLevelSetComplete) {
-            titleText = 'Level Set Complete!';
-            titleColor = '#44ff44';
-        } else if (isAbandoned) {
-            titleText = 'Game Abandoned';
-            titleColor = '#ffaa00';
-        }
-
-        this.gameOverText = this.add.text(centerX, centerY * 0.3, titleText, {
+        this.levelCompleteText = this.add.text(centerX, centerY * 0.3, 'Level Complete!', {
             fontFamily: 'Arial Black', 
             fontSize: titleFontSize, 
-            color: titleColor,
-            stroke: '#000000',
+            color: '#44ff44',
+            stroke: '#005500',
             strokeThickness: 6
         }).setOrigin(0.5);
 
-        // Winner announcement or status message
+        // Winner announcement
         const winnerFontSize = Math.min(36, this.cameras.main.width / 20);
-        let winnerColor = '#ffffff';
-        let winnerMessage = '';
-
-        if (isAbandoned) {
-            winnerColor = '#ffaa00';
-            winnerMessage = 'Better luck next time!';
-        } else if (isLevelSetComplete) {
-            winnerColor = '#44ff44';
-            winnerMessage = 'Congratulations!';
-        } else {
-            winnerColor = winner === 'Red' ? '#ff0000' : '#0000ff';
-            winnerMessage = `${winner} Player Wins!`;
-        }
-
-        this.winnerText = this.add.text(centerX, centerY * 0.45, winnerMessage, {
+        const winnerColor = winner === 'Red' ? '#ff0000' : '#0000ff';
+        this.winnerText = this.add.text(centerX, centerY * 0.45, `${winner} Player Wins!`, {
             fontFamily: 'Arial Black', 
             fontSize: winnerFontSize, 
             color: winnerColor,
@@ -82,12 +55,12 @@ export class GameOver extends Scene
             strokeThickness: 4
         }).setOrigin(0.5);
 
-        // Level set completion status
-        if (isLevelSetComplete && levelSetId) {
-            const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
-            if (levelSet) {
+        // Level info
+        if (levelSetId && levelId) {
+            const level = getLevelById(levelId);
+            if (level) {
                 const levelInfoFontSize = Math.min(24, this.cameras.main.width / 35);
-                this.add.text(centerX, centerY * 0.55, `Completed: ${levelSet.name}`, {
+                this.levelInfoText = this.add.text(centerX, centerY * 0.55, `Level: ${level.name}`, {
                     fontFamily: 'Arial', 
                     fontSize: levelInfoFontSize, 
                     color: '#cccccc'
@@ -97,10 +70,43 @@ export class GameOver extends Scene
 
         // Buttons
         const buttonFontSize = Math.min(24, this.cameras.main.width / 30);
+        
+        // Next Level button (check if there's a next level)
+        let hasNextLevel = false;
+        if (levelSetId && levelId) {
+            const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
+            if (levelSet) {
+                const currentIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === levelId);
+                if (currentIndex !== -1 && currentIndex + 1 < levelSet.levelEntries.length) {
+                    hasNextLevel = true;
+                    this.nextLevelButton = this.add.text(centerX, centerY * 0.7, 'Next Level', {
+                        fontFamily: 'Arial', 
+                        fontSize: buttonFontSize, 
+                        color: '#ffffff',
+                        backgroundColor: '#228822',
+                        padding: { x: 20, y: 10 }
+                    }).setOrigin(0.5);
 
-        // Play Again button (for abandoned games or level set completion)
-        let buttonY = centerY * 0.7;
-        this.restartButton = this.add.text(centerX, buttonY, isAbandoned ? 'Try Again' : 'Play Again', {
+                    this.nextLevelButton.setInteractive();
+                    this.nextLevelButton.on('pointerdown', () => {
+                        // Store level progression info to load next level
+                        this.game.registry.set('loadNextLevel', true);
+                        this.scene.start('Game');
+                    });
+
+                    this.nextLevelButton.on('pointerover', () => {
+                        this.nextLevelButton.setBackgroundColor('#44aa44');
+                    });
+
+                    this.nextLevelButton.on('pointerout', () => {
+                        this.nextLevelButton.setBackgroundColor('#228822');
+                    });
+                }
+            }
+        }
+
+        // Restart Level button
+        this.restartButton = this.add.text(centerX, centerY * (hasNextLevel ? 0.8 : 0.7), 'Restart Level', {
             fontFamily: 'Arial', 
             fontSize: buttonFontSize, 
             color: '#ffffff',
@@ -122,8 +128,7 @@ export class GameOver extends Scene
         });
 
         // Main Menu button
-        buttonY += centerY * 0.1;
-        this.mainMenuButton = this.add.text(centerX, buttonY, 'Main Menu', {
+        this.mainMenuButton = this.add.text(centerX, centerY * (hasNextLevel ? 0.9 : 0.8), 'Main Menu', {
             fontFamily: 'Arial', 
             fontSize: buttonFontSize, 
             color: '#ffffff',
@@ -145,15 +150,6 @@ export class GameOver extends Scene
         });
 
         EventBus.emit('current-scene-ready', this);
-    }
-
-    private isLevelSetComplete(levelSetId: string, currentLevelId: string): boolean {
-        const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
-        if (!levelSet) return false;
-        
-        const currentIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === currentLevelId);
-        // Level set is complete if this is the last level
-        return currentIndex !== -1 && currentIndex === levelSet.levelEntries.length - 1;
     }
 
     changeScene ()

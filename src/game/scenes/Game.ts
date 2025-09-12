@@ -702,14 +702,31 @@ export class Game extends Scene
         // Reset the game state
         this.clearSavedGameState();
         
-        // Store winner information for GameOver scene
+        // Store winner information
         this.game.registry.set('gameWinner', winner);
         
-        // Add a short pause before transitioning to GameOver scene
+        // Determine which scene to show based on the context
+        const levelSetId = this.game.registry.get('currentLevelSetId');
+        const levelId = this.game.registry.get('currentLevelId');
+        let targetScene = 'GameOver';
+        
+        // If this is a level completion (not abandonment), check if we should show LevelOver
+        if (winner !== 'Abandoned' && levelSetId && levelId) {
+            const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
+            if (levelSet) {
+                const currentIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === levelId);
+                const isLastLevel = currentIndex !== -1 && currentIndex === levelSet.levelEntries.length - 1;
+                
+                // Show LevelOver for individual level completion, GameOver for level set completion
+                targetScene = isLastLevel ? 'GameOver' : 'LevelOver';
+            }
+        }
+        
+        // Add a short pause before transitioning
         // This allows the user to see the final resolved game state
         this.time.delayedCall(1500, () => {
             this.game.registry.remove('gameEnding');
-            this.scene.start('GameOver');
+            this.scene.start(targetScene);
         });
     }
 

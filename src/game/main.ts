@@ -2,6 +2,7 @@ import { About } from './scenes/About';
 import { Tutorial } from './scenes/Tutorial';
 import { Boot } from './scenes/Boot';
 import { GameOver } from './scenes/GameOver';
+import { LevelOver } from './scenes/LevelOver';
 import { Game as MainGame } from './scenes/Game';
 import { MainMenu } from './scenes/MainMenu';
 import { AUTO, Game } from 'phaser';
@@ -38,6 +39,7 @@ const config: Phaser.Types.Core.GameConfig = {
         Tutorial,
         Settings,
         MainGame,
+        LevelOver,
         GameOver
     ]
 };
