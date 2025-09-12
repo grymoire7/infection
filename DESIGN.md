@@ -234,16 +234,12 @@ This section outlines an incremental development process for building the Dots g
     - blocked cells are never counted when determining another cell's capacity
     - bloacked cells should be visually distinct (e.g., a bright gray color)
 - [ ] Add board size options (3x3 to 9x9)
-- [ ] Add game statistics tracking
-- [ ] Implement save/load game functionality
-- [ ] Implement player progress saving and loading
-- [ ] Add scoring system based on performance across levels
+- [x] Implement save/load game functionality -- state is tracked in local storage
 
 ### Phase 8: Use sprites and animations
 - [x] Add sprite animations for dot placement instead of simple circles
 - [x] Use sprite animations for main menu instead of simple circles
 - [x] Improve dot pulse animation
-- [ ] Add explosion animations ?
 
 ### Phase 9: Scene Creation and Management
 - [x] Move current MainMenu code to a Splash scene
@@ -257,12 +253,14 @@ This section outlines an incremental development process for building the Dots g
 - [x] Create About scene with game information and credits
 - [x] Create Tutorial scene with game instructions
 - [ ] Create seperate LevelOver and GameOver scenes
+- [ ] Improve design of LevelOver and GameOver scenes
 
 ### Phase 10: Finish Rebranding
-- [x] Change game name from "Dots" to "Infection! Germs vs White Cells" ?
+- [x] Change game name from "Dots" to "Infection! Germs vs White Cells"
 - [x] Change spash screen logo
 - [ ] Rename repository
-- [ ] Update README.md
+- [ ] Update screenshot.png
+- [x] Update README.md: Dots -> Infection! Germs vs White Cells
 
 ### Phase 11: Scene content
 - [x] Add content to About scene
@@ -271,11 +269,10 @@ This section outlines an incremental development process for building the Dots g
     - [x] Move turn indicator to top left as tile with appropriate sprite
     - [ ] Move level set and level name to top left ?
     - [ ] Add level description top center above the board
-- [ ] Improve Settings scene
+- [x] Improve Settings scene
     - [x] Remove "Who goes first" option. The player should always go first.
     - [x] Remove "AI Difficulty" option. This should be part of the level definition.
-    - [ ] Change "Player color" option to "Player side" with options "Germs" and "White Cells"
-        - [ ] Add associated sprite to the option
+    - [x] Change "Player color" option to "Player" with sprite options
 
 ### Phase 12: Ship it!
 - [ ] Add more chohesive level sets and levels
@@ -288,15 +285,17 @@ This section outlines an incremental development process for building the Dots g
     - [ ] The expert level AI could be improved further.
     - [x] The level definition has a 'difficulty' field that is not currently used. Possibly use it to adjust the computer AI strategy.
     - [x] If we do this, we could remove the 'difficulty' selection from the settings menu.
-- [ ] Add tutorial level set with guided instructions <-- Would this be better or worse than a tutorial scene?
 - [ ] Create multiple level sets with different themes
 - [ ] Add keyboard controls for accessibility
-- [ ] Implement screen reader support
-- [ ] Add background music and enhanced sound effects
-- [ ] Add visual themes and customization options
 - [ ] Performance optimization and testing
-- [ ] Create level editor for custom level creation
 - [ ] Implement achievements and badges system
-- [ ] Add social features for sharing progress
+
+### Deferred Features
+- [ ] Add scoring system based on performance across levels
+- [ ] Add game statistics tracking
+- [ ] Add explosion animations ?
+- [ ] Add background music and enhanced sound effects
+- [ ] Create level editor for custom level creation - JSON format is easy enough to edit
+- [ ] Add visual themes and customization options
 
 Each phase builds upon the previous one, allowing for incremental testing and refinement of game mechanics.

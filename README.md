@@ -1,19 +1,19 @@
-# Dots game
+# Infection! game
 
-Dots is a 2D turn-based grid game that uses the Phaser 3 game library, the Vue
-framework, TypeScript and Vite for bundling. It includes a bridge for Vue to
-Phaser game communication, hot-reloading for quick development workflow and
-scripts to generate production-ready builds.
+"Infection! Germs vs White Cells" is a 2D turn-based grid game that uses the
+Phaser 3 game library, the Vue framework, TypeScript and Vite for bundling. It
+includes a bridge for Vue to Phaser game communication, hot-reloading for quick
+development workflow and scripts to generate production-ready builds.
 
 ### Play the stable version
 
-Dots is a web-based game. You can play it online at: [https://magicbydesign.com/dots](https://magicbydesign.com/dots)
+Infection! is a web-based game. You can play it online at: [https://magicbydesign.com/dots](https://magicbydesign.com/dots)
 
 ![screenshot](screenshot.png)
 
 ## Technology versions
 
-Dots uses:
+Infection! uses:
 
 - [Phaser 3.90.0](https://github.com/phaserjs/phaser)
 - [Vue 3.5.13](https://github.com/vuejs)
@@ -164,7 +164,7 @@ the `dist` folder to a public facing web server.
 
 ## Credits & Thanks
 
-Dots was created by [Tracy Atteberry](https://tracyatteberry.com) with [Phaser 3](https://phaser.io).
+Infection! was created by [Tracy Atteberry](https://tracyatteberry.com) with [Phaser 3](https://phaser.io).
 
 Thanks to Phaser! I started with the Phaser template "template-vue-ts", then
 mangled it beyond recognition from there. At this point, no blame can be
