@@ -252,7 +252,7 @@ This section outlines an incremental development process for building the Dots g
     - High Scores (future)
 - [x] Create About scene with game information and credits
 - [x] Create Tutorial scene with game instructions
-- [ ] Create seperate LevelOver and GameOver scenes
+- [x] Create seperate LevelOver and GameOver scenes
 - [ ] Improve design of LevelOver and GameOver scenes
 
 ### Phase 10: Finish Rebranding
