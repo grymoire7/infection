@@ -253,13 +253,12 @@ This section outlines an incremental development process for building the Dots g
 - [x] Create About scene with game information and credits
 - [x] Create Tutorial scene with game instructions
 - [x] Create seperate LevelOver and GameOver scenes
-- [ ] Improve design of LevelOver and GameOver scenes
 
 ### Phase 10: Finish Rebranding
 - [x] Change game name from "Dots" to "Infection! Germs vs White Cells"
 - [x] Change spash screen logo
 - [ ] Rename repository
-- [ ] Update screenshot.png
+- [x] Update screenshot.png
 - [x] Update README.md: Dots -> Infection! Germs vs White Cells
 
 ### Phase 11: Scene content
@@ -273,6 +272,7 @@ This section outlines an incremental development process for building the Dots g
     - [x] Remove "Who goes first" option. The player should always go first.
     - [x] Remove "AI Difficulty" option. This should be part of the level definition.
     - [x] Change "Player color" option to "Player" with sprite options
+- [ ] Improve design of LevelOver and GameOver scenes
 
 ### Phase 12: Ship it!
 - [ ] Add more chohesive level sets and levels
