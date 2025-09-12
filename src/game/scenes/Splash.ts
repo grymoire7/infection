@@ -23,16 +23,18 @@ export class Splash extends Scene
         
         this.background = this.add.image(centerX, centerY, 'background');
 
-        this.logo = this.add.image(centerX, centerY, 'logo').setDepth(100);
-        
-        // Scale logo based on screen size
-        const logoScale = Math.min(1, this.cameras.main.width / 1024);
-        this.logo.setScale(logoScale);
 
-        const titleFontSize = Math.min(38, this.cameras.main.width / 20);
-        this.title = this.add.text(centerX, centerY * 1.2, 'Infection!', {
+        const titleFontSize = Math.min(84, this.cameras.main.width * .5);
+        this.title = this.add.text(centerX, centerY * .9, 'Infection!', {
             fontFamily: 'Arial Black', fontSize: titleFontSize, color: '#44ff44',
-            stroke: '#005500', strokeThickness: 6,
+            stroke: '#005500', strokeThickness: 10,
+            align: 'center'
+        }).setOrigin(0.5).setDepth(100);
+
+        const subtitleFontSize = Math.min(24, this.cameras.main.width * .25);
+        this.title = this.add.text(centerX, centerY * 1.1, 'Germs vs White Cells', {
+            fontFamily: 'Arial Black', fontSize: subtitleFontSize, color: '#44ff44',
+            stroke: '#005500', strokeThickness: 5,
             align: 'center'
         }).setOrigin(0.5).setDepth(100);
 
@@ -70,7 +72,7 @@ export class Splash extends Scene
                 dot.toggleFlipX(); // Randomly flip for variety
             }
             dot.play(animationKeys[spriteIndex]);
-            dot.setDepth(50); // Behind logo (100) and title (100), in front of background
+            dot.setDepth(50); // Behind title (100), in front of background
             
             this.animatedDots.push(dot);
             

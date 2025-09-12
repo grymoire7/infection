@@ -47,7 +47,7 @@ export class Settings extends Scene
         const labelX = centerX - 100;
         const labelY = centerY * 0.65;
         
-        this.add.text(labelX, labelY, 'Sound Effects:', {
+        this.add.text(labelX, labelY, 'Sound:', {
             fontFamily: 'Arial', 
             fontSize: labelFontSize, 
             color: '#ffffff'
@@ -105,7 +105,7 @@ export class Settings extends Scene
 
         // Level Set Selection
         const levelSetLabelY = centerY * 0.95;
-        this.add.text(labelX, levelSetLabelY, 'Level Set:', {
+        this.add.text(labelX, levelSetLabelY, 'Levels:', {
             fontFamily: 'Arial', 
             fontSize: labelFontSize, 
             color: '#ffffff'
