@@ -11,13 +11,12 @@ import { SettingsManager } from '../SettingsManager';
 export class Game extends Scene
 {
     // Game configuration constants
-    private static readonly DEFAULT_GRID_SIZE = 5;
     private static readonly COMPUTER_MOVE_DELAY = 1000;
     private static readonly EXPLOSION_DELAY = 300;
 
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.Image;
-    gridSize: number = Game.DEFAULT_GRID_SIZE;
+    gridSize: number = 5; // Will be set by level definition
     cellSize: number;
     gridStartX: number;
     gridStartY: number;
@@ -49,7 +48,6 @@ export class Game extends Scene
         this.initializeManagers();
         this.initializeUI();
         this.initializeGameSettings();
-        this.createGrid();
         this.loadGameStateOrLevel();
         this.updateUI();
         
@@ -90,6 +88,7 @@ export class Game extends Scene
         if (this.stateManager.hasSavedState()) {
             console.log('Loading saved game state');
             this.loadGameState();
+            this.createGrid();
             this.recreateAllVisualDots();
             this.updateAllCellOwnership();
         } else {
@@ -611,14 +610,24 @@ export class Game extends Scene
         const savedState = this.stateManager.loadFromRegistry();
         if (!savedState) return;
 
+        const levelSetId = this.game.registry.get('currentLevelSetId') || 'default';
+        const levelId = this.game.registry.get('currentLevelId') || 'level-1';
+
+        // Set grid size from the current level before restoring board state
+        if (levelId) {
+            const level = getLevelById(levelId);
+            if (level) {
+                this.gridSize = level.gridSize;
+                this.blockedCells = level.blockedCells;
+            }
+        }
+
         this.boardState = savedState.boardState;
         this.currentPlayer = savedState.currentPlayer;
         this.humanPlayer = savedState.humanPlayer;
         const computerColor = savedState.computerPlayerColor;
 
         // Get AI difficulty from current level context
-        const levelSetId = this.game.registry.get('currentLevelSetId') || 'default';
-        const levelId = this.game.registry.get('currentLevelId') || 'level-1';
         const aiDifficulty = getAIDifficultyForLevel(levelSetId, levelId);
         
         this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
