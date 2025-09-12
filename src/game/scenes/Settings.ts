@@ -9,6 +9,7 @@ export class Settings extends Scene
     title: GameObjects.Text;
     soundToggleButton: GameObjects.Text;
     playerColorButton: GameObjects.Text;
+    playerSprite: GameObjects.Sprite;
     levelSetButton: GameObjects.Text;
     
     private settingsManager: SettingsManager;
@@ -53,7 +54,7 @@ export class Settings extends Scene
             color: '#ffffff'
         }).setOrigin(0, 0.5);
 
-        this.soundToggleButton = this.add.text(labelX + 170, labelY, '', {
+        this.soundToggleButton = this.add.text(labelX + 100, labelY, '', {
             fontFamily: 'Arial', 
             fontSize: labelFontSize, 
             color: '#ffffff',
@@ -74,20 +75,29 @@ export class Settings extends Scene
             this.soundToggleButton.setBackgroundColor('#666666');
         });
 
-        // Player Color Selection
+        // Player Selection
         const playerColorLabelY = centerY * 0.8;
-        this.add.text(labelX, playerColorLabelY, 'Player Color:', {
+        this.add.text(labelX, playerColorLabelY, 'Player:', {
             fontFamily: 'Arial', 
             fontSize: labelFontSize, 
             color: '#ffffff'
         }).setOrigin(0, 0.5);
 
-        this.playerColorButton = this.add.text(labelX + 170, playerColorLabelY, '', {
+        // Create animated sprite for player selection
+        const spriteSize = Math.min(2.5, this.cameras.main.width / 250);
+        const spriteX = labelX + 100;
+        this.playerSprite = this.add.sprite(spriteX, playerColorLabelY, 'evil-sprite');
+        this.playerSprite.setScale(spriteSize);
+        this.playerSprite.play('evil-dot-pulse');
+        this.playerSprite.setOrigin(0, 0.5);
+
+        // Create invisible button area around the sprite for interaction
+        this.playerColorButton = this.add.text(spriteX, playerColorLabelY, '        ', {
             fontFamily: 'Arial', 
             fontSize: labelFontSize, 
-            color: '#ffffff',
-            backgroundColor: '#666666',
-            padding: { x: 15, y: 8 }
+            color: 'transparent',
+            backgroundColor: 'transparent',
+            padding: { x: 20, y: 15 }
         }).setOrigin(0, 0.5);
 
         this.playerColorButton.setInteractive();
@@ -96,11 +106,11 @@ export class Settings extends Scene
         });
 
         this.playerColorButton.on('pointerover', () => {
-            this.playerColorButton.setBackgroundColor('#888888');
+            this.playerSprite.setTint(0xcccccc);
         });
 
         this.playerColorButton.on('pointerout', () => {
-            this.playerColorButton.setBackgroundColor('#666666');
+            this.playerSprite.clearTint();
         });
 
         // Level Set Selection
@@ -111,7 +121,7 @@ export class Settings extends Scene
             color: '#ffffff'
         }).setOrigin(0, 0.5);
 
-        this.levelSetButton = this.add.text(labelX + 170, levelSetLabelY, '', {
+        this.levelSetButton = this.add.text(labelX + 100, levelSetLabelY, '', {
             fontFamily: 'Arial', 
             fontSize: labelFontSize, 
             color: '#ffffff',
@@ -133,7 +143,7 @@ export class Settings extends Scene
         });
 
         this.updateSoundToggleButton();
-        this.updatePlayerColorButton();
+        this.updatePlayerSprite();
         this.updateLevelSetButton();
 
         EventBus.emit('current-scene-ready', this);
@@ -159,15 +169,20 @@ export class Settings extends Scene
     {
         this.currentSettings.playerColor = this.currentSettings.playerColor === 'red' ? 'blue' : 'red';
         this.settingsManager.updateSetting('playerColor', this.currentSettings.playerColor);
-        this.updatePlayerColorButton();
+        this.updatePlayerSprite();
         
         console.log(`Player color set to: ${this.currentSettings.playerColor}`);
     }
 
-    updatePlayerColorButton()
+    updatePlayerSprite()
     {
-        this.playerColorButton.setText(this.currentSettings.playerColor.charAt(0).toUpperCase() + this.currentSettings.playerColor.slice(1));
-        this.playerColorButton.setColor(this.currentSettings.playerColor === 'red' ? '#ff0000' : '#0000ff');
+        if (this.currentSettings.playerColor === 'red') {
+            this.playerSprite.setTexture('evil-sprite');
+            this.playerSprite.play('evil-dot-pulse');
+        } else {
+            this.playerSprite.setTexture('good-sprite');
+            this.playerSprite.play('good-dot-pulse');
+        }
     }
 
     cycleLevelSet()

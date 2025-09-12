@@ -259,13 +259,14 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Create seperate LevelOver and GameOver scenes
 
 ### Phase 10: Finish Rebranding
-- [ ] Change game name from "Dots" to "Infection! Germs vs White Cells" ?
-- [ ] Change spash screen logo
+- [x] Change game name from "Dots" to "Infection! Germs vs White Cells" ?
+- [x] Change spash screen logo
+- [ ] Rename repository
+- [ ] Update README.md
 
 ### Phase 11: Scene content
 - [x] Add content to About scene
 - [x] Add content to Tutorial scene
-- [ ] Recreate Splash scene with new logo
 - [ ] Rearrange Game scene
     - [x] Move turn indicator to top left as tile with appropriate sprite
     - [ ] Move level set and level name to top left ?
