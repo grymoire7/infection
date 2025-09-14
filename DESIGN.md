@@ -257,7 +257,7 @@ This section outlines an incremental development process for building the Dots g
 ### Phase 10: Finish Rebranding
 - [x] Change game name from "Dots" to "Infection! Germs vs White Cells"
 - [x] Change spash screen logo
-- [ ] Rename repository
+- [x] Rename repository
 - [x] Update screenshot.png
 - [x] Update README.md: Dots -> Infection! Germs vs White Cells
 
@@ -273,6 +273,12 @@ This section outlines an incremental development process for building the Dots g
     - [x] Remove "AI Difficulty" option. This should be part of the level definition.
     - [x] Change "Player color" option to "Player" with sprite options
 - [ ] Improve design of LevelOver and GameOver scenes
+    - [ ] Replace 'Restart Level' with 'Restart Game' on the LevelOver scene ?
+    - [ ] Add vertical spacing between buttons on both scenes
+    - [ ] Change "Blue/Red Player Wins!" to "White Cells/Germs Win!" and add
+          appropriate sprite, adjust text color
+    - [ ] On GameOver scene, change "Congratulations!" to show how many levels
+          were won out of total levels in the level set with overall winner
 
 ### Phase 12: Ship it!
 - [ ] Add more chohesive level sets and levels
@@ -288,7 +294,6 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Create multiple level sets with different themes
 - [ ] Add keyboard controls for accessibility
 - [ ] Performance optimization and testing
-- [ ] Implement achievements and badges system
 
 ### Deferred Features
 - [ ] Add scoring system based on performance across levels
@@ -297,5 +302,6 @@ This section outlines an incremental development process for building the Dots g
 - [ ] Add background music and enhanced sound effects
 - [ ] Create level editor for custom level creation - JSON format is easy enough to edit
 - [ ] Add visual themes and customization options
+- [ ] Implement achievements and badges system
 
 Each phase builds upon the previous one, allowing for incremental testing and refinement of game mechanics.
