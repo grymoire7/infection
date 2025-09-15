@@ -113,6 +113,27 @@ The game is played in a browser. The user interface includes:
 - Accessibility features such as keyboard controls and screen reader support.
 - See more in the "Game plan" section below.
 
+## Settings management
+
+- SettingsManager.ts
+  - solely responsible for reading/writing settings to/from localStorage and game.registry
+  - its primary job is to keep localStorage and game.registry in sync and define/use default settings when needed
+  - we store settings in localStorage so that they persist between game sessions
+  - we sync settings to game.registry so that they are easily accessible to all game scenes in an in-memory store
+  - reading is always attempted from the game.registry first, then localStorage, then defaults
+  - used by the Settings scene to get/set settings
+  - used by the Game scene to read settings, read only
+- Settings.ts scene
+  - displays current settings using SettingsManager to read them
+  - allows user to change settings using SettingsManager to write them
+- Game.ts scene
+  - Game scene never changes settings, only reads them using SettingsManager
+  - Game scene applies settings to game behavior (e.g. sound on/off, player alignment, levelSet)
+  - Game scene only applies the LevelSet setting when the game is started/restarted
+  - Game scene only applies the player alignment setting when the game is started/restarted
+  - Game scene always checks the SettingsManager for the sound setting before playing any sound
+    in case this setting was changed in the Settings scene during the course of a game
+
 
 ## Difficulty levels
 

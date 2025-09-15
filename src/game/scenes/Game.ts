@@ -510,7 +510,7 @@ export class Game extends Scene
         this.humanPlayer = settings.playerColor;
         const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
         
-        // Create computer player instance with default difficulty (will be overridden by level-specific difficulty)
+        // Difficulty 'easy' here will be overridden when the level is created with level-specific difficulty
         this.computerPlayer = new ComputerPlayer('easy', computerColor);
         this.currentPlayer = this.humanPlayer;
 
