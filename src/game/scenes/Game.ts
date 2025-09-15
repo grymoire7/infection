@@ -509,7 +509,7 @@ export class Game extends Scene
         // Set up game based on loaded settings
         this.humanPlayer = settings.playerColor;
         const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
-
+        
         // Create computer player instance with default difficulty (will be overridden by level-specific difficulty)
         this.computerPlayer = new ComputerPlayer('easy', computerColor);
         this.currentPlayer = this.humanPlayer;
@@ -517,23 +517,15 @@ export class Game extends Scene
         console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${computerColor}`);
     }
 
-    initializeGameSettingsForLevel(levelSetId: string, levelId: string)
+    setAIForLevel(levelSetId: string, levelId: string)
     {
-        // Load settings using SettingsManager
-        const settings = this.settingsManager.loadSettings();
-        
-        // Set up game based on loaded settings
-        this.humanPlayer = settings.playerColor;
-        const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
+        if (!this.computerPlayer) return;
 
-        // Get AI difficulty specific to this level
         const aiDifficulty = getAIDifficultyForLevel(levelSetId, levelId);
 
-        // Create computer player instance with level-specific difficulty
-        this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
-        this.currentPlayer = this.humanPlayer;
+        this.computerPlayer.setDifficulty(aiDifficulty);
 
-        console.log(`Game initialized for level: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty})`);
+        console.log(`AI set for level: Computer AI is ${aiDifficulty}`);
     }
 
     undoLastMove()
@@ -822,7 +814,8 @@ export class Game extends Scene
         this.updateAllCellOwnership();
         
         // Reset player turn with level-specific AI difficulty
-        this.initializeGameSettingsForLevel(levelSetId, levelId);
+        this.initializeGameSettings();
+        this.setAIForLevel(levelSetId, levelId);
         
         // Update UI only if UI elements exist
         if (this.levelInfoText) {
