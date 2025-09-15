@@ -1,6 +1,6 @@
 import { GameObjects, Scene } from 'phaser';
 import { EventBus } from '../EventBus';
-import { LEVEL_SETS, getLevelById } from '../LevelDefinitions';
+import { LEVEL_SETS } from '../LevelDefinitions';
 
 export class GameOver extends Scene
 {
