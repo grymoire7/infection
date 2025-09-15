@@ -273,8 +273,8 @@ This section outlines an incremental development process for building the Dots g
     - [x] Remove "AI Difficulty" option. This should be part of the level definition.
     - [x] Change "Player color" option to "Player" with sprite options
 - [ ] Improve design of LevelOver and GameOver scenes
-    - [ ] Replace 'Restart Level' with 'Restart Game' on the LevelOver scene ?
-    - [ ] Add vertical spacing between buttons on both scenes
+    - [x] Replace 'Restart Level' with 'Restart Game' on the LevelOver scene ?
+    - [x] Add vertical spacing between buttons on both scenes
     - [ ] Change "Blue/Red Player Wins!" to "White Cells/Germs Win!" and add
           appropriate sprite, adjust text color
     - [ ] On GameOver scene, change "Congratulations!" to show how many levels

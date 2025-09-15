@@ -26,6 +26,7 @@ export class Game extends Scene
     currentPlayer: 'red' | 'blue' = 'red';
     humanPlayer: 'red' | 'blue' = 'red';
     levelInfoText: Phaser.GameObjects.Text;
+    aiDifficultyText: Phaser.GameObjects.Text;
     undoButton: Phaser.GameObjects.Text;
     quitButton: Phaser.GameObjects.Text;
     currentPlayerSprite: Phaser.GameObjects.Sprite;
@@ -75,6 +76,7 @@ export class Game extends Scene
     private initializeUI(): void {
         const uiElements = this.uiManager.createUI();
         this.levelInfoText = uiElements.levelInfoText;
+        this.aiDifficultyText = uiElements.aiDifficultyText;
         this.undoButton = uiElements.undoButton;
         this.quitButton = uiElements.quitButton;
         this.currentPlayerSprite = uiElements.currentPlayerSprite;
@@ -100,6 +102,7 @@ export class Game extends Scene
     private updateUI(): void {
         this.updatePlayerIndicator();
         this.updateLevelInfo();
+        this.updateAIDifficulty();
         this.updateUndoButton();
     }
 
@@ -264,6 +267,13 @@ export class Game extends Scene
         } else {
             // Default text if level info isn't available
             this.uiManager.updateLevelInfo('Default Levels', 'Beginner\'s Grid');
+        }
+    }
+
+    updateAIDifficulty()
+    {
+        if (this.computerPlayer) {
+            this.uiManager.updateAIDifficulty(this.computerPlayer.getDifficulty());
         }
     }
 
@@ -818,6 +828,9 @@ export class Game extends Scene
         if (this.levelInfoText) {
             this.updateLevelInfo();
         }
+        if (this.aiDifficultyText) {
+            this.updateAIDifficulty();
+        }
         if (this.undoButton) {
             this.updateUndoButton();
         }
@@ -858,6 +871,7 @@ export class Game extends Scene
                 // For other setting changes, just update the UI
                 this.updatePlayerIndicator();
                 this.updateLevelInfo();
+                this.updateAIDifficulty();
             }
         }
         // If settings haven't changed but we're not in a game state, reload

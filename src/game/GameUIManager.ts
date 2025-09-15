@@ -1,6 +1,7 @@
 export class GameUIManager {
     private scene: Phaser.Scene;
     private levelInfoText: Phaser.GameObjects.Text;
+    private aiDifficultyText: Phaser.GameObjects.Text;
     private undoButton: Phaser.GameObjects.Text;
     private quitButton: Phaser.GameObjects.Text;
     private currentPlayerSprite: Phaser.GameObjects.Sprite;
@@ -12,16 +13,18 @@ export class GameUIManager {
     /**
      * Create all UI elements for the game
      */
-    createUI(): { levelInfoText: Phaser.GameObjects.Text, undoButton: Phaser.GameObjects.Text, quitButton: Phaser.GameObjects.Text, currentPlayerSprite: Phaser.GameObjects.Sprite } {
+    createUI(): { levelInfoText: Phaser.GameObjects.Text, aiDifficultyText: Phaser.GameObjects.Text, undoButton: Phaser.GameObjects.Text, quitButton: Phaser.GameObjects.Text, currentPlayerSprite: Phaser.GameObjects.Sprite } {
         this.createTitle();
         this.createInstructions();
         this.createLevelInfo();
         this.createCurrentPlayerSprite();
+        this.createAIDifficultyText();
         this.createUndoButton();
         this.createQuitButton();
 
         return {
             levelInfoText: this.levelInfoText,
+            aiDifficultyText: this.aiDifficultyText,
             undoButton: this.undoButton,
             quitButton: this.quitButton,
             currentPlayerSprite: this.currentPlayerSprite
@@ -66,6 +69,18 @@ export class GameUIManager {
         this.currentPlayerSprite = this.scene.add.sprite(spriteX, spriteY, 'evil-sprite');
         this.currentPlayerSprite.setScale(spriteSize);
         this.currentPlayerSprite.play('evil-dot-pulse');
+    }
+
+    private createAIDifficultyText(): void {
+        const difficultyFontSize = Math.min(16, this.scene.cameras.main.width / 50);
+        const difficultyX = Math.min(50, this.scene.cameras.main.width * 0.05);
+        const difficultyY = Math.min(120, this.scene.cameras.main.height * 0.18);
+        
+        this.aiDifficultyText = this.scene.add.text(difficultyX, difficultyY, 'AI: easy', {
+            fontFamily: 'Arial', 
+            fontSize: difficultyFontSize, 
+            color: '#cccccc'
+        }).setOrigin(0);
     }
 
     private createUndoButton(): void {
@@ -198,6 +213,13 @@ export class GameUIManager {
     disableUndoButton(): void {
         this.undoButton.removeInteractive();
         this.undoButton.setAlpha(0.3);
+    }
+
+    /**
+     * Update the AI difficulty display
+     */
+    updateAIDifficulty(difficulty: string): void {
+        this.aiDifficultyText.setText(`AI: ${difficulty}`);
     }
 
     /**
