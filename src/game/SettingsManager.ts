@@ -16,12 +16,14 @@ export class SettingsManager {
 
     constructor(gameRegistry: Phaser.Data.DataManager) {
         this.gameRegistry = gameRegistry;
+        // Ensure registry is synced with localStorage on initialization
+        this.loadSettings();
     }
 
     /**
      * Load all settings from localStorage and sync with game registry
      */
-    loadSettings(): GameSettings {
+    private loadSettings(): GameSettings {
         const settings: GameSettings = {
             soundEffectsEnabled: this.loadBooleanSetting('soundEffects', SettingsManager.DEFAULT_SETTINGS.soundEffectsEnabled),
             playerColor: this.loadStringSetting('playerColor', SettingsManager.DEFAULT_SETTINGS.playerColor) as 'red' | 'blue',
@@ -55,7 +57,7 @@ export class SettingsManager {
     getCurrentSettings(): GameSettings {
         return {
             soundEffectsEnabled: this.gameRegistry.get('soundEffectsEnabled') ?? this.loadBooleanSetting('soundEffects', SettingsManager.DEFAULT_SETTINGS.soundEffectsEnabled),
-            playerColor: this.gameRegistry.get('playerColor') ?? this.loadStringSetting('playerColor', SettingsManager.DEFAULT_SETTINGS.playerColor),
+            playerColor: this.gameRegistry.get('playerColor') ?? this.loadStringSetting('playerColor', SettingsManager.DEFAULT_SETTINGS.playerColor) as 'red' | 'blue',
             levelSetId: this.gameRegistry.get('levelSetId') ?? this.loadStringSetting('levelSetId', SettingsManager.DEFAULT_SETTINGS.levelSetId)
         };
     }
@@ -70,11 +72,33 @@ export class SettingsManager {
     }
 
     /**
-     * Get a single setting value
+     * Get a single setting value - follows registry first, then localStorage, then defaults
      */
     getSetting<K extends keyof GameSettings>(key: K): GameSettings[K] {
-        const currentSettings = this.getCurrentSettings();
-        return currentSettings[key];
+        // Map setting keys to their storage keys and defaults
+        const keyMappings = {
+            soundEffectsEnabled: { storageKey: 'soundEffects', default: SettingsManager.DEFAULT_SETTINGS.soundEffectsEnabled },
+            playerColor: { storageKey: 'playerColor', default: SettingsManager.DEFAULT_SETTINGS.playerColor },
+            levelSetId: { storageKey: 'levelSetId', default: SettingsManager.DEFAULT_SETTINGS.levelSetId }
+        };
+
+        const mapping = keyMappings[key];
+        if (!mapping) {
+            throw new Error(`Unknown setting key: ${key}`);
+        }
+
+        // Try registry first, then localStorage, then default
+        const registryValue = this.gameRegistry.get(key);
+        if (registryValue !== undefined) {
+            return registryValue;
+        }
+
+        // Fall back to localStorage
+        if (key === 'soundEffectsEnabled') {
+            return this.loadBooleanSetting(mapping.storageKey, mapping.default as boolean) as GameSettings[K];
+        } else {
+            return this.loadStringSetting(mapping.storageKey, mapping.default as string) as GameSettings[K];
+        }
     }
 
     /**

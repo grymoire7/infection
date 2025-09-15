@@ -503,10 +503,10 @@ export class Game extends Scene
 
     initializeGameSettings()
     {
-        // Load all settings using SettingsManager
-        const settings = this.settingsManager.loadSettings();
+        // Read settings using SettingsManager (read-only)
+        const settings = this.settingsManager.getCurrentSettings();
         
-        // Set up game based on loaded settings
+        // Set up game based on current settings
         this.humanPlayer = settings.playerColor;
         const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
         
@@ -877,6 +877,7 @@ export class Game extends Scene
      * Reload all settings from the settings manager
      */
     private reloadAllSettings(): void {
+        // Read current settings (read-only)
         const settings = this.settingsManager.getCurrentSettings();
         
         // Reload player color

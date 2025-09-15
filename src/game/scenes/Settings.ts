@@ -24,7 +24,7 @@ export class Settings extends Scene
     {
         // Initialize settings manager
         this.settingsManager = new SettingsManager(this.game.registry);
-        this.currentSettings = this.settingsManager.loadSettings();
+        this.currentSettings = this.settingsManager.getCurrentSettings();
         
         const centerX = this.cameras.main.width / 2;
         const centerY = this.cameras.main.height / 2;
