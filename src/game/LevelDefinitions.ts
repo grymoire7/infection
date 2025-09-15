@@ -30,6 +30,13 @@ export const LEVELS: Record<string, Level> = {
         gridSize: 4,
         blockedCells: []
     },
+    'level-c': {
+        id: 'level-c',
+        name: '3x3 Grid',
+        description: 'A simple 3x3 grid',
+        gridSize: 3,
+        blockedCells: []
+    },
     'level-1': {
         id: 'level-1',
         name: 'Beginner\'s Grid',
@@ -88,7 +95,8 @@ export const BASIC_LEVEL_SET: LevelSet = {
     description: 'The standard set of levels to learn and master the game',
     levelEntries: [
         { levelId: 'level-a', aiDifficulty: 'easy' },
-        { levelId: 'level-b', aiDifficulty: 'easy' }
+        { levelId: 'level-b', aiDifficulty: 'easy' },
+        { levelId: 'level-c', aiDifficulty: 'easy' }
     ]
 };
 

@@ -100,7 +100,7 @@ export class GameOver extends Scene
 
         // Play Again button (for abandoned games or level set completion)
         let buttonY = centerY * 0.7;
-        this.restartButton = this.add.text(centerX, buttonY, isAbandoned ? 'Try Again' : 'Play Again', {
+        this.restartButton = this.add.text(centerX, buttonY, 'Restart Game', {
             fontFamily: 'Arial', 
             fontSize: buttonFontSize, 
             color: '#ffffff',
@@ -122,7 +122,7 @@ export class GameOver extends Scene
         });
 
         // Main Menu button
-        buttonY += centerY * 0.1;
+        buttonY += centerY * 0.15;
         this.mainMenuButton = this.add.text(centerX, buttonY, 'Main Menu', {
             fontFamily: 'Arial', 
             fontSize: buttonFontSize, 

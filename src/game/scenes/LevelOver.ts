@@ -105,8 +105,8 @@ export class LevelOver extends Scene
             }
         }
 
-        // Restart Level button
-        this.restartButton = this.add.text(centerX, centerY * (hasNextLevel ? 0.8 : 0.7), 'Restart Level', {
+        // Restart Game button
+        this.restartButton = this.add.text(centerX, centerY * (hasNextLevel ? 0.85 : 0.7), 'Restart Game', {
             fontFamily: 'Arial', 
             fontSize: buttonFontSize, 
             color: '#ffffff',
@@ -128,7 +128,7 @@ export class LevelOver extends Scene
         });
 
         // Main Menu button
-        this.mainMenuButton = this.add.text(centerX, centerY * (hasNextLevel ? 0.9 : 0.8), 'Main Menu', {
+        this.mainMenuButton = this.add.text(centerX, centerY * (hasNextLevel ? 1.0 : 0.85), 'Main Menu', {
             fontFamily: 'Arial', 
             fontSize: buttonFontSize, 
             color: '#ffffff',
