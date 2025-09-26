@@ -107,50 +107,89 @@ export class Game extends Scene
     }
 
     private loadLevelNoState(): void {
-        if (this.stateManager.hasSavedState()) return;
+        console.log('Game.loadLevelNoState: loadLevelNoState called');
+        console.log('Game.loadLevelNoState: Has saved state?', this.stateManager.hasSavedState());
+        
+        if (this.stateManager.hasSavedState()) {
+            console.log('Game.loadLevelNoState: Has saved state, returning early');
+            return;
+        }
 
         // Always use the level set from the settings
         const selectedLevelSetId = this.settingsManager.getSetting('levelSetId');
+        console.log('Game.loadLevelNoState: Selected level set from settings:', selectedLevelSetId);
         
         if (this.shouldLoadNextLevel()) {
-            console.log('Should load next level');
             this.loadNextLevelOrFallback(selectedLevelSetId);
         } else {
-            console.log('Loading first level of set:', selectedLevelSetId);
+            console.log('Game.loadLevelNoState: Loading first level of set:', selectedLevelSetId);
             this.loadFirstLevelOfSet(selectedLevelSetId);
         }
     }
 
     private shouldLoadNextLevel(): boolean {
         const shouldLoad = this.game.registry.get('loadNextLevel') === true;
-        console.log('shouldLoadNextLevel check:', shouldLoad);
+        console.log('Game.shouldLoadNextLevel: shouldLoadNextLevel check:', shouldLoad);
+        console.log('Game.shouldLoadNextLevel: Registry state at shouldLoadNextLevel check:', {
+            loadNextLevel: this.game.registry.get('loadNextLevel'),
+            currentLevelSetId: this.game.registry.get('currentLevelSetId'),
+            currentLevelId: this.game.registry.get('currentLevelId')
+        });
         return shouldLoad;
     }
 
     private loadNextLevelOrFallback(selectedLevelSetId: string): void {
-        this.game.registry.remove('loadNextLevel');
-        const levelSetId = this.game.registry.get('currentLevelSetId');
-        const levelId = this.game.registry.get('currentLevelId');
+        console.log('Game: loadNextLevelOrFallback called with selectedLevelSetId:', selectedLevelSetId);
+        console.log('Game: Registry state before removing loadNextLevel flag:', {
+            loadNextLevel: this.game.registry.get('loadNextLevel'),
+            currentLevelSetId: this.game.registry.get('currentLevelSetId'),
+            currentLevelId: this.game.registry.get('currentLevelId')
+        });
         
-        if (!levelSetId || !levelId) {
+        this.game.registry.remove('loadNextLevel');
+        
+        // Get current level info from registry (preserved by LevelOver scene)
+        const currentLevelSetId = this.game.registry.get('currentLevelSetId') || selectedLevelSetId;
+        const currentLevelId = this.game.registry.get('currentLevelId');
+        
+        console.log('Game: Retrieved level info from registry:', {
+            currentLevelSetId,
+            currentLevelId,
+            selectedLevelSetId
+        });
+        
+        const levelSet = LEVEL_SETS.find(set => set.id === currentLevelSetId);
+        if (!levelSet || !currentLevelId) {
+            console.log('Game: No current level info found, loading first level of set');
+            console.log('Game: levelSet found:', !!levelSet, 'currentLevelId:', currentLevelId);
             this.loadFirstLevelOfSet(selectedLevelSetId);
             return;
         }
 
-        const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
-        if (!levelSet) {
+        // Find current level index
+        const currentLevelIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === currentLevelId);
+        console.log('Game: Found current level index:', currentLevelIndex, 'for levelId:', currentLevelId);
+        console.log('Game: Level set entries:', levelSet.levelEntries.map(e => e.levelId));
+        
+        if (currentLevelIndex === -1) {
+            console.log('Game: Current level not found in level set, loading first level');
             this.loadFirstLevelOfSet(selectedLevelSetId);
             return;
         }
 
-        const currentIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === levelId);
-        if (currentIndex !== -1 && currentIndex + 1 < levelSet.levelEntries.length) {
-            const nextLevelId = levelSet.levelEntries[currentIndex + 1].levelId;
-            this.loadLevel(levelSetId, nextLevelId);
-            console.log(`Loading next level: ${nextLevelId} from level set: ${levelSetId}`);
+        const nextLevelIndex = currentLevelIndex + 1;
+        console.log('Game: Next level index would be:', nextLevelIndex, 'out of', levelSet.levelEntries.length, 'total levels');
+        
+        if (nextLevelIndex < levelSet.levelEntries.length) {
+            const nextLevelId = levelSet.levelEntries[nextLevelIndex].levelId;
+            
+            console.log(`Game: Loading next level: ${nextLevelId} from level set: ${currentLevelSetId} (index ${nextLevelIndex})`);
+            
+            // Load the level with the correct index
+            this.loadLevel(currentLevelSetId, nextLevelId, nextLevelIndex);
         } else {
             // If we've completed all levels in the set, start over from the first level
-            console.log(`Completed all levels in ${levelSetId}, restarting from first level`);
+            console.log(`Game: Completed all levels in ${currentLevelSetId}, restarting from first level`);
             this.loadFirstLevelOfSet(selectedLevelSetId);
         }
     }
@@ -162,6 +201,78 @@ export class Game extends Scene
         } else {
             this.loadLevel('default', 'level-1');
         }
+    }
+    
+    private loadLevel(levelSetId: string, levelId: string, levelIndex: number = -1): void {
+        console.log(`Game: loadLevel called with:`, {
+            levelSetId,
+            levelId,
+            levelIndex
+        });
+        
+        // Find the level set
+        const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
+        if (!levelSet) {
+            console.error('Game: Level set not found:', levelSetId);
+            return;
+        }
+
+        // Find the level and its index
+        if (levelIndex === -1) {
+            levelIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === levelId);
+            if (levelIndex === -1) return;
+        }
+        
+        const level = getLevelById(levelId);
+        if (!level) {
+            console.error('Game: Level not found:', levelId);
+            return;
+        }
+        
+        console.log(`Game: Successfully found level:`, level.name);
+        
+        // Set level properties with maximum grid size constraint
+        this.gridSize = Math.min(level.gridSize, 9);
+        this.blockedCells = level.blockedCells;
+        
+        // Log warning if grid size was clamped
+        if (level.gridSize > 9) {
+            console.warn(`Level ${levelId} grid size ${level.gridSize} exceeds maximum of 9, clamped to 9`);
+        }
+        
+        // Initialize game state through GameStateManager with the specified level index
+        console.log(`Game: Initializing new game state with level index:`, levelIndex);
+        this.stateManager.initializeNewGameState(this.humanPlayer, levelIndex);
+        
+        this.createGrid();
+        this.recreateAllVisualDots();
+        this.updateAllCellOwnership();
+        
+        // Reset player turn with level-specific AI difficulty
+        this.initializeGameSettings();
+        this.setAIForLevel(levelSetId, levelId);
+        
+        // Update UI only if UI elements exist
+        if (this.levelInfoText) {
+            this.updateLevelInfo();
+        }
+        if (this.aiDifficultyText) {
+            this.updateAIDifficulty();
+        }
+        if (this.undoButton) {
+            this.updateUndoButton();
+        }
+        this.updatePlayerIndicator();
+        
+        // Save level info to registry for UI purposes
+        console.log(`Game: Saving level info to registry:`, { levelSetId, levelId });
+        this.game.registry.set('currentLevelSetId', levelSetId);
+        this.game.registry.set('currentLevelId', levelId);
+        
+        console.log(`Game: Level loading complete. Registry now contains:`, {
+            currentLevelSetId: this.game.registry.get('currentLevelSetId'),
+            currentLevelId: this.game.registry.get('currentLevelId')
+        });
     }
 
     private createGrid(): void {
@@ -331,11 +442,19 @@ export class Game extends Scene
             this.updateUndoButton();
 
             // Save board state after each move
+            const savedState = this.stateManager.loadFromRegistry();
+            const currentLevelIndex = savedState?.currentLevelIndex || 0;
+            const levelWinners = savedState?.levelWinners || [];
+        
             this.stateManager.saveToRegistry(
                 this.boardState,
                 this.currentPlayer,
                 this.humanPlayer,
-                this.computerPlayer?.getColor() || 'blue'
+                this.computerPlayer?.getColor() || 'blue',
+                false, // gameOver
+                false, // levelOver
+                currentLevelIndex,
+                levelWinners
             );
 
             // If it's now the computer's turn, make a computer move after a short delay
@@ -701,27 +820,59 @@ export class Game extends Scene
         }
         this.game.registry.set('gameEnding', true);
         
-        // Reset the game state
-        this.clearSavedGameState();
+        // Get current level information from state manager
+        const savedState = this.stateManager.loadFromRegistry();
+        const currentLevelIndex = savedState?.currentLevelIndex || 0;
         
-        // Store winner information
+        // Store winner information in registry for scenes
         this.game.registry.set('gameWinner', winner);
         
-        // Determine which scene to show based on the context
-        const levelSetId = this.game.registry.get('currentLevelSetId');
-        const levelId = this.game.registry.get('currentLevelId');
+        // Ensure current level info is preserved in registry for LevelOver scene
+        const currentLevelSetId = this.game.registry.get('currentLevelSetId');
+        const currentLevelId = this.game.registry.get('currentLevelId');
+        
+        // If level info is missing, try to reconstruct it from settings and state
+        if (!currentLevelSetId || !currentLevelId) {
+            const levelSetId = this.settingsManager.getSetting('levelSetId');
+            const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
+            if (levelSet && currentLevelIndex < levelSet.levelEntries.length) {
+                const levelId = levelSet.levelEntries[currentLevelIndex].levelId;
+                this.game.registry.set('currentLevelSetId', levelSetId);
+                this.game.registry.set('currentLevelId', levelId);
+                console.log(`Reconstructed level info: ${levelSetId}/${levelId} (index ${currentLevelIndex})`);
+            }
+        }
+        
         let targetScene = 'GameOver';
         
-        // If this is a level completion (not abandonment), check if we should show LevelOver
-        if (winner !== 'Abandoned' && levelSetId && levelId) {
+        // If this is a level completion (not abandonment), update state and determine target scene
+        if (winner !== 'Abandoned') {
+            // Update level completion in state manager
+            if (winner === 'Red' || winner === 'Blue') {
+                const winnerColor = winner.toLowerCase() as 'red' | 'blue';
+                this.stateManager.updateLevelCompletion(winnerColor, currentLevelIndex);
+            }
+            
+            // Determine if this is the last level in the set
+            const levelSetId = this.settingsManager.getSetting('levelSetId');
             const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
             if (levelSet) {
-                const currentIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === levelId);
-                const isLastLevel = currentIndex !== -1 && currentIndex === levelSet.levelEntries.length - 1;
+                const isLastLevel = currentLevelIndex >= levelSet.levelEntries.length - 1;
                 
-                // Show LevelOver for individual level completion, GameOver for level set completion
-                targetScene = isLastLevel ? 'GameOver' : 'LevelOver';
+                if (isLastLevel) {
+                    // Mark game as complete and show GameOver
+                    this.stateManager.markGameComplete(winner);
+                    targetScene = 'GameOver';
+                } else {
+                    // Show LevelOver for individual level completion
+                    // Clear saved state so that when Game scene restarts, it will check loadNextLevel flag
+                    this.clearSavedGameState();
+                    targetScene = 'LevelOver';
+                }
             }
+        } else {
+            // Game was abandoned, clear state
+            this.clearSavedGameState();
         }
         
         // Add a short pause before transitioning
@@ -787,51 +938,6 @@ export class Game extends Scene
 
     areSoundEffectsEnabled(): boolean {
         return this.settingsManager.getSetting('soundEffectsEnabled');
-    }
-
-    loadLevel(levelSetId: string, levelId: string) {
-        // Find the level set
-        const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
-        if (!levelSet) return;
-        
-        // Find the level
-        const level = getLevelById(levelId);
-        if (!level) return;
-        
-        // Set level properties with maximum grid size constraint
-        this.gridSize = Math.min(level.gridSize, 9);
-        this.blockedCells = level.blockedCells;
-        
-        // Log warning if grid size was clamped
-        if (level.gridSize > 9) {
-            console.warn(`Level ${levelId} grid size ${level.gridSize} exceeds maximum of 9, clamped to 9`);
-        }
-        
-        // Reset game state
-        this.clearSavedGameState();
-        this.createGrid();
-        this.recreateAllVisualDots();
-        this.updateAllCellOwnership();
-        
-        // Reset player turn with level-specific AI difficulty
-        this.initializeGameSettings();
-        this.setAIForLevel(levelSetId, levelId);
-        
-        // Update UI only if UI elements exist
-        if (this.levelInfoText) {
-            this.updateLevelInfo();
-        }
-        if (this.aiDifficultyText) {
-            this.updateAIDifficulty();
-        }
-        if (this.undoButton) {
-            this.updateUndoButton();
-        }
-        this.updatePlayerIndicator();
-        
-        // Save level info to registry
-        this.game.registry.set('currentLevelSetId', levelSetId);
-        this.game.registry.set('currentLevelId', levelId);
     }
 
     changeScene ()

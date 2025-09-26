@@ -32,6 +32,9 @@ export interface SavedGameState {
     computerPlayerColor: 'red' | 'blue';
     moveHistory: MoveHistoryEntry[];
     gameOver: boolean;
+    levelOver: boolean;
+    currentLevelIndex: number;
+    levelWinners: ('red' | 'blue')[];
     winner: string | null;
 }
 
@@ -104,6 +107,9 @@ export class GameStateManager {
         humanPlayer: 'red' | 'blue',
         computerPlayerColor: 'red' | 'blue',
         gameOver: boolean = false,
+        levelOver: boolean = false,
+        currentLevelIndex: number = 0,
+        levelWinners: ('red' | 'blue')[] = [],
         winner: string | null = null
     ): void {
         const savedState: SavedGameState = {
@@ -116,6 +122,9 @@ export class GameStateManager {
                 currentPlayer: move.currentPlayer
             })),
             gameOver,
+            levelOver,
+            currentLevelIndex,
+            levelWinners: [...levelWinners],
             winner
         };
 
@@ -143,6 +152,9 @@ export class GameStateManager {
             computerPlayerColor: savedState.computerPlayerColor,
             moveHistory: this.moveHistory,
             gameOver: savedState.gameOver,
+            levelOver: savedState.levelOver,
+            currentLevelIndex: savedState.currentLevelIndex,
+            levelWinners: [...savedState.levelWinners],
             winner: savedState.winner
         };
     }
@@ -167,5 +179,95 @@ export class GameStateManager {
      */
     getMoveHistoryLength(): number {
         return this.moveHistory.length;
+    }
+
+    /**
+     * Initialize a new game state with default values
+     */
+    initializeNewGameState(
+        humanPlayerColor: 'red' | 'blue',
+        currentLevelIndex: number = 0
+    ): void {
+        this.moveHistory = [];
+        const emptyBoardState: CellState[][] = [];
+        const computerPlayerColor = humanPlayerColor === 'red' ? 'blue' : 'red';
+        
+        this.saveToRegistry(
+            emptyBoardState,
+            humanPlayerColor, // Start with human player
+            humanPlayerColor,
+            computerPlayerColor,
+            false, // gameOver
+            false, // levelOver
+            currentLevelIndex,
+            [], // levelWinners
+            null // winner
+        );
+    }
+
+    /**
+     * Update level completion status
+     */
+    updateLevelCompletion(winner: 'red' | 'blue', currentLevelIndex: number): void {
+        const savedState = this.loadFromRegistry();
+        if (!savedState) return;
+
+        const updatedLevelWinners = [...savedState.levelWinners];
+        updatedLevelWinners[currentLevelIndex] = winner;
+
+        this.saveToRegistry(
+            savedState.boardState,
+            savedState.currentPlayer,
+            savedState.humanPlayer,
+            savedState.computerPlayerColor,
+            savedState.gameOver,
+            true, // levelOver
+            currentLevelIndex,
+            updatedLevelWinners,
+            savedState.winner
+        );
+    }
+
+    /**
+     * Advance to next level
+     */
+    advanceToNextLevel(nextLevelIndex: number): void {
+        const savedState = this.loadFromRegistry();
+        if (!savedState) return;
+
+        // Clear the move history for the new level
+        this.moveHistory = [];
+
+        this.saveToRegistry(
+            [], // Empty board state for new level
+            savedState.humanPlayer, // Reset to human player's turn
+            savedState.humanPlayer,
+            savedState.computerPlayerColor,
+            false, // gameOver - cleared for new level
+            false, // levelOver - cleared for new level
+            nextLevelIndex,
+            savedState.levelWinners,
+            null // winner - cleared for new level
+        );
+    }
+
+    /**
+     * Mark game as complete
+     */
+    markGameComplete(winner: string): void {
+        const savedState = this.loadFromRegistry();
+        if (!savedState) return;
+
+        this.saveToRegistry(
+            savedState.boardState,
+            savedState.currentPlayer,
+            savedState.humanPlayer,
+            savedState.computerPlayerColor,
+            true, // gameOver
+            savedState.levelOver,
+            savedState.currentLevelIndex,
+            savedState.levelWinners,
+            winner
+        );
     }
 }

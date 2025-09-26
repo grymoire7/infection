@@ -90,7 +90,13 @@ export class LevelOver extends Scene
                     this.nextLevelButton.setInteractive();
                     this.nextLevelButton.on('pointerdown', () => {
                         // Store level progression info to load next level
+                        console.log('LevelOver: Next Level button clicked');
+                        console.log('LevelOver: Current level info in registry:', {
+                            levelSetId: this.game.registry.get('currentLevelSetId'),
+                            levelId: this.game.registry.get('currentLevelId')
+                        });
                         this.game.registry.set('loadNextLevel', true);
+                        console.log('LevelOver: Set loadNextLevel flag to true, starting Game scene');
                         this.scene.start('Game');
                     });
 

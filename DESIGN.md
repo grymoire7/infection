@@ -135,6 +135,35 @@ The game is played in a browser. The user interface includes:
     in case this setting was changed in the Settings scene during the course of a game
 
 
+I would like a code review to ensure that we are handling game state in accordance with our design requirements:
+
+## State management
+
+- GameStateManager.ts
+  - helper class for managing game state in the game.registry
+  - solely responsible for reading/writing game state to/from the game.registry
+  - defines/uses default state when needed
+  - game state does not need to persist between game sessions
+  - game state does need to persist between game scene changes within a game session in the registry
+  - the game state should include:
+    - boardState: CellState[][];           // 2D array representing the board state
+    - currentPlayer: 'red' | 'blue';       // whose turn it is
+    - humanPlayer: 'red' | 'blue';         // which color the human player is
+    - computerPlayerColor: 'red' | 'blue'; // which color the computer player is
+    - moveHistory: MoveHistoryEntry[];     // history of moves for undo functionality
+    - gameOver: boolean;                   // whether the game is over, if we are between levels this is false. cleared when the first move of a game is made
+    - levelOver: boolean;                  // whether the current level is over, if we are between levels this is true. cleared when the first move of a level is made
+    - currentLevelIndex: number;           // index of the current level in the level set. current LevelSet is in settings
+    - levelWinners: ('red' | 'blue')[];    // array of winners for each completed level in the level set
+    - winner: string | null;               // 'red' or 'blue' when gameOver is true, otherwise null
+- Game.ts scene
+  - used by the Game scene to get/set state
+  - the game state is reset/initialized when a new game is started/restarted
+  - the game state loaded when switching to the game scene (`wake`) and game scene initialized if we are between games
+  - Game scene reads state using GameStateManager when the scene is created or woken
+  - Game scene writes state using GameStateManager whenever the state changes
+
+
 ## Difficulty levels
 
 ### Definitions
