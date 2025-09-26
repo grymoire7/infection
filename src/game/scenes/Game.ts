@@ -8,44 +8,63 @@ import { DotPositioner } from '../utils/DotPositioner';
 import { GridManager } from '../GridManager';
 import { SettingsManager } from '../SettingsManager';
 
-export class Game extends Scene
-{
+type PlayerColor = 'red' | 'blue';
+type CellOwner = PlayerColor | 'default' | 'blocked';
+
+interface GameMove {
+    row: number;
+    col: number;
+}
+
+interface LevelInfo {
+    levelSetId: string;
+    levelId: string;
+    levelIndex?: number;
+}
+
+export class Game extends Scene {
     // Game configuration constants
     private static readonly COMPUTER_MOVE_DELAY = 1000;
     private static readonly EXPLOSION_DELAY = 300;
+    private static readonly MAX_GRID_SIZE = 9;
+    private static readonly GAME_END_DELAY = 1500;
 
-    camera: Phaser.Cameras.Scene2D.Camera;
-    background: Phaser.GameObjects.Image;
-    gridSize: number = 5; // Will be set by level definition
-    cellSize: number;
-    gridStartX: number;
-    gridStartY: number;
-    grid: Phaser.GameObjects.Rectangle[][];
-    dots: any[][][]; // Now 3D array: [row][col][dotIndex]
-    boardState: CellState[][];
-    currentPlayer: 'red' | 'blue' = 'red';
-    humanPlayer: 'red' | 'blue' = 'red';
-    levelInfoText: Phaser.GameObjects.Text;
-    aiDifficultyText: Phaser.GameObjects.Text;
-    undoButton: Phaser.GameObjects.Text;
-    quitButton: Phaser.GameObjects.Text;
-    currentPlayerSprite: Phaser.GameObjects.Sprite;
-    computerPlayer: ComputerPlayer | null = null;
-    stateManager: GameStateManager;
-    uiManager: GameUIManager;
-    gridManager: GridManager;
-    settingsManager: SettingsManager;
-    // Level-related properties
+    // Core game components
+    private camera: Phaser.Cameras.Scene2D.Camera;
+    private background: Phaser.GameObjects.Image;
+    private stateManager: GameStateManager;
+    private uiManager: GameUIManager;
+    private gridManager: GridManager;
+    private settingsManager: SettingsManager;
+    private computerPlayer: ComputerPlayer | null = null;
+
+    // Grid and game state
+    private gridSize: number = 5;
+    private cellSize: number;
+    private gridStartX: number;
+    private gridStartY: number;
+    // private grid: Phaser.GameObjects.Rectangle[][];
+    private dots: any[][][]; // 3D array: [row][col][dotIndex]
+    private boardState: CellState[][];
     private blockedCells: { row: number; col: number }[] = [];
 
-    constructor ()
-    {
+    // Game flow
+    private currentPlayer: PlayerColor = 'red';
+    private humanPlayer: PlayerColor = 'red';
+
+    // UI elements
+    private levelInfoText: Phaser.GameObjects.Text;
+    private aiDifficultyText: Phaser.GameObjects.Text;
+    private undoButton: Phaser.GameObjects.Text;
+    // private quitButton: Phaser.GameObjects.Text;
+    // private currentPlayerSprite: Phaser.GameObjects.Sprite;
+
+    constructor() {
         super('Game');
     }
 
-    create() {
-        this.initializeCamera();
-        this.initializeBackground();
+    create(): void {
+        this.initializeCore();
         this.initializeManagers();
         this.initializeUI();
         this.initializeGameSettings();
@@ -55,16 +74,13 @@ export class Game extends Scene
         EventBus.emit('current-scene-ready', this);
     }
 
-    private initializeCamera(): void {
+    private initializeCore(): void {
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x222222);
-    }
 
-    private initializeBackground(): void {
         this.background = this.add.image(512, 384, 'background');
         this.background.setAlpha(0.3);
     }
-
 
     private initializeManagers(): void {
         this.stateManager = new GameStateManager(this.game.registry);
@@ -75,149 +91,132 @@ export class Game extends Scene
 
     private initializeUI(): void {
         const uiElements = this.uiManager.createUI();
+        this.assignUIElements(uiElements);
+        this.setupUIHandlers();
+    }
+
+    private assignUIElements(uiElements: any): void {
         this.levelInfoText = uiElements.levelInfoText;
         this.aiDifficultyText = uiElements.aiDifficultyText;
         this.undoButton = uiElements.undoButton;
-        this.quitButton = uiElements.quitButton;
-        this.currentPlayerSprite = uiElements.currentPlayerSprite;
-        
+        // this.quitButton = uiElements.quitButton;
+        // this.currentPlayerSprite = uiElements.currentPlayerSprite;
+    }
+
+    private setupUIHandlers(): void {
         this.uiManager.setUndoButtonHandler(() => this.undoLastMove());
         this.uiManager.setQuitButtonHandler(() => this.quitGame());
     }
 
     private loadGameStateOrLevel(): void {
-        // If we have a saved state, load it
         if (this.stateManager.hasSavedState()) {
             console.log('Loading saved game state');
-            this.loadGameState();
-            this.createGrid();
-            this.recreateAllVisualDots();
-            this.updateAllCellOwnership();
+            this.loadExistingGameState();
         } else {
-            console.log('No saved state, determining which level to load');
-            this.loadLevelNoState();
+            console.log('No saved state, loading new level');
+            this.loadNewLevel();
         }
     }
 
-    private updateUI(): void {
-        this.updatePlayerIndicator();
-        this.updateLevelInfo();
-        this.updateAIDifficulty();
-        this.updateUndoButton();
+    private loadExistingGameState(): void {
+        this.loadGameState();
+        this.createGrid();
+        this.recreateAllVisualDots();
+        this.updateAllCellOwnership();
     }
 
-    private loadLevelNoState(): void {
-        console.log('Game.loadLevelNoState: loadLevelNoState called');
-        console.log('Game.loadLevelNoState: Has saved state?', this.stateManager.hasSavedState());
-        
-        if (this.stateManager.hasSavedState()) {
-            console.log('Game.loadLevelNoState: Has saved state, returning early');
-            return;
-        }
-
-        // Always use the level set from the settings
+    private loadNewLevel(): void {
         const selectedLevelSetId = this.settingsManager.getSetting('levelSetId');
-        console.log('Game.loadLevelNoState: Selected level set from settings:', selectedLevelSetId);
         
         if (this.shouldLoadNextLevel()) {
             this.loadNextLevelOrFallback(selectedLevelSetId);
         } else {
-            console.log('Game.loadLevelNoState: Loading first level of set:', selectedLevelSetId);
             this.loadFirstLevelOfSet(selectedLevelSetId);
         }
     }
 
     private shouldLoadNextLevel(): boolean {
-        const shouldLoad = this.game.registry.get('loadNextLevel') === true;
-        console.log('Game.shouldLoadNextLevel: shouldLoadNextLevel check:', shouldLoad);
-        console.log('Game.shouldLoadNextLevel: Registry state at shouldLoadNextLevel check:', {
-            loadNextLevel: this.game.registry.get('loadNextLevel'),
-            currentLevelSetId: this.game.registry.get('currentLevelSetId'),
-            currentLevelId: this.game.registry.get('currentLevelId')
-        });
-        return shouldLoad;
+        return this.game.registry.get('loadNextLevel') === true;
     }
 
     private loadNextLevelOrFallback(selectedLevelSetId: string): void {
-        console.log('Game: loadNextLevelOrFallback called with selectedLevelSetId:', selectedLevelSetId);
-        console.log('Game: Registry state before removing loadNextLevel flag:', {
-            loadNextLevel: this.game.registry.get('loadNextLevel'),
-            currentLevelSetId: this.game.registry.get('currentLevelSetId'),
-            currentLevelId: this.game.registry.get('currentLevelId')
-        });
+        console.log('Loading next level for level set:', selectedLevelSetId);
         
         this.game.registry.remove('loadNextLevel');
         
-        // Get current level info from registry (preserved by LevelOver scene)
-        const currentLevelSetId = this.game.registry.get('currentLevelSetId') || selectedLevelSetId;
-        const currentLevelId = this.game.registry.get('currentLevelId');
+        const currentLevelInfo = this.getCurrentLevelInfo(selectedLevelSetId);
+        if (currentLevelInfo.isValid) {
+            console.log('No valid current level info, loading first level of set');
+            this.loadFirstLevelOfSet(selectedLevelSetId);
+            return;
+        }
+
+        const nextLevelIndex = currentLevelInfo.levelIndex! + 1;
+        const levelSet = LEVEL_SETS.find(set => set.id === currentLevelInfo.levelSetId);
         
-        console.log('Game: Retrieved level info from registry:', {
-            currentLevelSetId,
-            currentLevelId,
-            selectedLevelSetId
-        });
+        if (this.hasNextLevel(levelSet!, nextLevelIndex)) {
+            this.loadLevelByIndex(currentLevelInfo.levelSetId, nextLevelIndex);
+        } else {
+            console.log(`Completed all levels in ${currentLevelInfo.levelSetId}, restarting from first level`);
+            this.loadFirstLevelOfSet(selectedLevelSetId);
+        }
+    }
+
+    private getCurrentLevelInfo(fallbackLevelSetId: string): { 
+        levelSetId: string; 
+        levelId: string; 
+        levelIndex: number; 
+        isValid: boolean 
+    } {
+        const currentLevelSetId = this.game.registry.get('currentLevelSetId') || fallbackLevelSetId;
+        const currentLevelId = this.game.registry.get('currentLevelId');
         
         const levelSet = LEVEL_SETS.find(set => set.id === currentLevelSetId);
         if (!levelSet || !currentLevelId) {
-            console.log('Game: No current level info found, loading first level of set');
-            console.log('Game: levelSet found:', !!levelSet, 'currentLevelId:', currentLevelId);
-            this.loadFirstLevelOfSet(selectedLevelSetId);
+            return { levelSetId: '', levelId: '', levelIndex: -1, isValid: false };
+        }
+
+        const levelIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === currentLevelId);
+        return {
+            levelSetId: currentLevelSetId,
+            levelId: currentLevelId,
+            levelIndex,
+            isValid: levelIndex !== -1
+        };
+    }
+
+    private hasNextLevel(levelSet: any, nextLevelIndex: number): boolean {
+        return nextLevelIndex < levelSet.levelEntries.length;
+    }
+
+    private loadLevelByIndex(levelSetId: string, levelIndex: number): void {
+        const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
+        if (!levelSet || levelIndex >= levelSet.levelEntries.length) {
+            console.error('Invalid level index:', levelIndex);
             return;
         }
 
-        // Find current level index
-        const currentLevelIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === currentLevelId);
-        console.log('Game: Found current level index:', currentLevelIndex, 'for levelId:', currentLevelId);
-        console.log('Game: Level set entries:', levelSet.levelEntries.map(e => e.levelId));
-        
-        if (currentLevelIndex === -1) {
-            console.log('Game: Current level not found in level set, loading first level');
-            this.loadFirstLevelOfSet(selectedLevelSetId);
-            return;
-        }
-
-        const nextLevelIndex = currentLevelIndex + 1;
-        console.log('Game: Next level index would be:', nextLevelIndex, 'out of', levelSet.levelEntries.length, 'total levels');
-        
-        if (nextLevelIndex < levelSet.levelEntries.length) {
-            const nextLevelId = levelSet.levelEntries[nextLevelIndex].levelId;
-            
-            console.log(`Game: Loading next level: ${nextLevelId} from level set: ${currentLevelSetId} (index ${nextLevelIndex})`);
-            
-            // Load the level with the correct index
-            this.loadLevel(currentLevelSetId, nextLevelId, nextLevelIndex);
-        } else {
-            // If we've completed all levels in the set, start over from the first level
-            console.log(`Game: Completed all levels in ${currentLevelSetId}, restarting from first level`);
-            this.loadFirstLevelOfSet(selectedLevelSetId);
-        }
+        const levelId = levelSet.levelEntries[levelIndex].levelId;
+        console.log(`Loading level: ${levelId} from set: ${levelSetId} (index ${levelIndex})`);
+        this.loadLevel(levelSetId, levelId, levelIndex);
     }
 
     private loadFirstLevelOfSet(levelSetId: string): void {
         const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
         if (levelSet && levelSet.levelEntries.length > 0) {
-            this.loadLevel(levelSetId, levelSet.levelEntries[0].levelId);
+            this.loadLevel(levelSetId, levelSet.levelEntries[0].levelId, 0);
         } else {
-            this.loadLevel('default', 'level-1');
+            this.loadLevel('default', 'level-1', 0);
         }
     }
     
     private loadLevel(levelSetId: string, levelId: string, levelIndex: number = -1): void {
-        console.log(`Game: loadLevel called with:`, {
-            levelSetId,
-            levelId,
-            levelIndex
-        });
-        
-        // Find the level set
         const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
         if (!levelSet) {
-            console.error('Game: Level set not found:', levelSetId);
+            console.error('Level set not found:', levelSetId);
             return;
         }
 
-        // Find the level and its index
         if (levelIndex === -1) {
             levelIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === levelId);
             if (levelIndex === -1) return;
@@ -225,54 +224,58 @@ export class Game extends Scene
         
         const level = getLevelById(levelId);
         if (!level) {
-            console.error('Game: Level not found:', levelId);
+            console.error('Level not found:', levelId);
             return;
         }
         
-        console.log(`Game: Successfully found level:`, level.name);
+        this.setupLevel(level, levelSetId, levelId, levelIndex);
+    }
+
+    private setupLevel(level: any, levelSetId: string, levelId: string, levelIndex: number): void {
+        console.log(`Setting up level: ${level.name}`);
         
-        // Set level properties with maximum grid size constraint
-        this.gridSize = Math.min(level.gridSize, 9);
+        this.setLevelProperties(level, levelId);
+        this.initializeGameState(levelIndex);
+        this.createGameBoard();
+        this.setupAI(levelSetId, levelId);
+        this.updateUIForLevel();
+        this.saveLevelInfo(levelSetId, levelId);
+    }
+
+    private setLevelProperties(level: any, levelId: string): void {
+        this.gridSize = Math.min(level.gridSize, Game.MAX_GRID_SIZE);
         this.blockedCells = level.blockedCells;
         
-        // Log warning if grid size was clamped
-        if (level.gridSize > 9) {
-            console.warn(`Level ${levelId} grid size ${level.gridSize} exceeds maximum of 9, clamped to 9`);
+        if (level.gridSize > Game.MAX_GRID_SIZE) {
+            console.warn(`Level ${levelId} grid size ${level.gridSize} exceeds maximum of ${Game.MAX_GRID_SIZE}, clamped`);
         }
-        
-        // Initialize game state through GameStateManager with the specified level index
-        console.log(`Game: Initializing new game state with level index:`, levelIndex);
+    }
+
+    private initializeGameState(levelIndex: number): void {
         this.stateManager.initializeNewGameState(this.humanPlayer, levelIndex);
-        
+    }
+
+    private createGameBoard(): void {
         this.createGrid();
         this.recreateAllVisualDots();
         this.updateAllCellOwnership();
-        
-        // Reset player turn with level-specific AI difficulty
+    }
+
+    private setupAI(levelSetId: string, levelId: string): void {
         this.initializeGameSettings();
         this.setAIForLevel(levelSetId, levelId);
-        
-        // Update UI only if UI elements exist
-        if (this.levelInfoText) {
-            this.updateLevelInfo();
-        }
-        if (this.aiDifficultyText) {
-            this.updateAIDifficulty();
-        }
-        if (this.undoButton) {
-            this.updateUndoButton();
-        }
+    }
+
+    private updateUIForLevel(): void {
+        if (this.levelInfoText) this.updateLevelInfo();
+        if (this.aiDifficultyText) this.updateAIDifficulty();
+        if (this.undoButton) this.updateUndoButton();
         this.updatePlayerIndicator();
-        
-        // Save level info to registry for UI purposes
-        console.log(`Game: Saving level info to registry:`, { levelSetId, levelId });
+    }
+
+    private saveLevelInfo(levelSetId: string, levelId: string): void {
         this.game.registry.set('currentLevelSetId', levelSetId);
         this.game.registry.set('currentLevelId', levelId);
-        
-        console.log(`Game: Level loading complete. Registry now contains:`, {
-            currentLevelSetId: this.game.registry.get('currentLevelSetId'),
-            currentLevelId: this.game.registry.get('currentLevelId')
-        });
     }
 
     private createGrid(): void {
@@ -282,7 +285,6 @@ export class Game extends Scene
 
     private initializeGridArrays(): void {
         this.dots = Array(this.gridSize).fill(null).map(() => []);
-        // Initialize boardState with empty arrays for each row
         this.boardState = Array(this.gridSize);
         for (let i = 0; i < this.gridSize; i++) {
             this.boardState[i] = Array(this.gridSize);
@@ -290,43 +292,47 @@ export class Game extends Scene
     }
 
     private createGridCells(): void {
-        // Create the visual grid using GridManager
         const gridResult = this.gridManager.createGrid(this.gridSize, this.blockedCells);
-        this.grid = gridResult.grid;
+        this.assignGridProperties(gridResult);
+        this.initializeCells();
+        this.setupCellCapacitiesAndInteractivity();
+    }
+
+    private assignGridProperties(gridResult: any): void {
+        // this.grid = gridResult.grid;
         this.gridStartX = gridResult.gridStartX;
         this.gridStartY = gridResult.gridStartY;
         this.cellSize = gridResult.cellSize;
+    }
 
-        // Initialize dots array for each cell
+    private initializeCells(): void {
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 this.dots[row][col] = [];
-            }
-        }
-
-        // First pass: initialize all cell states with temporary capacities
-        for (let row = 0; row < this.gridSize; row++) {
-            for (let col = 0; col < this.gridSize; col++) {
                 this.initializeCellState(row, col, 0);
             }
         }
-        
-        // Second pass: calculate actual capacities and set up interactivity
+    }
+
+    private setupCellCapacitiesAndInteractivity(): void {
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 const cellState = this.boardState[row][col];
                 if (!cellState.isBlocked) {
-                    cellState.capacity = this.gridManager.calculateCellCapacity(row, col, this.boardState);
-                    // Make cell interactive only if not blocked
-                    this.gridManager.makeCellInteractive(
-                        row, col,
-                        () => this.gridManager.handleCellHover(row, col, cellState),
-                        () => this.updateCellOwnership(row, col),
-                        () => this.placeDot(row, col)
-                    );
+                    this.setupNonBlockedCell(row, col, cellState);
                 }
             }
         }
+    }
+
+    private setupNonBlockedCell(row: number, col: number, cellState: CellState): void {
+        cellState.capacity = this.gridManager.calculateCellCapacity(row, col, this.boardState);
+        this.gridManager.makeCellInteractive(
+            row, col,
+            () => this.gridManager.handleCellHover(row, col, cellState),
+            () => this.updateCellOwnership(row, col),
+            () => this.placeDot(row, col)
+        );
     }
 
     private isCellBlocked(row: number, col: number): boolean {
@@ -334,7 +340,7 @@ export class Game extends Scene
     }
 
     private initializeCellState(row: number, col: number, capacity: number): void {
-        const initialOwner = this.isCellBlocked(row, col) ? 'blocked' : 'default';
+        const initialOwner: CellOwner = this.isCellBlocked(row, col) ? 'blocked' : 'default';
 
         this.boardState[row][col] = { 
             dotCount: 0, 
@@ -344,369 +350,373 @@ export class Game extends Scene
         };
     }
 
-    updateUndoButton()
-    {
+    private updateUI(): void {
+        this.updatePlayerIndicator();
+        this.updateLevelInfo();
+        this.updateAIDifficulty();
+        this.updateUndoButton();
+    }
+
+    updateUndoButton(): void {
         this.uiManager.updateUndoButton(this.stateManager.canUndo());
     }
 
-    updatePlayerIndicator()
-    {
+    updatePlayerIndicator(): void {
         this.uiManager.updatePlayerIndicator(this.currentPlayer);
     }
 
-    updateLevelInfo()
-    {
-        // Always use the current level set from the settings
+    updateLevelInfo(): void {
+        const levelInfo = this.getLevelInfoForUI();
+        this.uiManager.updateLevelInfo(levelInfo.setName, levelInfo.levelName);
+    }
+
+    private getLevelInfoForUI(): { setName: string; levelName: string } {
         const levelSetId = this.settingsManager.getSetting('levelSetId');
         const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
-        
-        // Get the current level ID from the registry
         const levelId = this.game.registry.get('currentLevelId');
-        let level;
         
+        let level;
         if (levelId) {
             level = getLevelById(levelId);
-        }
-        
-        // If level is not found, use the first level of the current level set
-        if (!level && levelSet && levelSet.levelEntries.length > 0) {
+        } else if (levelSet && levelSet.levelEntries.length > 0) {
             level = getLevelById(levelSet.levelEntries[0].levelId);
         }
         
-        if (levelSet && level) {
-            this.uiManager.updateLevelInfo(levelSet.name, level.name);
-        } else {
-            // Default text if level info isn't available
-            this.uiManager.updateLevelInfo('Default Levels', 'Beginner\'s Grid');
-        }
+        return {
+            setName: levelSet?.name || 'Default Levels',
+            levelName: level?.name || 'Beginner\'s Grid'
+        };
     }
 
-    updateAIDifficulty()
-    {
+    updateAIDifficulty(): void {
         if (this.computerPlayer) {
             this.uiManager.updateAIDifficulty(this.computerPlayer.getDifficulty());
         }
     }
 
-
-    async placeDot(row: number, col: number, isComputerMove: boolean = false)
-    {
-        const cellState = this.boardState[row][col];
-        
-        // Check if cell is blocked - can't place dots on blocked cells
-        if (cellState.isBlocked) {
-            console.log(`Cannot place dot on blocked cell at ${row},${col}`);
+    async placeDot(row: number, col: number, isComputerMove: boolean = false): Promise<void> {
+        if (!this.isValidMove(row, col, isComputerMove)) {
             return;
         }
 
-        // Can only place dots in empty cells or cells owned by current player
-        // For human moves, check if it's the human player's turn (prevent clicking during computer turn)
-        // For computer moves, bypass the human player check
-        if ((cellState.dotCount === 0 || cellState.owner === this.currentPlayer) && 
-            (isComputerMove || this.currentPlayer === this.humanPlayer)) {
-            // Save current state to history before making the move
-            this.stateManager.saveMove(this.boardState, this.currentPlayer);
-            // Update game state first
-            cellState.dotCount++;
-            cellState.owner = this.currentPlayer;
+        this.processMoveAndUpdateState(row, col);
+        await this.handleMoveConsequences();
+    }
 
-            this.addVisualDot(row, col, this.currentPlayer);
-
-            // Arrange all dots in this cell visually
-            this.arrangeDots(row, col);
-
-            // Update cell ownership visual
-            this.updateCellOwnership(row, col);
-
-            console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col} (${cellState.dotCount}/${cellState.capacity})`);
-
-            // Play placement sound effect
-            if (this.areSoundEffectsEnabled()) {
-                this.sound.play('placement');
-            }
-
-            // Check for explosions after placing the dot
-            await this.checkAndHandleExplosions();
-
-            // Check for win condition
-            const winner = this.checkWinCondition();
-            if (winner) {
-                console.log(`Game Over! ${winner} wins!`);
-                this.handleGameOver(winner);
-                return;
-            }
-
-            // Switch to the other player
-            this.currentPlayer = this.currentPlayer === 'red' ? 'blue' : 'red';
-            this.updatePlayerIndicator();
-            this.updateUndoButton();
-
-            // Save board state after each move
-            const savedState = this.stateManager.loadFromRegistry();
-            const currentLevelIndex = savedState?.currentLevelIndex || 0;
-            const levelWinners = savedState?.levelWinners || [];
+    private isValidMove(row: number, col: number, isComputerMove: boolean): boolean {
+        const cellState = this.boardState[row][col];
         
-            this.stateManager.saveToRegistry(
-                this.boardState,
-                this.currentPlayer,
-                this.humanPlayer,
-                this.computerPlayer?.getColor() || 'blue',
-                false, // gameOver
-                false, // levelOver
-                currentLevelIndex,
-                levelWinners
-            );
+        if (cellState.isBlocked) {
+            console.log(`Cannot place dot on blocked cell at ${row},${col}`);
+            return false;
+        }
 
-            // If it's now the computer's turn, make a computer move after a short delay
-            if (this.currentPlayer !== this.humanPlayer && this.computerPlayer) {
-                this.time.delayedCall(Game.COMPUTER_MOVE_DELAY, () => {
-                    this.makeComputerMove();
-                });
-            }
-        } else {
+        const canPlaceDot = cellState.dotCount === 0 || cellState.owner === this.currentPlayer;
+        const isPlayerTurn = isComputerMove || this.currentPlayer === this.humanPlayer;
+        
+        if (!canPlaceDot) {
             console.log(`Cell at row ${row}, col ${col} is owned by the other player`);
+        }
+
+        return canPlaceDot && isPlayerTurn;
+    }
+
+    private processMoveAndUpdateState(row: number, col: number): void {
+        const cellState = this.boardState[row][col];
+        
+        this.stateManager.saveMove(this.boardState, this.currentPlayer);
+        
+        cellState.dotCount++;
+        cellState.owner = this.currentPlayer;
+
+        this.updateVisuals(row, col);
+        this.playPlacementSound();
+        
+        console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col} (${cellState.dotCount}/${cellState.capacity})`);
+    }
+
+    private updateVisuals(row: number, col: number): void {
+        this.addVisualDot(row, col, this.currentPlayer);
+        this.arrangeDots(row, col);
+        this.updateCellOwnership(row, col);
+    }
+
+    private playPlacementSound(): void {
+        if (this.areSoundEffectsEnabled()) {
+            this.sound.play('placement');
         }
     }
 
-    arrangeDots(row: number, col: number)
-    {
-        const cellDots = this.dots[row][col];
-        const dotCount = cellDots.length;
+    private async handleMoveConsequences(): Promise<void> {
+        await this.checkAndHandleExplosions();
 
-        if (dotCount === 0) return;
+        const winner = this.checkWinCondition();
+        if (winner) {
+            console.log(`Game Over! ${winner} wins!`);
+            this.handleGameOver(winner);
+            return;
+        }
+
+        this.switchToNextPlayer();
+        this.saveGameState();
+        this.scheduleComputerMoveIfNeeded();
+    }
+
+    private switchToNextPlayer(): void {
+        this.currentPlayer = this.currentPlayer === 'red' ? 'blue' : 'red';
+        this.updatePlayerIndicator();
+        this.updateUndoButton();
+    }
+
+    private saveGameState(): void {
+        const savedState = this.stateManager.loadFromRegistry();
+        const currentLevelIndex = savedState?.currentLevelIndex || 0;
+        const levelWinners = savedState?.levelWinners || [];
+    
+        this.stateManager.saveToRegistry(
+            this.boardState,
+            this.currentPlayer,
+            this.humanPlayer,
+            this.computerPlayer?.getColor() || 'blue',
+            false, // gameOver
+            false, // levelOver
+            currentLevelIndex,
+            levelWinners
+        );
+    }
+
+    private scheduleComputerMoveIfNeeded(): void {
+        if (this.isComputerMove()) {
+            this.time.delayedCall(Game.COMPUTER_MOVE_DELAY, () => {
+                this.makeComputerMove();
+            });
+        }
+    }
+
+    arrangeDots(row: number, col: number): void {
+        const cellDots = this.dots[row][col];
+        if (cellDots.length === 0) return;
 
         const cellCenterX = this.gridStartX + col * this.cellSize;
         const cellCenterY = this.gridStartY + row * this.cellSize;
 
-        const positions = DotPositioner.calculateDotPositions(dotCount, cellCenterX, cellCenterY);
+        const positions = DotPositioner.calculateDotPositions(cellDots.length, cellCenterX, cellCenterY);
         
-        // Apply positions to dots
         for (let i = 0; i < positions.length; i++) {
             cellDots[i].setPosition(positions[i].x, positions[i].y);
         }
     }
 
-    updateCellOwnership(row: number, col: number)
-    {
+    updateCellOwnership(row: number, col: number): void {
         const cellState = this.boardState[row][col];
         this.gridManager.updateCellOwnership(row, col, cellState);
     }
 
-    async checkAndHandleExplosions()
-    {
+    async checkAndHandleExplosions(): Promise<void> {
         let explosionOccurred = true;
 
-        // Keep checking for explosions until no more occur (handle chain reactions)
         while (explosionOccurred) {
             explosionOccurred = false;
 
             for (let row = 0; row < this.gridSize; row++) {
                 for (let col = 0; col < this.gridSize; col++) {
-                    const cellState = this.boardState[row][col];
-
-                    // Check if this cell should explode
-                    if (cellState.dotCount > cellState.capacity) {
+                    if (this.shouldExplode(row, col)) {
                         this.explodeCell(row, col);
                         explosionOccurred = true;
                     }
                 }
             }
 
-            // Check for win condition after each explosion wave
             if (explosionOccurred) {
-                // Play explosion propagation sound effect
-                if (this.areSoundEffectsEnabled()) {
-                    this.sound.play('propagate');
-                }
+                this.playExplosionSound();
 
                 const winner = this.checkWinCondition();
                 if (winner) {
                     console.log(`Game Over during chain reaction! ${winner} wins!`);
                     this.handleGameOver(winner);
-                    return; // Stop the chain reaction
+                    return;
                 }
 
-                // Add delay between explosion waves to show chain reaction
-                await new Promise(resolve => setTimeout(resolve, Game.EXPLOSION_DELAY));
+                await this.waitForExplosionDelay();
             }
         }
     }
 
-    explodeCell(row: number, col: number)
-    {
+    private shouldExplode(row: number, col: number): boolean {
         const cellState = this.boardState[row][col];
-        const explodingPlayer = cellState.owner;
+        return cellState.dotCount > cellState.capacity;
+    }
+
+    private playExplosionSound(): void {
+        if (this.areSoundEffectsEnabled()) {
+            this.sound.play('propagate');
+        }
+    }
+
+    private waitForExplosionDelay(): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, Game.EXPLOSION_DELAY));
+    }
+
+    explodeCell(row: number, col: number): void {
+        const cellState = this.boardState[row][col];
+        const explodingPlayer = cellState.owner as PlayerColor;
 
         console.log(`Cell at ${row},${col} exploding! (${cellState.dotCount} > ${cellState.capacity})`);
 
-        // Remove dots equal to capacity from the exploding cell
+        this.removeDotsDuringExplosion(row, col, cellState);
+        this.distributeDotsToAdjacentCells(row, col, explodingPlayer);
+    }
+
+    private removeDotsDuringExplosion(row: number, col: number, cellState: CellState): void {
         const dotsToDistribute = cellState.capacity;
         cellState.dotCount -= dotsToDistribute;
-
-        // Remove visual dots from the exploding cell
         this.updateCellVisualDots(row, col);
+    }
 
-        // Distribute dots to adjacent cells
-        const directions = [
-            [-1, 0], // up
-            [1, 0],  // down
-            [0, -1], // left
-            [0, 1]   // right
-        ];
+    private distributeDotsToAdjacentCells(row: number, col: number, explodingPlayer: PlayerColor): void {
+        const adjacentDirections = [[-1, 0], [1, 0], [0, -1], [0, 1]];
 
-        for (const [deltaRow, deltaCol] of directions) {
-            const newRow = row + deltaRow;
-            const newCol = col + deltaCol;
-
-            // Check if the adjacent cell is within grid bounds and not blocked
-            if (newRow >= 0 && newRow < this.gridSize && 
-                newCol >= 0 && newCol < this.gridSize) {
-
-                const adjacentCell = this.boardState[newRow][newCol];
-                
-                // Skip blocked cells
-                if (adjacentCell.isBlocked) {
-                    continue;
-                }
-
-                // Add one dot to the adjacent cell
-                adjacentCell.dotCount++;
-
-                // Change ownership to the exploding player
-                adjacentCell.owner = explodingPlayer;
-
-                // Update visual representation (this will recreate all dots with correct colors)
-                this.updateCellVisualDots(newRow, newCol);
-                this.updateCellOwnership(newRow, newCol);
-
-                console.log(`  -> Added dot to ${newRow},${newCol} (now ${adjacentCell.dotCount}/${adjacentCell.capacity})`);
+        for (const [deltaRow, deltaCol] of adjacentDirections) {
+            const targetCell = { row: row + deltaRow, col: col + deltaCol };
+            
+            if (this.isValidAdjacentCell(targetCell)) {
+                this.addDotToAdjacentCell(targetCell, explodingPlayer);
             }
         }
     }
 
-    updateCellVisualDots(row: number, col: number)
-    {
-        const cellState = this.boardState[row][col];
-        const currentDots = this.dots[row][col];
+    private isValidAdjacentCell(cell: GameMove): boolean {
+        return cell.row >= 0 && cell.row < this.gridSize && 
+               cell.col >= 0 && cell.col < this.gridSize &&
+               !this.boardState[cell.row][cell.col].isBlocked;
+    }
 
-        // Remove all existing visual dots
+    private addDotToAdjacentCell(cell: GameMove, explodingPlayer: PlayerColor): void {
+        const adjacentCell = this.boardState[cell.row][cell.col];
+        
+        adjacentCell.dotCount++;
+        adjacentCell.owner = explodingPlayer;
+
+        this.updateCellVisualDots(cell.row, cell.col);
+        this.updateCellOwnership(cell.row, cell.col);
+
+        console.log(`  -> Added dot to ${cell.row},${cell.col} (now ${adjacentCell.dotCount}/${adjacentCell.capacity})`);
+    }
+
+    updateCellVisualDots(row: number, col: number): void {
+        this.clearCellDots(row, col);
+        this.recreateCellDots(row, col);
+        this.arrangeDots(row, col);
+    }
+
+    private clearCellDots(row: number, col: number): void {
+        const currentDots = this.dots[row][col];
         while (currentDots.length > 0) {
             const dotToRemove = currentDots.pop();
             if (dotToRemove) {
                 dotToRemove.destroy();
             }
         }
+    }
 
-        // Recreate all dots with the correct owner's color
+    private recreateCellDots(row: number, col: number): void {
+        const cellState = this.boardState[row][col];
         if (cellState.owner && cellState.dotCount > 0) {
             for (let i = 0; i < cellState.dotCount; i++) {
                 this.addVisualDot(row, col, cellState.owner);
             }
         }
-
-        // Rearrange all dots
-        this.arrangeDots(row, col);
     }
 
-    addVisualDot(row: number, col: number, owner: string)
-    {
-        const dot = this.add.sprite(0, 0, owner === 'red' ? 'evil-sprite' : 'good-sprite');                                                                                 
+    addVisualDot(row: number, col: number, owner: string): void {
+        const spriteKey = owner === 'red' ? 'evil-sprite' : 'good-sprite';
+        const animationKey = owner === 'red' ? 'evil-dot-pulse' : 'good-dot-pulse';
+        
+        const dot = this.add.sprite(0, 0, spriteKey);                                                                                 
         dot.setScale(1.5);
+        
         if (Math.random() < 0.5) {
-            dot.toggleFlipX(); // Randomly flip for variety
+            dot.toggleFlipX();
         }
-        dot.play(owner === 'red' ? 'evil-dot-pulse' : 'good-dot-pulse');
-
+        
+        dot.play(animationKey);
         this.dots[row][col].push(dot);
     }
 
-    initializeGameSettings()
-    {
-        // Read settings using SettingsManager (read-only)
+    initializeGameSettings(): void {
         const settings = this.settingsManager.getCurrentSettings();
         
-        // Set up game based on current settings
         this.humanPlayer = settings.playerColor;
         const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
         
-        // Difficulty 'easy' here will be overridden when the level is created with level-specific difficulty
         this.computerPlayer = new ComputerPlayer('easy', computerColor);
         this.currentPlayer = this.humanPlayer;
 
         console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${computerColor}`);
     }
 
-    setAIForLevel(levelSetId: string, levelId: string)
-    {
+    setAIForLevel(levelSetId: string, levelId: string): void {
         if (!this.computerPlayer) return;
 
         const aiDifficulty = getAIDifficultyForLevel(levelSetId, levelId);
-
         this.computerPlayer.setDifficulty(aiDifficulty);
 
         console.log(`AI set for level: Computer AI is ${aiDifficulty}`);
     }
 
-    undoLastMove()
-    {
+    undoLastMove(): void {
         const lastState = this.stateManager.undoLastMove();
         if (!lastState) return;
 
-        // Restore the board state
+        this.restoreGameState(lastState);
+        this.updateVisualsAfterUndo();
+        this.saveStateAfterUndo();
+
+        console.log(`Undid move, back to ${this.currentPlayer} player's turn`);
+    }
+
+    private restoreGameState(lastState: any): void {
         this.boardState = lastState.boardState;
         this.currentPlayer = lastState.currentPlayer;
+    }
 
-        // Clear all visual elements and recreate them
+    private updateVisualsAfterUndo(): void {
         this.clearAllVisualDots();
         this.recreateAllVisualDots();
         this.updateAllCellOwnership();
         this.updatePlayerIndicator();
         this.updateUndoButton();
+    }
 
-        // Save updated board state after undo
+    private saveStateAfterUndo(): void {
         this.stateManager.saveToRegistry(
             this.boardState,
             this.currentPlayer,
             this.humanPlayer,
             this.computerPlayer?.getColor() || 'blue'
         );
-
-        console.log(`Undid move, back to ${this.currentPlayer} player's turn`);
     }
 
-    quitGame()
-    {
-        // Reset the game state
+    quitGame(): void {
         this.clearSavedGameState();
-        
-        // Store abandonment information for GameOver scene
         this.game.registry.set('gameWinner', 'Abandoned');
-        
-        // Transition to GameOver scene immediately
         this.scene.start('GameOver');
     }
 
-    clearAllVisualDots()
-    {
+    clearAllVisualDots(): void {
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
-                const cellDots = this.dots[row][col];
-                while (cellDots.length > 0) {
-                    const dot = cellDots.pop();
-                    if (dot) {
-                        dot.destroy();
-                    }
-                }
+                this.clearCellDots(row, col);
             }
         }
     }
 
-    recreateAllVisualDots()
-    {
+    recreateAllVisualDots(): void {
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 const cellState = this.boardState[row][col];
                 const playerOwned = (cellState.owner === 'red' || cellState.owner === 'blue');
+                
                 if (playerOwned && cellState.dotCount > 0) {
                     for (let i = 0; i < cellState.dotCount; i++) {
                         this.addVisualDot(row, col, cellState.owner);
@@ -717,8 +727,7 @@ export class Game extends Scene
         }
     }
 
-    updateAllCellOwnership()
-    {
+    updateAllCellOwnership(): void {
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 this.updateCellOwnership(row, col);
@@ -726,41 +735,49 @@ export class Game extends Scene
         }
     }
 
-    loadGameState()
-    {
+    loadGameState(): void {
         const savedState = this.stateManager.loadFromRegistry();
         if (!savedState) return;
 
+        this.setupFromSavedState(savedState);
+        this.handleGameOverIfNeeded(savedState);
+    }
+
+    private setupFromSavedState(savedState: any): void {
         const levelSetId = this.game.registry.get('currentLevelSetId') || 'default';
         const levelId = this.game.registry.get('currentLevelId') || 'level-1';
 
-        // Set grid size from the current level before restoring board state
-        if (levelId) {
-            const level = getLevelById(levelId);
-            if (level) {
-                this.gridSize = Math.min(level.gridSize, 9);
-                this.blockedCells = level.blockedCells;
-                
-                // Log warning if grid size was clamped
-                if (level.gridSize > 9) {
-                    console.warn(`Level ${levelId} grid size ${level.gridSize} exceeds maximum of 9, clamped to 9`);
-                }
+        this.setLevelPropertiesFromSavedState(levelId);
+        this.restoreGameStateFromSave(savedState);
+        this.setupAIFromSavedState(levelSetId, levelId, savedState);
+    }
+
+    private setLevelPropertiesFromSavedState(levelId: string): void {
+        const level = getLevelById(levelId);
+        if (level) {
+            this.gridSize = Math.min(level.gridSize, Game.MAX_GRID_SIZE);
+            this.blockedCells = level.blockedCells;
+            
+            if (level.gridSize > Game.MAX_GRID_SIZE) {
+                console.warn(`Level ${levelId} grid size ${level.gridSize} exceeds maximum, clamped`);
             }
         }
+    }
 
+    private restoreGameStateFromSave(savedState: any): void {
         this.boardState = savedState.boardState;
         this.currentPlayer = savedState.currentPlayer;
         this.humanPlayer = savedState.humanPlayer;
-        const computerColor = savedState.computerPlayerColor;
+    }
 
-        // Get AI difficulty from current level context
+    private setupAIFromSavedState(levelSetId: string, levelId: string, savedState: any): void {
+        const computerColor = savedState.computerPlayerColor;
         const aiDifficulty = getAIDifficultyForLevel(levelSetId, levelId);
-        
         this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
-        
-        // Check if the game was over when saved
+    }
+
+    private handleGameOverIfNeeded(savedState: any): void {
         if (savedState.gameOver && savedState.winner) {
-            // Recreate the game over state after a short delay to ensure all visuals are ready
             this.time.delayedCall(100, () => {
                 if (savedState.winner) {
                     this.handleGameOver(savedState.winner);
@@ -769,23 +786,33 @@ export class Game extends Scene
         }
     }
 
-    clearSavedGameState()
-    {
+    clearSavedGameState(): void {
         this.stateManager.clearSavedState();
     }
 
-    checkWinCondition(): string | null
-    {
+    checkWinCondition(): string | null {
+        const cellCounts = this.countCellsByOwner();
+        
+        if (cellCounts.empty === 0) {
+            if (cellCounts.red > 0 && cellCounts.blue === 0) {
+                return 'Red';
+            } else if (cellCounts.blue > 0 && cellCounts.red === 0) {
+                return 'Blue';
+            }
+        }
+
+        return null;
+    }
+
+    private countCellsByOwner(): { red: number; blue: number; empty: number } {
         let redCells = 0;
         let blueCells = 0;
         let emptyCells = 0;
 
-        // Count cells owned by each player, ignoring blocked cells
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 const cellState = this.boardState[row][col];
                 
-                // Skip blocked cells in win condition calculation
                 if (cellState.isBlocked) {
                     continue;
                 }
@@ -800,134 +827,144 @@ export class Game extends Scene
             }
         }
 
-        // Win condition: one player owns all non-blocked cells (no empty cells and opponent has 0 cells)
-        if (emptyCells === 0) {
-            if (redCells > 0 && blueCells === 0) {
-                return 'Red';
-            } else if (blueCells > 0 && redCells === 0) {
-                return 'Blue';
-            }
-        }
-
-        return null; // No winner yet
+        return { red: redCells, blue: blueCells, empty: emptyCells };
     }
 
-    handleGameOver(winner: string)
-    {
-        // Prevent multiple calls to handleGameOver
+    handleGameOver(winner: string): void {
         if (this.game.registry.get('gameEnding')) {
             return;
         }
+        
         this.game.registry.set('gameEnding', true);
-        
-        // Get current level information from state manager
-        const savedState = this.stateManager.loadFromRegistry();
-        const currentLevelIndex = savedState?.currentLevelIndex || 0;
-        
-        // Store winner information in registry for scenes
+        this.processGameEndResult(winner);
+        this.scheduleSceneTransition(winner);
+    }
+
+    private processGameEndResult(winner: string): void {
         this.game.registry.set('gameWinner', winner);
+        this.preserveLevelInfoForGameOver();
         
-        // Ensure current level info is preserved in registry for LevelOver scene
+        if (winner !== 'Abandoned') {
+            this.updateLevelCompletionStatus(winner);
+        } else {
+            this.clearSavedGameState();
+        }
+    }
+
+    private preserveLevelInfoForGameOver(): void {
         const currentLevelSetId = this.game.registry.get('currentLevelSetId');
         const currentLevelId = this.game.registry.get('currentLevelId');
         
-        // If level info is missing, try to reconstruct it from settings and state
         if (!currentLevelSetId || !currentLevelId) {
-            const levelSetId = this.settingsManager.getSetting('levelSetId');
-            const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
-            if (levelSet && currentLevelIndex < levelSet.levelEntries.length) {
-                const levelId = levelSet.levelEntries[currentLevelIndex].levelId;
-                this.game.registry.set('currentLevelSetId', levelSetId);
-                this.game.registry.set('currentLevelId', levelId);
-                console.log(`Reconstructed level info: ${levelSetId}/${levelId} (index ${currentLevelIndex})`);
-            }
+            this.reconstructLevelInfo();
         }
+    }
+
+    private reconstructLevelInfo(): void {
+        const savedState = this.stateManager.loadFromRegistry();
+        const currentLevelIndex = savedState?.currentLevelIndex || 0;
+        const levelSetId = this.settingsManager.getSetting('levelSetId');
+        const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
         
-        let targetScene = 'GameOver';
-        
-        // If this is a level completion (not abandonment), update state and determine target scene
-        if (winner !== 'Abandoned') {
-            // Update level completion in state manager
-            if (winner === 'Red' || winner === 'Blue') {
-                const winnerColor = winner.toLowerCase() as 'red' | 'blue';
-                this.stateManager.updateLevelCompletion(winnerColor, currentLevelIndex);
-            }
-            
-            // Determine if this is the last level in the set
-            const levelSetId = this.settingsManager.getSetting('levelSetId');
-            const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
-            if (levelSet) {
-                const isLastLevel = currentLevelIndex >= levelSet.levelEntries.length - 1;
-                
-                if (isLastLevel) {
-                    // Mark game as complete and show GameOver
-                    this.stateManager.markGameComplete(winner);
-                    targetScene = 'GameOver';
-                } else {
-                    // Show LevelOver for individual level completion
-                    // Clear saved state so that when Game scene restarts, it will check loadNextLevel flag
-                    this.clearSavedGameState();
-                    targetScene = 'LevelOver';
-                }
-            }
-        } else {
-            // Game was abandoned, clear state
-            this.clearSavedGameState();
+        if (levelSet && currentLevelIndex < levelSet.levelEntries.length) {
+            const levelId = levelSet.levelEntries[currentLevelIndex].levelId;
+            this.game.registry.set('currentLevelSetId', levelSetId);
+            this.game.registry.set('currentLevelId', levelId);
+            console.log(`Reconstructed level info: ${levelSetId}/${levelId} (index ${currentLevelIndex})`);
         }
+    }
+
+    private updateLevelCompletionStatus(winner: string): void {
+        const savedState = this.stateManager.loadFromRegistry();
+        const currentLevelIndex = savedState?.currentLevelIndex || 0;
         
-        // Add a short pause before transitioning
-        // This allows the user to see the final resolved game state
-        this.time.delayedCall(1500, () => {
+        if (winner === 'Red' || winner === 'Blue') {
+            const winnerColor = winner.toLowerCase() as PlayerColor;
+            this.stateManager.updateLevelCompletion(winnerColor, currentLevelIndex);
+        }
+    }
+
+    private scheduleSceneTransition(winner: string): void {
+        const targetScene = this.determineTargetScene(winner);
+        
+        this.time.delayedCall(Game.GAME_END_DELAY, () => {
             this.game.registry.remove('gameEnding');
             this.scene.start(targetScene);
         });
     }
 
-    async makeComputerMove()
-    {
-        if (!this.computerPlayer || this.currentPlayer === this.humanPlayer) {
+    private determineTargetScene(winner: string): string {
+        if (winner === 'Abandoned') {
+            return 'GameOver';
+        }
+
+        const savedState = this.stateManager.loadFromRegistry();
+        const currentLevelIndex = savedState?.currentLevelIndex || 0;
+        const levelSetId = this.settingsManager.getSetting('levelSetId');
+        const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
+        
+        if (levelSet) {
+            const isLastLevel = currentLevelIndex >= levelSet.levelEntries.length - 1;
+            
+            if (isLastLevel) {
+                this.stateManager.markGameComplete(winner);
+                return 'GameOver';
+            } else {
+                this.clearSavedGameState();
+                return 'LevelOver';
+            }
+        }
+        
+        return 'GameOver';
+    }
+
+    async makeComputerMove(): Promise<void> {
+        if (!this.isComputerMove()) {
             return;
         }
 
         try {
-            // Get the computer's move
-            const move = this.computerPlayer.findMove(this.boardState, this.gridSize);
-            console.log(`Computer (${this.computerPlayer.getColor()}) choosing move: ${move.row}, ${move.col}`);
+            const move = this.computerPlayer!.findMove(this.boardState, this.gridSize);
+            console.log(`Computer (${this.computerPlayer!.getColor()}) choosing move: ${move.row}, ${move.col}`);
 
-            // Validate the move before attempting to place the dot
-            const cellState = this.boardState[move.row][move.col];
-            if (cellState && !cellState.isBlocked && (cellState.dotCount === 0 || cellState.owner === this.currentPlayer)) {
-                // Make the move (pass true to indicate this is a computer move)
+            if (this.isMoveValid(move)) {
                 await this.placeDot(move.row, move.col, true);
             } else {
                 console.error('Computer attempted invalid move, trying random valid move instead');
-                // Fall back to a random valid move
-                const validMoves = this.getValidMoves();
-                if (validMoves.length > 0) {
-                    const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
-                    await this.placeDot(randomMove.row, randomMove.col, true);
-                } else {
-                    console.error('No valid moves available for computer');
-                }
+                await this.makeRandomValidMove();
             }
         } catch (error) {
             console.error('Computer player error:', error);
-            // If computer can't find a move, the game might be over
         }
     }
 
-    /**
-     * Get all valid moves for the current player
-     */
-    private getValidMoves(): { row: number, col: number }[] {
-        const validMoves: { row: number, col: number }[] = [];
+    private isComputerMove(): boolean {
+        return this.computerPlayer !== null && this.currentPlayer !== this.humanPlayer;
+    }
+
+    private isMoveValid(move: GameMove): boolean {
+        const cellState = this.boardState[move.row][move.col];
+        return cellState && 
+               !cellState.isBlocked && 
+               (cellState.dotCount === 0 || cellState.owner === this.currentPlayer);
+    }
+
+    private async makeRandomValidMove(): Promise<void> {
+        const validMoves = this.getValidMoves();
+        if (validMoves.length > 0) {
+            const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+            await this.placeDot(randomMove.row, randomMove.col, true);
+        } else {
+            console.error('No valid moves available for computer');
+        }
+    }
+
+    private getValidMoves(): GameMove[] {
+        const validMoves: GameMove[] = [];
 
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
-                const cellState = this.boardState[row][col];
-                
-                // A move is valid if the cell is not blocked and (empty or owned by current player)
-                if (cellState && !cellState.isBlocked && (cellState.dotCount === 0 || cellState.owner === this.currentPlayer)) {
+                if (this.isMoveValid({row, col})) {
                     validMoves.push({ row, col });
                 }
             }
@@ -940,62 +977,54 @@ export class Game extends Scene
         return this.settingsManager.getSetting('soundEffectsEnabled');
     }
 
-    changeScene ()
-    {
+    changeScene(): void {
         this.scene.start('GameOver');
     }
 
-    // This method is called when the scene becomes active again
-    wake() {
-        // Check if settings have been changed while we were away
+    wake(): void {
         const settingsDirty = this.game.registry.get('settingsDirty');
         if (settingsDirty) {
-            // Clear the flag
-            this.game.registry.remove('settingsDirty');
-            
-            // Check if level set has changed
-            const currentLevelSetId = this.game.registry.get('currentLevelSetId');
-            const newLevelSetId = this.settingsManager.getSetting('levelSetId');
-            
-            // Reload all settings from the registry
-            this.reloadAllSettings();
-            
-            // If level set has changed, load the first level of the new level set
-            if (currentLevelSetId !== newLevelSetId) {
-                const levelSet = LEVEL_SETS.find(set => set.id === newLevelSetId);
-                if (levelSet && levelSet.levelEntries.length > 0) {
-                    this.loadLevel(newLevelSetId, levelSet.levelEntries[0].levelId);
-                }
-            } else {
-                // For other setting changes, just update the UI
-                this.updatePlayerIndicator();
-                this.updateLevelInfo();
-                this.updateAIDifficulty();
-            }
-        }
-        // If settings haven't changed but we're not in a game state, reload
-        else if (!this.stateManager.hasSavedState()) {
-            this.loadLevelNoState();
+            this.handleSettingsChange();
+        } else if (!this.stateManager.hasSavedState()) {
+            this.loadNewLevel();
         }
     }
 
-    /**
-     * Reload all settings from the settings manager
-     */
+    private handleSettingsChange(): void {
+        this.game.registry.remove('settingsDirty');
+        
+        const currentLevelSetId = this.game.registry.get('currentLevelSetId');
+        const newLevelSetId = this.settingsManager.getSetting('levelSetId');
+        
+        this.reloadAllSettings();
+        
+        if (this.hasLevelSetChanged(currentLevelSetId, newLevelSetId)) {
+            this.loadFirstLevelOfSet(newLevelSetId);
+        } else {
+            this.updateUIAfterSettingsChange();
+        }
+    }
+
+    private hasLevelSetChanged(currentLevelSetId: string, newLevelSetId: string): boolean {
+        return currentLevelSetId !== newLevelSetId;
+    }
+
+    private updateUIAfterSettingsChange(): void {
+        this.updatePlayerIndicator();
+        this.updateLevelInfo();
+        this.updateAIDifficulty();
+    }
+
     private reloadAllSettings(): void {
-        // Read current settings (read-only)
         const settings = this.settingsManager.getCurrentSettings();
         
-        // Reload player color
         this.humanPlayer = settings.playerColor;
         const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
 
-        // Get AI difficulty from current level context
         const levelSetId = this.game.registry.get('currentLevelSetId') || 'default';
         const levelId = this.game.registry.get('currentLevelId') || 'level-1';
         const aiDifficulty = getAIDifficultyForLevel(levelSetId, levelId);
 
-        // Reload difficulty level (now level-specific)
         this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
         this.currentPlayer = this.humanPlayer;
 

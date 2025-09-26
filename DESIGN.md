@@ -330,13 +330,33 @@ This section outlines an incremental development process for building the Dots g
     - [ ] On GameOver scene, change "Congratulations!" to show how many levels
           were won out of total levels in the level set with overall winner
 
-### Phase 12: Ship it!
+### Phase 12: Refactor Level Management
+Level management is increasinly complex and difficult to debug and maintain. So it's time to refactor.
+The `GameStateManager` currently defines interfaces for `Level` and `LevelSet`.
+The existing interfaces could be renamed to `LevelDefinition` and `LevelSetDefinition`.
+We wish to create separate `Level` and `LevelSet` classes to better manage levels and level sets.
+
+- [ ] Create LevelSetManager.ts
+    - [ ] responsible for loading level sets from JSON files into LevelSet linked list
+    - [ ] #getCurrentLevelSet(): LevelSet -- returns the current level set based on registry setting
+- [ ] Create LevelSet.ts
+    - [ ] represents a level set, contains metadata and linked list of levels
+    - [ ] initialized with LevelSetDefinition data from `LevelDefinitions.ts`
+    - [ ] #first(): Level -- returns the first level in the set
+    - [ ] #last(): Level -- returns the last level in the set
+    - [ ] #getLevel(index: number): Level -- returns the level at the given index
+- [ ] Create Level.ts
+    - [ ] represents a single level
+    - [ ] initialized with LevelDefinition data from `LevelDefinitions.ts`
+    - [ ] #next(): Level | null -- returns the next level in the set or null if last
+
+### Phase 13: Ship it!
 - [ ] Add more chohesive level sets and levels
 - [ ] Final testing and bug fixing
 - [ ] Deploy to production environment
 - [ ] Announce release on social media, Phaser, and gaming forums
 
-### Phase 13: Polish and Accessibility
+### Phase 14: Polish and Accessibility
 - [ ] Improve computer AI
     - [ ] The expert level AI could be improved further.
     - [x] The level definition has a 'difficulty' field that is not currently used. Possibly use it to adjust the computer AI strategy.
