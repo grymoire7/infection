@@ -75,7 +75,7 @@ export class Game extends Scene {
         this.uiManager = new GameUIManager(this);
         this.gridManager = new GridManager(this);
         this.settingsManager = new SettingsManager(this.game.registry);
-        this.levelSetManager = new LevelSetManager(this.game.registry, this.loadLevel.bind(this));
+        this.levelSetManager = new LevelSetManager(this.game.registry);
     }
 
     private initializeUI(): void {
@@ -97,30 +97,64 @@ export class Game extends Scene {
         this.uiManager.setQuitButtonHandler(() => this.quitGame());
     }
 
+    /**
+     * Determine what to load when scene starts:
+     * 1. If there's a saved game in progress, resume it
+     * 2. Otherwise, start a new level
+     */
     private loadGameStateOrLevel(): void {
-        // This logic is incorrect.
         if (this.stateManager.hasSavedState()) {
-            console.log('Loading saved game state');
-            this.loadExistingGameState();
+            console.log('Resuming saved game');
+            this.resumeSavedGame();
         } else {
-            console.log('No saved state, loading new level');
-            this.levelSetManager.loadNewLevel();
+            console.log('Starting new level');
+            this.startNewLevel();
         }
     }
 
-    // called only by loadGameStateOrLevel
-    private loadExistingGameState(): void {
-        this.loadGameState();
+    /**
+     * Resume a saved game from registry
+     */
+    private resumeSavedGame(): void {
+        const savedState = this.stateManager.loadFromRegistry();
+        if (!savedState) {
+            console.warn('Failed to load saved state, starting new level');
+            this.startNewLevel();
+            return;
+        }
+
+        // Restore level info and board state
+        this.currentLevel = savedState.currentLevel;
+        this.setLevelProperties(this.currentLevel);
+        this.boardStateManager.setState(savedState.boardState);
+        this.currentPlayer = savedState.currentPlayer;
+        this.humanPlayer = savedState.humanPlayer;
+        this.restoreAIFromSavedState(savedState);
+
+        // Create grid and visuals
         this.createGrid();
         this.recreateAllVisualDots();
         this.updateAllCellOwnership();
+
+        // Check if game was already over when saved
+        this.handleGameOverIfNeeded(savedState);
     }
 
-    // used only by loadNewLevel and loadFirstLevelOfSet
+    /**
+     * Start a new level (either first level or next level)
+     */
+    private startNewLevel(): void {
+        const level = this.levelSetManager.getLevelToLoad();
+        this.loadLevel(level);
+    }
+
+    /**
+     * Load a specific level and set up the game board
+     */
     private loadLevel(level: Level): void {
         console.log(`Loading level: ${level.getName()}`);
         this.currentLevel = level;
-        
+
         this.setLevelProperties(level);
         this.initializeGameState();
         this.createGameBoard();
@@ -526,32 +560,12 @@ export class Game extends Scene {
         }
     }
 
-    // called only by loadExistingGameState()
-    private loadGameState(): void {
-        const savedState = this.stateManager.loadFromRegistry();
-        if (!savedState) return;
-
-        this.restoreGameStateFromSave(savedState);
-        this.setLevelProperties(this.currentLevel);
-        this.handleGameOverIfNeeded(savedState);
-    }
-
-    // called only by loadGameState
-    private restoreGameStateFromSave(savedState: any): void {
-        this.boardStateManager.setState(savedState.boardState);
-        this.currentPlayer = savedState.currentPlayer;
-        this.humanPlayer = savedState.humanPlayer;
-        this.currentLevel = savedState.currentLevel;
-        this.restoreAIFromSavedState(savedState);
-    }
-
-    // used only by restoreGameStateFromSave
+    /**
+     * Restore AI player from saved state
+     */
     private restoreAIFromSavedState(savedState: any): void {
         const computerColor = savedState.computerPlayerColor;
-        let aiDifficulty: 'easy' | 'medium' | 'hard' | 'expert' = 'easy';
-        
-        aiDifficulty = this.currentLevel?.getAIDifficulty() || 'easy';
-        
+        const aiDifficulty = this.currentLevel?.getAIDifficulty() || 'easy';
         this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
     }
 
@@ -669,7 +683,7 @@ export class Game extends Scene {
         if (settingsDirty) {
             this.handleSettingsChange();
         } else if (!this.stateManager.hasSavedState()) {
-            this.levelSetManager.loadNewLevel();
+            this.startNewLevel();
         }
     }
 
@@ -699,7 +713,8 @@ export class Game extends Scene {
         this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
         this.currentPlayer = this.humanPlayer;
 
-        this.levelSetManager.handleLevelSetDirty();
+        // Check if level set was changed - this clears the dirty flag
+        this.levelSetManager.hasLevelSetChanged();
 
         console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty})`);
     }

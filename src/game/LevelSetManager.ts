@@ -5,11 +5,9 @@ import { LEVEL_SETS } from './LevelDefinitions';
 export class LevelSetManager {
     private levelSets: Map<string, LevelSet> = new Map();
     private gameRegistry: Phaser.Data.DataManager;
-    private loadLevelMethod: ((level: Level) => void) | undefined;
 
-    constructor(gameRegistry: Phaser.Data.DataManager, loadLevelMethod?: (level: Level) => void) {
+    constructor(gameRegistry: Phaser.Data.DataManager) {
         this.gameRegistry = gameRegistry;
-        this.loadLevelMethod = loadLevelMethod;
         this.initializeLevelSets();
     }
 
@@ -23,59 +21,56 @@ export class LevelSetManager {
         }
     }
 
-    private loadLevel(level: Level): void {
-        if (this.loadLevelMethod) {
-            this.loadLevelMethod(level);
-        } else {
-            console.warn('No loadLevelMethod provided to LevelSetManager.');
-        }
-    }
-
-    // clalled by game.wake and game.loadGameStateOrLevel
-    loadNewLevel(): void {
-        const shouldLoadNextLevel = (this.gameRegistry.get('loadNextLevel') === true);
-        console.log('LevelSetManager.loadNewLevel(): shouldLoadNextLevel = ', shouldLoadNextLevel);
-        
-        if (shouldLoadNextLevel) {
-            this.loadNextLevel();
-        } else {
-            this.loadFirstLevelOfSet();
-        }
-
+    /**
+     * Get the level that should be loaded next
+     * This could be the next level in the set, or the first level if starting fresh
+     */
+    getLevelToLoad(): Level {
+        const shouldLoadNextLevel = this.gameRegistry.get('loadNextLevel') === true;
         this.gameRegistry.remove('loadNextLevel');
-    }
 
-    // used by game.realoadAllSettings
-    handleLevelSetDirty(): void {
-        const levelSetDirty = this.gameRegistry.get('levelSetDirty');
-        if (levelSetDirty) {
-            this.gameRegistry.remove('levelSetDirty');
-            this.loadFirstLevelOfSet();
+        if (shouldLoadNextLevel) {
+            return this.getNextLevel();
+        } else {
+            return this.getFirstLevelOfCurrentSet();
         }
     }
 
-    // used by loadNewLevel, loadNextLevel, and handleLevelSetDirty
-    private loadFirstLevelOfSet(): void {
+    /**
+     * Get the first level of the current level set
+     */
+    getFirstLevelOfCurrentSet(): Level {
         const currentLevelSet = this.getCurrentLevelSet();
-        
         const firstLevel = currentLevelSet.first();
         currentLevelSet.setCurrentLevel(firstLevel);
-        this.loadLevel(firstLevel);
+        return firstLevel;
     }
-    
-    // used only by loadNewLevel
-    private loadNextLevel(): void {
+
+    /**
+     * Get the next level in the current level set
+     */
+    private getNextLevel(): Level {
         const currentLevelSet = this.getCurrentLevelSet();
         const nextLevel = currentLevelSet.nextLevel();
-        
-        console.log('Loading next level for level set:', currentLevelSet.getId());
-        
+
         if (nextLevel) {
-            this.loadLevel(nextLevel);
+            return nextLevel;
         } else {
-            console.log(`WARN: We should ever get here. No next level when loadNextLevel is called.`);
-            this.loadFirstLevelOfSet();
+            // Fallback to first level if no next level
+            console.warn('No next level available, returning first level of set');
+            return this.getFirstLevelOfCurrentSet();
         }
+    }
+
+    /**
+     * Check if the level set has changed and needs to be reloaded
+     */
+    hasLevelSetChanged(): boolean {
+        const levelSetDirty = this.gameRegistry.get('levelSetDirty') === true;
+        if (levelSetDirty) {
+            this.gameRegistry.remove('levelSetDirty');
+        }
+        return levelSetDirty;
     }
 
     getCurrentLevel(): Level | null {
