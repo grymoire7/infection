@@ -1,21 +1,16 @@
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 import { ComputerPlayer } from '../ComputerPlayer';
-import { GameStateManager, CellState } from '../GameStateManager';
+import { GameStateManager } from '../GameStateManager';
 import { GameUIManager } from '../GameUIManager';
 import { LevelSetManager } from '../LevelSetManager';
 import { Level } from '../Level';
 import { GridManager } from '../GridManager';
 import { SettingsManager } from '../SettingsManager';
 import { VisualDotManager } from '../VisualDotManager';
+import { BoardStateManager } from '../BoardStateManager';
 
 type PlayerColor = 'red' | 'blue';
-type CellOwner = PlayerColor | 'default' | 'blocked';
-
-interface GameMove {
-    row: number;
-    col: number;
-}
 
 export class Game extends Scene {
     // Game configuration constants
@@ -31,6 +26,7 @@ export class Game extends Scene {
     private uiManager: GameUIManager;
     private gridManager: GridManager;
     private visualDotManager: VisualDotManager;
+    private boardStateManager: BoardStateManager;
     private settingsManager: SettingsManager;
     private levelSetManager: LevelSetManager;
     private computerPlayer: ComputerPlayer | null = null;
@@ -38,7 +34,6 @@ export class Game extends Scene {
 
     // Grid and game state
     private gridSize: number = 5;
-    private boardState: CellState[][];
     private blockedCells: { row: number; col: number }[] = [];
 
     // Game flow
@@ -188,10 +183,8 @@ export class Game extends Scene {
     }
 
     private initializeGridArrays(): void {
-        this.boardState = Array(this.gridSize);
-        for (let i = 0; i < this.gridSize; i++) {
-            this.boardState[i] = Array(this.gridSize);
-        }
+        // Initialize board state manager
+        this.boardStateManager = new BoardStateManager(this.gridSize, this.blockedCells);
 
         // Initialize visual dot manager for this grid size
         this.visualDotManager = new VisualDotManager(this, this.gridSize);
@@ -199,25 +192,22 @@ export class Game extends Scene {
 
     private createGridCells(): void {
         this.gridManager.createGrid(this.gridSize, this.blockedCells);
-        this.initializeCells();
         this.setupCellCapacitiesAndInteractivity();
     }
 
-    private initializeCells(): void {
-        for (let row = 0; row < this.gridSize; row++) {
-            for (let col = 0; col < this.gridSize; col++) {
-                this.initializeCellState(row, col, 0);
-            }
-        }
-    }
-
     private setupCellCapacitiesAndInteractivity(): void {
+        const boardState = this.boardStateManager.getState();
+
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
-                const cellState = this.boardState[row][col];
+                const cellState = boardState[row][col];
                 if (cellState.isBlocked) continue;
 
-                cellState.capacity = this.gridManager.calculateCellCapacity(row, col, this.boardState);
+                // Calculate and set capacity
+                const capacity = this.gridManager.calculateCellCapacity(row, col, boardState);
+                this.boardStateManager.setCellCapacity(row, col, capacity);
+
+                // Make cell interactive
                 this.gridManager.makeCellInteractive(
                     row, col,
                     () => this.gridManager.handleCellHover(row, col, cellState),
@@ -226,21 +216,6 @@ export class Game extends Scene {
                 );
             }
         }
-    }
-
-    private isCellBlocked(row: number, col: number): boolean {
-        return this.blockedCells.some(cell => cell.row === row && cell.col === col);
-    }
-
-    private initializeCellState(row: number, col: number, capacity: number): void {
-        const initialOwner: CellOwner = this.isCellBlocked(row, col) ? 'blocked' : 'default';
-
-        this.boardState[row][col] = { 
-            dotCount: 0, 
-            owner: initialOwner, 
-            capacity,
-            isBlocked: initialOwner === 'blocked'
-        };
     }
 
     private updateUI(): void {
@@ -299,39 +274,43 @@ export class Game extends Scene {
     }
 
     private isValidMove(row: number, col: number, isComputerMove: boolean): boolean {
-        const cellState = this.boardState[row][col];
-        
-        if (cellState.isBlocked) {
-            console.log(`Cannot place dot on blocked cell at ${row},${col}`);
+        const isPlayerTurn = isComputerMove || this.currentPlayer === this.humanPlayer;
+
+        if (!isPlayerTurn) {
             return false;
         }
 
-        const canPlaceDot = cellState.dotCount === 0 || cellState.owner === this.currentPlayer;
-        const isPlayerTurn = isComputerMove || this.currentPlayer === this.humanPlayer;
-        
-        if (!canPlaceDot) {
-            console.log(`Cell at row ${row}, col ${col} is owned by the other player`);
+        const isValid = this.boardStateManager.isValidMove(row, col, this.currentPlayer);
+
+        if (!isValid) {
+            const cellState = this.boardStateManager.getCellState(row, col);
+            if (cellState.isBlocked) {
+                console.log(`Cannot place dot on blocked cell at ${row},${col}`);
+            } else {
+                console.log(`Cell at row ${row}, col ${col} is owned by the other player`);
+            }
         }
 
-        return canPlaceDot && isPlayerTurn;
+        return isValid;
     }
 
     private processMoveAndUpdateState(row: number, col: number): void {
-        const cellState = this.boardState[row][col];
-        
-        this.stateManager.saveMove(this.boardState, this.currentPlayer);
-        
-        cellState.dotCount++;
-        cellState.owner = this.currentPlayer;
+        // Save move for undo
+        this.stateManager.saveMove(this.boardStateManager.getState(), this.currentPlayer);
 
+        // Place dot through board state manager
+        this.boardStateManager.placeDot(row, col, this.currentPlayer);
+
+        // Update visuals
         this.updateVisuals(row, col);
         this.playPlacementSound();
-        
+
+        const cellState = this.boardStateManager.getCellState(row, col);
         console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col} (${cellState.dotCount}/${cellState.capacity})`);
     }
 
     private updateVisuals(row: number, col: number): void {
-        const cellState = this.boardState[row][col];
+        const cellState = this.boardStateManager.getCellState(row, col);
         const cellCenter = this.gridManager.getCellCenter(row, col);
 
         this.visualDotManager.updateCell(
@@ -354,10 +333,11 @@ export class Game extends Scene {
     private async handleMoveConsequences(): Promise<void> {
         await this.checkAndHandleExplosions();
 
-        const winner = this.checkWinCondition();
+        const winner = this.boardStateManager.checkWinCondition();
         if (winner) {
-            console.log(`Game Over! ${winner} wins!`);
-            this.handleGameOver(winner);
+            const winnerName = winner.charAt(0).toUpperCase() + winner.slice(1);
+            console.log(`Game Over! ${winnerName} wins!`);
+            this.handleGameOver(winnerName);
             return;
         }
 
@@ -376,9 +356,9 @@ export class Game extends Scene {
         const savedState = this.stateManager.loadFromRegistry();
         const currentLevel = savedState?.currentLevel || this.getCurrentLevel();
         const levelWinners = savedState?.levelWinners || [];
-    
+
         this.stateManager.saveToRegistry(
-            this.boardState,
+            this.boardStateManager.getState(),
             this.currentPlayer,
             this.humanPlayer,
             this.computerPlayer?.getColor() || 'blue',
@@ -398,7 +378,7 @@ export class Game extends Scene {
     }
 
     updateCellOwnership(row: number, col: number): void {
-        const cellState = this.boardState[row][col];
+        const cellState = this.boardStateManager.getCellState(row, col);
         this.gridManager.updateCellOwnership(row, col, cellState);
     }
 
@@ -408,33 +388,28 @@ export class Game extends Scene {
         while (explosionOccurred) {
             explosionOccurred = false;
 
-            for (let row = 0; row < this.gridSize; row++) {
-                for (let col = 0; col < this.gridSize; col++) {
-                    if (this.shouldExplode(row, col)) {
-                        this.explodeCell(row, col);
-                        explosionOccurred = true;
-                    }
-                }
-            }
+            const cellsToExplode = this.boardStateManager.getCellsToExplode();
 
-            if (explosionOccurred) {
+            if (cellsToExplode.length > 0) {
+                explosionOccurred = true;
+
+                for (const cell of cellsToExplode) {
+                    this.explodeCell(cell.row, cell.col);
+                }
+
                 this.playExplosionSound();
 
-                const winner = this.checkWinCondition();
+                const winner = this.boardStateManager.checkWinCondition();
                 if (winner) {
-                    console.log(`Game Over during chain reaction! ${winner} wins!`);
-                    this.handleGameOver(winner);
+                    const winnerName = winner.charAt(0).toUpperCase() + winner.slice(1);
+                    console.log(`Game Over during chain reaction! ${winnerName} wins!`);
+                    this.handleGameOver(winnerName);
                     return;
                 }
 
                 await this.waitForExplosionDelay();
             }
         }
-    }
-
-    private shouldExplode(row: number, col: number): boolean {
-        const cellState = this.boardState[row][col];
-        return cellState.dotCount > cellState.capacity;
     }
 
     private playExplosionSound(): void {
@@ -448,53 +423,27 @@ export class Game extends Scene {
     }
 
     explodeCell(row: number, col: number): void {
-        const cellState = this.boardState[row][col];
-        const explodingPlayer = cellState.owner as PlayerColor;
-
+        const cellState = this.boardStateManager.getCellState(row, col);
         console.log(`Cell at ${row},${col} exploding! (${cellState.dotCount} > ${cellState.capacity})`);
 
-        this.removeDotsDuringExplosion(row, col, cellState);
-        this.distributeDotsToAdjacentCells(row, col, explodingPlayer);
-    }
+        // Explode through board state manager and get affected cells
+        const affectedCells = this.boardStateManager.explodeCell(row, col);
 
-    private removeDotsDuringExplosion(row: number, col: number, cellState: CellState): void {
-        const dotsToDistribute = cellState.capacity;
-        cellState.dotCount -= dotsToDistribute;
+        // Update visual for the exploded cell
         this.updateCellVisualDots(row, col);
-    }
 
-    private distributeDotsToAdjacentCells(row: number, col: number, explodingPlayer: PlayerColor): void {
-        const adjacentDirections = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        // Update visuals for all affected cells
+        for (const cell of affectedCells) {
+            this.updateCellVisualDots(cell.row, cell.col);
+            this.updateCellOwnership(cell.row, cell.col);
 
-        for (const [deltaRow, deltaCol] of adjacentDirections) {
-            const targetCell = { row: row + deltaRow, col: col + deltaCol };
-            
-            if (this.isValidAdjacentCell(targetCell)) {
-                this.addDotToAdjacentCell(targetCell, explodingPlayer);
-            }
+            const adjacentCellState = this.boardStateManager.getCellState(cell.row, cell.col);
+            console.log(`  -> Added dot to ${cell.row},${cell.col} (now ${adjacentCellState.dotCount}/${adjacentCellState.capacity})`);
         }
     }
 
-    private isValidAdjacentCell(cell: GameMove): boolean {
-        return cell.row >= 0 && cell.row < this.gridSize && 
-               cell.col >= 0 && cell.col < this.gridSize &&
-               !this.boardState[cell.row][cell.col].isBlocked;
-    }
-
-    private addDotToAdjacentCell(cell: GameMove, explodingPlayer: PlayerColor): void {
-        const adjacentCell = this.boardState[cell.row][cell.col];
-        
-        adjacentCell.dotCount++;
-        adjacentCell.owner = explodingPlayer;
-
-        this.updateCellVisualDots(cell.row, cell.col);
-        this.updateCellOwnership(cell.row, cell.col);
-
-        console.log(`  -> Added dot to ${cell.row},${cell.col} (now ${adjacentCell.dotCount}/${adjacentCell.capacity})`);
-    }
-
     updateCellVisualDots(row: number, col: number): void {
-        const cellState = this.boardState[row][col];
+        const cellState = this.boardStateManager.getCellState(row, col);
         const cellCenter = this.gridManager.getCellCenter(row, col);
 
         this.visualDotManager.updateCell(
@@ -540,7 +489,7 @@ export class Game extends Scene {
     }
 
     private restoreGameState(lastState: any): void {
-        this.boardState = lastState.boardState;
+        this.boardStateManager.setState(lastState.boardState);
         this.currentPlayer = lastState.currentPlayer;
     }
 
@@ -564,7 +513,7 @@ export class Game extends Scene {
 
     recreateAllVisualDots(): void {
         this.visualDotManager.recreateAll(
-            this.boardState,
+            this.boardStateManager.getState(),
             (row, col) => this.gridManager.getCellCenter(row, col)
         );
     }
@@ -589,7 +538,7 @@ export class Game extends Scene {
 
     // called only by loadGameState
     private restoreGameStateFromSave(savedState: any): void {
-        this.boardState = savedState.boardState;
+        this.boardStateManager.setState(savedState.boardState);
         this.currentPlayer = savedState.currentPlayer;
         this.humanPlayer = savedState.humanPlayer;
         this.currentLevel = savedState.currentLevel;
@@ -616,45 +565,6 @@ export class Game extends Scene {
         }
     }
 
-    checkWinCondition(): string | null {
-        const cellCounts = this.countCellsByOwner();
-        
-        if (cellCounts.empty === 0) {
-            if (cellCounts.red > 0 && cellCounts.blue === 0) {
-                return 'Red';
-            } else if (cellCounts.blue > 0 && cellCounts.red === 0) {
-                return 'Blue';
-            }
-        }
-
-        return null;
-    }
-
-    private countCellsByOwner(): { red: number; blue: number; empty: number } {
-        let redCells = 0;
-        let blueCells = 0;
-        let emptyCells = 0;
-
-        for (let row = 0; row < this.gridSize; row++) {
-            for (let col = 0; col < this.gridSize; col++) {
-                const cellState = this.boardState[row][col];
-                
-                if (cellState.isBlocked) {
-                    continue;
-                }
-                
-                if (cellState.owner === 'red') {
-                    redCells++;
-                } else if (cellState.owner === 'blue') {
-                    blueCells++;
-                } else {
-                    emptyCells++;
-                }
-            }
-        }
-
-        return { red: redCells, blue: blueCells, empty: emptyCells };
-    }
 
     handleGameOver(winner: string): void {
         // this flag feels like a hack, unsure why it is needed
@@ -718,10 +628,10 @@ export class Game extends Scene {
         }
 
         try {
-            const move = this.computerPlayer!.findMove(this.boardState, this.gridSize);
+            const move = this.computerPlayer!.findMove(this.boardStateManager.getState(), this.gridSize);
             console.log(`Computer (${this.computerPlayer!.getColor()}) choosing move: ${move.row}, ${move.col}`);
 
-            if (this.isMoveValid(move)) {
+            if (this.boardStateManager.isValidMove(move.row, move.col, this.currentPlayer)) {
                 await this.placeDot(move.row, move.col, true);
             } else {
                 console.error('Computer attempted invalid move, trying random valid move instead');
@@ -736,35 +646,14 @@ export class Game extends Scene {
         return this.computerPlayer !== null && this.currentPlayer !== this.humanPlayer;
     }
 
-    private isMoveValid(move: GameMove): boolean {
-        const cellState = this.boardState[move.row][move.col];
-        return cellState && 
-               !cellState.isBlocked && 
-               (cellState.dotCount === 0 || cellState.owner === this.currentPlayer);
-    }
-
     private async makeRandomValidMove(): Promise<void> {
-        const validMoves = this.getValidMoves();
+        const validMoves = this.boardStateManager.getValidMoves(this.currentPlayer);
         if (validMoves.length > 0) {
             const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
             await this.placeDot(randomMove.row, randomMove.col, true);
         } else {
             console.error('No valid moves available for computer');
         }
-    }
-
-    private getValidMoves(): GameMove[] {
-        const validMoves: GameMove[] = [];
-
-        for (let row = 0; row < this.gridSize; row++) {
-            for (let col = 0; col < this.gridSize; col++) {
-                if (this.isMoveValid({row, col})) {
-                    validMoves.push({ row, col });
-                }
-            }
-        }
-
-        return validMoves;
     }
 
     areSoundEffectsEnabled(): boolean {
