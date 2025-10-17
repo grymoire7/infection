@@ -595,7 +595,7 @@ export class Game extends Scene {
     }
 
     quitGame(): void {
-        this.clearSavedGameState();
+        this.stateManager.clearSavedState();
         this.game.registry.set('gameWinner', 'Abandoned');
         this.scene.start('GameOver');
     }
@@ -671,10 +671,6 @@ export class Game extends Scene {
         }
     }
 
-    clearSavedGameState(): void {
-        this.stateManager.clearSavedState();
-    }
-
     checkWinCondition(): string | null {
         const cellCounts = this.countCellsByOwner();
         
@@ -738,7 +734,7 @@ export class Game extends Scene {
         if (winner !== 'Abandoned') {
             this.updateLevelCompletionStatus(winner);
         } else {
-            this.clearSavedGameState();
+            this.stateManager.clearSavedState();
         }
     }
 
