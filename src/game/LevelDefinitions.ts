@@ -1,7 +1,7 @@
-import { Level, LevelSet } from './GameStateManager';
+import { LevelDefinition, LevelSetDefinition } from './GameStateManager';
 
 // Define all levels separately
-export const LEVELS: Record<string, Level> = {
+export const LEVELS: Record<string, LevelDefinition> = {
     'level-x': {
         id: 'level-x',
         name: '19x19 Grid',
@@ -89,7 +89,7 @@ export const LEVELS: Record<string, Level> = {
 };
 
 // Sample level sets
-export const BASIC_LEVEL_SET: LevelSet = {
+export const BASIC_LEVEL_SET: LevelSetDefinition = {
     id: 'default',
     name: 'Basic Levels',
     description: 'The standard set of levels to learn and master the game',
@@ -100,7 +100,7 @@ export const BASIC_LEVEL_SET: LevelSet = {
     ]
 };
 
-export const ADVANCED_LEVEL_SET: LevelSet = {
+export const ADVANCED_LEVEL_SET: LevelSetDefinition = {
     id: 'advanced',
     name: 'Advanced Levels',
     description: 'Challenging levels for experienced players',
@@ -110,19 +110,19 @@ export const ADVANCED_LEVEL_SET: LevelSet = {
     ]
 };
 
-export const LEVEL_SETS: LevelSet[] = [
+export const LEVEL_SETS: LevelSetDefinition[] = [
     BASIC_LEVEL_SET,
     ADVANCED_LEVEL_SET
 ];
 
 // Helper function to get a level by ID
-export function getLevelById(levelId: string): Level | undefined {
+export function getLevelById(levelId: string): LevelDefinition | undefined {
     return LEVELS[levelId];
 }
 
 // Helper function to get levels for a level set
-export function getLevelsForSet(levelSet: LevelSet): Level[] {
-    return levelSet.levelEntries.map(entry => LEVELS[entry.levelId]).filter(Boolean) as Level[];
+export function getLevelsForSet(levelSet: LevelSetDefinition): LevelDefinition[] {
+    return levelSet.levelEntries.map(entry => LEVELS[entry.levelId]).filter(Boolean) as LevelDefinition[];
 }
 
 // Helper function to get AI difficulty for a specific level in a level set

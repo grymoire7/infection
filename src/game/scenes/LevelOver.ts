@@ -1,6 +1,6 @@
 import { GameObjects, Scene } from 'phaser';
 import { EventBus } from '../EventBus';
-import { LEVEL_SETS, getLevelById } from '../LevelDefinitions';
+import { LevelSetManager } from '../LevelSetManager';
 
 export class LevelOver extends Scene
 {
@@ -13,6 +13,8 @@ export class LevelOver extends Scene
     restartButton: GameObjects.Text;
     mainMenuButton: GameObjects.Text;
 
+    private levelSetManager: LevelSetManager;
+
     constructor ()
     {
         super('LevelOver');
@@ -20,6 +22,9 @@ export class LevelOver extends Scene
 
     create ()
     {
+        console.log('this.game.registry in LevelOver constructor:', this.game);
+        this.levelSetManager = new LevelSetManager(this.game.registry);
+        
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(0x222222);
 
@@ -31,8 +36,10 @@ export class LevelOver extends Scene
 
         // Get winner and level info from registry
         const winner = this.game.registry.get('gameWinner') || 'Unknown';
-        const levelSetId = this.game.registry.get('currentLevelSetId');
-        const levelId = this.game.registry.get('currentLevelId');
+        // const levelSetId = this.game.registry.get('currentLevelSetId');
+        // const levelId = this.game.registry.get('currentLevelId');
+        const currentLevelSet = this.levelSetManager.getCurrentLevelSet();
+        const currentLevel = currentLevelSet.getCurrentLevel();
 
         // Level Complete title
         const titleFontSize = Math.min(48, this.cameras.main.width / 15);
@@ -56,59 +63,48 @@ export class LevelOver extends Scene
         }).setOrigin(0.5);
 
         // Level info
-        if (levelSetId && levelId) {
-            const level = getLevelById(levelId);
-            if (level) {
-                const levelInfoFontSize = Math.min(24, this.cameras.main.width / 35);
-                this.levelInfoText = this.add.text(centerX, centerY * 0.55, `Level: ${level.name}`, {
-                    fontFamily: 'Arial', 
-                    fontSize: levelInfoFontSize, 
-                    color: '#cccccc'
-                }).setOrigin(0.5);
-            }
-        }
+        const levelInfoFontSize = Math.min(24, this.cameras.main.width / 35);
+        this.levelInfoText = this.add.text(centerX, centerY * 0.55, `Level: ${currentLevel.getName()}`, {
+            fontFamily: 'Arial', 
+            fontSize: levelInfoFontSize, 
+            color: '#cccccc'
+        }).setOrigin(0.5);
 
         // Buttons
         const buttonFontSize = Math.min(24, this.cameras.main.width / 30);
         
         // Next Level button (check if there's a next level)
-        let hasNextLevel = false;
-        if (levelSetId && levelId) {
-            const levelSet = LEVEL_SETS.find(set => set.id === levelSetId);
-            if (levelSet) {
-                const currentIndex = levelSet.levelEntries.findIndex(entry => entry.levelId === levelId);
-                if (currentIndex !== -1 && currentIndex + 1 < levelSet.levelEntries.length) {
-                    hasNextLevel = true;
-                    this.nextLevelButton = this.add.text(centerX, centerY * 0.7, 'Next Level', {
-                        fontFamily: 'Arial', 
-                        fontSize: buttonFontSize, 
-                        color: '#ffffff',
-                        backgroundColor: '#228822',
-                        padding: { x: 20, y: 10 }
-                    }).setOrigin(0.5);
+        let hasNextLevel = currentLevel.next() !== null;
 
-                    this.nextLevelButton.setInteractive();
-                    this.nextLevelButton.on('pointerdown', () => {
-                        // Store level progression info to load next level
-                        console.log('LevelOver: Next Level button clicked');
-                        console.log('LevelOver: Current level info in registry:', {
-                            levelSetId: this.game.registry.get('currentLevelSetId'),
-                            levelId: this.game.registry.get('currentLevelId')
-                        });
-                        this.game.registry.set('loadNextLevel', true);
-                        console.log('LevelOver: Set loadNextLevel flag to true, starting Game scene');
-                        this.scene.start('Game');
-                    });
+        if (hasNextLevel) {
+            this.nextLevelButton = this.add.text(centerX, centerY * 0.7, 'Next Level', {
+                fontFamily: 'Arial', 
+                fontSize: buttonFontSize, 
+                color: '#ffffff',
+                backgroundColor: '#228822',
+                padding: { x: 20, y: 10 }
+            }).setOrigin(0.5);
 
-                    this.nextLevelButton.on('pointerover', () => {
-                        this.nextLevelButton.setBackgroundColor('#44aa44');
-                    });
+            this.nextLevelButton.setInteractive();
+            this.nextLevelButton.on('pointerdown', () => {
+                // Store level progression info to load next level
+                console.log('LevelOver: Next Level button clicked');
+                console.log('LevelOver: Current level info in registry:', {
+                    levelSet: currentLevelSet.getId(),
+                    level: currentLevel.getId()
+                });
+                this.game.registry.set('loadNextLevel', true);
+                console.log('LevelOver: Set loadNextLevel flag to true, starting Game scene');
+                this.scene.start('Game');
+            });
 
-                    this.nextLevelButton.on('pointerout', () => {
-                        this.nextLevelButton.setBackgroundColor('#228822');
-                    });
-                }
-            }
+            this.nextLevelButton.on('pointerover', () => {
+                this.nextLevelButton.setBackgroundColor('#44aa44');
+            });
+
+            this.nextLevelButton.on('pointerout', () => {
+                this.nextLevelButton.setBackgroundColor('#228822');
+            });
         }
 
         // Restart Game button

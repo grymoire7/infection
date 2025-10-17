@@ -107,6 +107,13 @@ export class SettingsManager {
     private syncToRegistry(settings: GameSettings): void {
         this.gameRegistry.set('soundEffectsEnabled', settings.soundEffectsEnabled);
         this.gameRegistry.set('playerColor', settings.playerColor);
+
+        // Needed to load first level of a new level set in the game scene
+        const currentLevelSet = this.gameRegistry.get('currentLevelSet');
+        if (currentLevelSet && currentLevelSet.getId() !== settings.levelSetId) {
+            this.gameRegistry.set('levelSetDirty', true);
+        }
+
         this.gameRegistry.set('levelSetId', settings.levelSetId);
     }
 

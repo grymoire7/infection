@@ -1,4 +1,6 @@
-export interface Level {
+import { Level } from './Level';
+
+export interface LevelDefinition {
     id: string;
     name: string;
     description: string;
@@ -6,7 +8,7 @@ export interface Level {
     blockedCells: { row: number; col: number }[];
 }
 
-export interface LevelSet {
+export interface LevelSetDefinition {
     id: string;
     name: string;
     description: string;
@@ -33,7 +35,7 @@ export interface SavedGameState {
     moveHistory: MoveHistoryEntry[];
     gameOver: boolean;
     levelOver: boolean;
-    currentLevelIndex: number;
+    currentLevel: Level;
     levelWinners: ('red' | 'blue')[];
     winner: string | null;
 }
@@ -108,7 +110,7 @@ export class GameStateManager {
         computerPlayerColor: 'red' | 'blue',
         gameOver: boolean = false,
         levelOver: boolean = false,
-        currentLevelIndex: number = 0,
+        currentLevel: Level,
         levelWinners: ('red' | 'blue')[] = [],
         winner: string | null = null
     ): void {
@@ -123,7 +125,7 @@ export class GameStateManager {
             })),
             gameOver,
             levelOver,
-            currentLevelIndex,
+            currentLevel,
             levelWinners: [...levelWinners],
             winner
         };
@@ -153,7 +155,7 @@ export class GameStateManager {
             moveHistory: this.moveHistory,
             gameOver: savedState.gameOver,
             levelOver: savedState.levelOver,
-            currentLevelIndex: savedState.currentLevelIndex,
+            currentLevel: savedState.currentLevel,
             levelWinners: [...savedState.levelWinners],
             winner: savedState.winner
         };
@@ -186,7 +188,7 @@ export class GameStateManager {
      */
     initializeNewGameState(
         humanPlayerColor: 'red' | 'blue',
-        currentLevelIndex: number = 0
+        currentLevel: Level
     ): void {
         this.moveHistory = [];
         const emptyBoardState: CellState[][] = [];
@@ -199,7 +201,7 @@ export class GameStateManager {
             computerPlayerColor,
             false, // gameOver
             false, // levelOver
-            currentLevelIndex,
+            currentLevel,
             [], // levelWinners
             null // winner
         );
@@ -208,12 +210,12 @@ export class GameStateManager {
     /**
      * Update level completion status
      */
-    updateLevelCompletion(winner: 'red' | 'blue', currentLevelIndex: number): void {
+    updateLevelCompletion(winner: 'red' | 'blue', currentLevel: Level): void {
         const savedState = this.loadFromRegistry();
         if (!savedState) return;
 
         const updatedLevelWinners = [...savedState.levelWinners];
-        updatedLevelWinners[currentLevelIndex] = winner;
+        updatedLevelWinners[currentLevel.getIndex()] = winner;
 
         this.saveToRegistry(
             savedState.boardState,
@@ -222,7 +224,7 @@ export class GameStateManager {
             savedState.computerPlayerColor,
             savedState.gameOver,
             true, // levelOver
-            currentLevelIndex,
+            currentLevel,
             updatedLevelWinners,
             savedState.winner
         );
@@ -230,8 +232,9 @@ export class GameStateManager {
 
     /**
      * Advance to next level
+     * UNUSED - kept for potential future use
      */
-    advanceToNextLevel(nextLevelIndex: number): void {
+    advanceToNextLevel(nextLevel: Level): void {
         const savedState = this.loadFromRegistry();
         if (!savedState) return;
 
@@ -245,7 +248,7 @@ export class GameStateManager {
             savedState.computerPlayerColor,
             false, // gameOver - cleared for new level
             false, // levelOver - cleared for new level
-            nextLevelIndex,
+            nextLevel,
             savedState.levelWinners,
             null // winner - cleared for new level
         );
@@ -265,7 +268,7 @@ export class GameStateManager {
             savedState.computerPlayerColor,
             true, // gameOver
             savedState.levelOver,
-            savedState.currentLevelIndex,
+            savedState.currentLevel,
             savedState.levelWinners,
             winner
         );
