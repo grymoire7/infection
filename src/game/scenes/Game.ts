@@ -5,9 +5,9 @@ import { GameStateManager, CellState } from '../GameStateManager';
 import { GameUIManager } from '../GameUIManager';
 import { LevelSetManager } from '../LevelSetManager';
 import { Level } from '../Level';
-import { DotPositioner } from '../utils/DotPositioner';
 import { GridManager } from '../GridManager';
 import { SettingsManager } from '../SettingsManager';
+import { VisualDotManager } from '../VisualDotManager';
 
 type PlayerColor = 'red' | 'blue';
 type CellOwner = PlayerColor | 'default' | 'blocked';
@@ -30,6 +30,7 @@ export class Game extends Scene {
     private stateManager: GameStateManager;
     private uiManager: GameUIManager;
     private gridManager: GridManager;
+    private visualDotManager: VisualDotManager;
     private settingsManager: SettingsManager;
     private levelSetManager: LevelSetManager;
     private computerPlayer: ComputerPlayer | null = null;
@@ -37,11 +38,6 @@ export class Game extends Scene {
 
     // Grid and game state
     private gridSize: number = 5;
-    private cellSize: number;
-    private gridStartX: number;
-    private gridStartY: number;
-    // private grid: Phaser.GameObjects.Rectangle[][];
-    private dots: any[][][]; // 3D array: [row][col][dotIndex]
     private boardState: CellState[][];
     private blockedCells: { row: number; col: number }[] = [];
 
@@ -192,31 +188,24 @@ export class Game extends Scene {
     }
 
     private initializeGridArrays(): void {
-        this.dots = Array(this.gridSize).fill(null).map(() => []);
         this.boardState = Array(this.gridSize);
         for (let i = 0; i < this.gridSize; i++) {
             this.boardState[i] = Array(this.gridSize);
         }
+
+        // Initialize visual dot manager for this grid size
+        this.visualDotManager = new VisualDotManager(this, this.gridSize);
     }
 
     private createGridCells(): void {
-        const gridResult = this.gridManager.createGrid(this.gridSize, this.blockedCells);
-        this.assignGridProperties(gridResult);
+        this.gridManager.createGrid(this.gridSize, this.blockedCells);
         this.initializeCells();
         this.setupCellCapacitiesAndInteractivity();
-    }
-
-    private assignGridProperties(gridResult: any): void {
-        // this.grid = gridResult.grid;
-        this.gridStartX = gridResult.gridStartX;
-        this.gridStartY = gridResult.gridStartY;
-        this.cellSize = gridResult.cellSize;
     }
 
     private initializeCells(): void {
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
-                this.dots[row][col] = [];
                 this.initializeCellState(row, col, 0);
             }
         }
@@ -342,8 +331,17 @@ export class Game extends Scene {
     }
 
     private updateVisuals(row: number, col: number): void {
-        this.addVisualDot(row, col, this.currentPlayer);
-        this.arrangeDots(row, col);
+        const cellState = this.boardState[row][col];
+        const cellCenter = this.gridManager.getCellCenter(row, col);
+
+        this.visualDotManager.updateCell(
+            row,
+            col,
+            cellState.owner,
+            cellState.dotCount,
+            cellCenter.x,
+            cellCenter.y
+        );
         this.updateCellOwnership(row, col);
     }
 
@@ -396,20 +394,6 @@ export class Game extends Scene {
             this.time.delayedCall(Game.COMPUTER_MOVE_DELAY, () => {
                 this.makeComputerMove();
             });
-        }
-    }
-
-    arrangeDots(row: number, col: number): void {
-        const cellDots = this.dots[row][col];
-        if (cellDots.length === 0) return;
-
-        const cellCenterX = this.gridStartX + col * this.cellSize;
-        const cellCenterY = this.gridStartY + row * this.cellSize;
-
-        const positions = DotPositioner.calculateDotPositions(cellDots.length, cellCenterX, cellCenterY);
-        
-        for (let i = 0; i < positions.length; i++) {
-            cellDots[i].setPosition(positions[i].x, positions[i].y);
         }
     }
 
@@ -510,43 +494,17 @@ export class Game extends Scene {
     }
 
     updateCellVisualDots(row: number, col: number): void {
-        this.clearCellDots(row, col);
-        this.recreateCellDots(row, col);
-        this.arrangeDots(row, col);
-    }
-
-    private clearCellDots(row: number, col: number): void {
-        const currentDots = this.dots[row][col];
-        while (currentDots.length > 0) {
-            const dotToRemove = currentDots.pop();
-            if (dotToRemove) {
-                dotToRemove.destroy();
-            }
-        }
-    }
-
-    private recreateCellDots(row: number, col: number): void {
         const cellState = this.boardState[row][col];
-        if (cellState.owner && cellState.dotCount > 0) {
-            for (let i = 0; i < cellState.dotCount; i++) {
-                this.addVisualDot(row, col, cellState.owner);
-            }
-        }
-    }
+        const cellCenter = this.gridManager.getCellCenter(row, col);
 
-    addVisualDot(row: number, col: number, owner: string): void {
-        const spriteKey = owner === 'red' ? 'evil-sprite' : 'good-sprite';
-        const animationKey = owner === 'red' ? 'evil-dot-pulse' : 'good-dot-pulse';
-        
-        const dot = this.add.sprite(0, 0, spriteKey);                                                                                 
-        dot.setScale(1.5);
-        
-        if (Math.random() < 0.5) {
-            dot.toggleFlipX();
-        }
-        
-        dot.play(animationKey);
-        this.dots[row][col].push(dot);
+        this.visualDotManager.updateCell(
+            row,
+            col,
+            cellState.owner,
+            cellState.dotCount,
+            cellCenter.x,
+            cellCenter.y
+        );
     }
 
     initializeGameSettings(): void {
@@ -601,27 +559,14 @@ export class Game extends Scene {
     }
 
     clearAllVisualDots(): void {
-        for (let row = 0; row < this.gridSize; row++) {
-            for (let col = 0; col < this.gridSize; col++) {
-                this.clearCellDots(row, col);
-            }
-        }
+        this.visualDotManager.clearAll();
     }
 
     recreateAllVisualDots(): void {
-        for (let row = 0; row < this.gridSize; row++) {
-            for (let col = 0; col < this.gridSize; col++) {
-                const cellState = this.boardState[row][col];
-                const playerOwned = (cellState.owner === 'red' || cellState.owner === 'blue');
-                
-                if (playerOwned && cellState.dotCount > 0) {
-                    for (let i = 0; i < cellState.dotCount; i++) {
-                        this.addVisualDot(row, col, cellState.owner);
-                    }
-                }
-                this.arrangeDots(row, col);
-            }
-        }
+        this.visualDotManager.recreateAll(
+            this.boardState,
+            (row, col) => this.gridManager.getCellCenter(row, col)
+        );
     }
 
     updateAllCellOwnership(): void {

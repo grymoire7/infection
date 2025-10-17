@@ -152,7 +152,7 @@ export class GridManager {
             const newCol = col + deltaCol;
 
             // Check if the adjacent cell is within grid bounds
-            if (newRow >= 0 && newRow < this.gridSize && 
+            if (newRow >= 0 && newRow < this.gridSize &&
                 newCol >= 0 && newCol < this.gridSize) {
                 // Make sure the cell exists in boardState
                 if (boardState[newRow] && boardState[newRow][newCol]) {
@@ -166,5 +166,27 @@ export class GridManager {
         }
 
         return capacity;
+    }
+
+    /**
+     * Get the center coordinates of a cell
+     */
+    getCellCenter(row: number, col: number): { x: number; y: number } {
+        return {
+            x: this.gridStartX + col * this.cellSize,
+            y: this.gridStartY + row * this.cellSize
+        };
+    }
+
+    /**
+     * Get the current grid dimensions
+     */
+    getGridDimensions(): { startX: number; startY: number; cellSize: number; gridSize: number } {
+        return {
+            startX: this.gridStartX,
+            startY: this.gridStartY,
+            cellSize: this.cellSize,
+            gridSize: this.gridSize
+        };
     }
 }
