@@ -83,11 +83,18 @@ export class Game extends Scene {
 
     /**
      * Determine what to load when scene starts:
-     * 1. If there's a saved game in progress, resume it
-     * 2. Otherwise, start a new level
+     * 1. If loadNextLevel flag is set, load the next level
+     * 2. If there's a saved game in progress, resume it
+     * 3. Otherwise, start a new level
      */
     private loadGameStateOrLevel(): void {
-        if (this.stateManager.hasSavedState()) {
+        const shouldLoadNextLevel = this.game.registry.get('loadNextLevel') === true;
+
+        if (shouldLoadNextLevel) {
+            console.log('Loading next level after level completion');
+            this.stateManager.clearSavedState(); // Clear old saved state
+            this.startNewLevel(); // This will check and consume the loadNextLevel flag
+        } else if (this.stateManager.hasSavedState()) {
             console.log('Resuming saved game');
             this.resumeSavedGame();
         } else {
