@@ -40,13 +40,6 @@ export class Game extends Scene {
     private currentPlayer: PlayerColor = 'red';
     private humanPlayer: PlayerColor = 'red';
 
-    // UI elements
-    private levelInfoText: Phaser.GameObjects.Text;
-    private aiDifficultyText: Phaser.GameObjects.Text;
-    private undoButton: Phaser.GameObjects.Text;
-    // private quitButton: Phaser.GameObjects.Text;
-    // private currentPlayerSprite: Phaser.GameObjects.Sprite;
-
     constructor() {
         super('Game');
     }
@@ -79,17 +72,8 @@ export class Game extends Scene {
     }
 
     private initializeUI(): void {
-        const uiElements = this.uiManager.createUI();
-        this.assignUIElements(uiElements);
+        this.uiManager.createUI();
         this.setupUIHandlers();
-    }
-
-    private assignUIElements(uiElements: any): void {
-        this.levelInfoText = uiElements.levelInfoText;
-        this.aiDifficultyText = uiElements.aiDifficultyText;
-        this.undoButton = uiElements.undoButton;
-        // this.quitButton = uiElements.quitButton;
-        // this.currentPlayerSprite = uiElements.currentPlayerSprite;
     }
 
     private setupUIHandlers(): void {
@@ -197,9 +181,9 @@ export class Game extends Scene {
     }
 
     private updateUIForLevel(): void {
-        if (this.levelInfoText) this.updateLevelInfo();
-        if (this.aiDifficultyText) this.updateAIDifficulty();
-        if (this.undoButton) this.updateUndoButton();
+        this.updateLevelInfo();
+        this.updateAIDifficulty();
+        this.updateUndoButton();
         this.updatePlayerIndicator();
     }
 
