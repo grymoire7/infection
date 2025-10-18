@@ -336,19 +336,19 @@ The `GameStateManager` currently defines interfaces for `Level` and `LevelSet`.
 The existing interfaces could be renamed to `LevelDefinition` and `LevelSetDefinition`.
 We wish to create separate `Level` and `LevelSet` classes to better manage levels and level sets.
 
-- [ ] Create LevelSetManager.ts
-    - [ ] responsible for loading level sets from JSON files into LevelSet linked list
-    - [ ] #getCurrentLevelSet(): LevelSet -- returns the current level set based on registry setting
-- [ ] Create LevelSet.ts
-    - [ ] represents a level set, contains metadata and linked list of levels
-    - [ ] initialized with LevelSetDefinition data from `LevelDefinitions.ts`
-    - [ ] #first(): Level -- returns the first level in the set
-    - [ ] #last(): Level -- returns the last level in the set
-    - [ ] #getLevel(index: number): Level -- returns the level at the given index
-- [ ] Create Level.ts
-    - [ ] represents a single level
-    - [ ] initialized with LevelDefinition data from `LevelDefinitions.ts`
-    - [ ] #next(): Level | null -- returns the next level in the set or null if last
+- [x] Create LevelSetManager.ts
+    - [x] responsible for loading level sets from JSON files into LevelSet linked list
+    - [x] #getCurrentLevelSet(): LevelSet -- returns the current level set based on registry setting
+- [x] Create LevelSet.ts
+    - [x] represents a level set, contains metadata and linked list of levels
+    - [x] initialized with LevelSetDefinition data from `LevelDefinitions.ts`
+    - [x] #first(): Level -- returns the first level in the set
+    - [x] #last(): Level -- returns the last level in the set
+    - [x] #getLevel(index: number): Level -- returns the level at the given index
+- [x] Create Level.ts
+    - [x] represents a single level
+    - [x] initialized with LevelDefinition data from `LevelDefinitions.ts`
+    - [x] #next(): Level | null -- returns the next level in the set or null if last
 
 ### Phase 13: Ship it!
 - [ ] Add more chohesive level sets and levels
