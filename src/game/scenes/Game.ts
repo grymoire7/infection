@@ -349,7 +349,12 @@ export class Game extends Scene {
     }
 
     private async handleMoveConsequences(): Promise<void> {
-        await this.checkAndHandleExplosions();
+        const gameEndedDuringExplosions = await this.checkAndHandleExplosions();
+
+        // If game ended during explosions, don't check again
+        if (gameEndedDuringExplosions) {
+            return;
+        }
 
         const winner = this.boardStateManager.checkWinCondition();
         if (winner) {
@@ -400,7 +405,7 @@ export class Game extends Scene {
         this.gridManager.updateCellOwnership(row, col, cellState);
     }
 
-    async checkAndHandleExplosions(): Promise<void> {
+    async checkAndHandleExplosions(): Promise<boolean> {
         let explosionOccurred = true;
 
         while (explosionOccurred) {
@@ -422,12 +427,14 @@ export class Game extends Scene {
                     const winnerName = winner.charAt(0).toUpperCase() + winner.slice(1);
                     console.log(`Game Over during chain reaction! ${winnerName} wins!`);
                     this.handleGameOver(winnerName);
-                    return;
+                    return true; // Game ended during explosions
                 }
 
                 await this.waitForExplosionDelay();
             }
         }
+
+        return false; // Game did not end during explosions
     }
 
     private playExplosionSound(): void {
@@ -565,12 +572,6 @@ export class Game extends Scene {
 
 
     handleGameOver(winner: string): void {
-        // this flag feels like a hack, unsure why it is needed
-        if (this.game.registry.get('gameEnding')) {
-            return;
-        }
-        
-        this.game.registry.set('gameEnding', true);
         this.processGameEndResult(winner);
         this.scheduleSceneTransition(winner);
     }
@@ -603,9 +604,8 @@ export class Game extends Scene {
 
     private scheduleSceneTransition(winner: string): void {
         const targetScene = this.determineTargetScene(winner);
-        
+
         this.time.delayedCall(Game.GAME_END_DELAY, () => {
-            this.game.registry.remove('gameEnding');
             this.scene.start(targetScene);
         });
     }
