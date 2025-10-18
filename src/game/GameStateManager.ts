@@ -76,8 +76,7 @@ export class GameStateManager {
      * Undo the last move and return the previous state
      */
     undoLastMove(): MoveHistoryEntry | null {
-        if (this.moveHistory.length === 0) {
-            console.log('No moves to undo');
+        if (this.canUndo() === false) {
             return null;
         }
 

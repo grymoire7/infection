@@ -224,16 +224,6 @@ describe('GameStateManager', () => {
       expect(undone3?.boardState[0][0].dotCount).toBe(1);
       expect(undone3?.currentPlayer).toBe('red');
     });
-
-    it('should log message when no moves to undo', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      stateManager.undoLastMove();
-
-      expect(consoleSpy).toHaveBeenCalledWith('No moves to undo');
-
-      consoleSpy.mockRestore();
-    });
   });
 
   describe('canUndo', () => {
