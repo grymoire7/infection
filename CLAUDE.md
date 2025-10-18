@@ -24,6 +24,10 @@ they exceed capacity, creating chain reactions that can capture opponent cells.
 | `npm run type-check` | Run TypeScript type checking |
 | `npm run dev-nolog` | Dev server without Phaser analytics |
 | `npm run build-nolog` | Production build without Phaser analytics |
+| `npm test` | Run tests in watch mode |
+| `npm run test:run` | Run all tests once (CI-ready) |
+| `npm run test:ui` | Open Vitest UI for debugging tests |
+| `npm run test:coverage` | Generate test coverage report |
 
 ## Architecture
 
@@ -190,22 +194,115 @@ src/
         └── GameOver.ts        # Game complete
 ```
 
+## Testing
+
+The project has comprehensive test coverage using **Vitest 3.2.4**.
+
+### Test Coverage Statistics
+
+**353 tests across 8 test files** covering all core game classes:
+
+- **Phase 1: Core Data Structures (69 tests)**
+  - `Level.test.ts` - 28 tests for level data and linked list navigation
+  - `LevelSet.test.ts` - 41 tests for level set management
+
+- **Phase 2: Manager Classes (147 tests)**
+  - `SettingsManager.test.ts` - 42 tests for settings persistence
+  - `GameStateManager.test.ts` - 57 tests for state management and undo
+  - `LevelSetManager.test.ts` - 48 tests for level set loading
+
+- **Phase 3: Game Logic (88 tests)**
+  - `GridManager.test.ts` - 48 tests for grid creation and cell capacity
+  - `ComputerPlayer.test.ts` - 40 tests for AI strategies
+
+- **Phase 4: UI Layer (49 tests)**
+  - `GameUIManager.test.ts` - 49 tests for UI element management
+
+### Running Tests
+
+```bash
+# Watch mode - auto-runs on file changes (recommended for development)
+npm test
+
+# Single run - all tests once (use for CI/CD)
+npm run test:run
+
+# Visual UI - interactive test browser
+npm run test:ui
+
+# Coverage report - generates HTML coverage report
+npm run test:coverage
+```
+
+### Test File Locations
+
+All test files are co-located with their source files in `src/game/`:
+- `Level.test.ts` - Tests for `Level.ts`
+- `LevelSet.test.ts` - Tests for `LevelSet.ts`
+- `SettingsManager.test.ts` - Tests for `SettingsManager.ts`
+- `GameStateManager.test.ts` - Tests for `GameStateManager.ts`
+- `LevelSetManager.test.ts` - Tests for `LevelSetManager.ts`
+- `GridManager.test.ts` - Tests for `GridManager.ts`
+- `ComputerPlayer.test.ts` - Tests for `ComputerPlayer.ts`
+- `GameUIManager.test.ts` - Tests for `GameUIManager.ts`
+
+### Writing New Tests
+
+When adding new functionality:
+1. Create a corresponding `.test.ts` file next to the source file
+2. Use Vitest's `describe`, `it`, `expect`, `beforeEach` patterns
+3. Mock Phaser dependencies (Scene, DataManager, GameObjects) as needed
+4. Follow existing test structure for consistency
+5. Run tests to ensure all pass before committing
+
+Example test structure:
+```typescript
+import { describe, it, expect, beforeEach } from 'vitest';
+import { MyClass } from './MyClass';
+
+describe('MyClass', () => {
+  let instance: MyClass;
+
+  beforeEach(() => {
+    instance = new MyClass();
+  });
+
+  describe('methodName', () => {
+    it('should do something specific', () => {
+      const result = instance.methodName();
+      expect(result).toBe(expectedValue);
+    });
+  });
+});
+```
+
+### Test Configuration
+
+Tests are configured in `vitest.config.ts`:
+- Uses `happy-dom` for lightweight DOM simulation
+- Supports TypeScript out of the box
+- Configured for parallel test execution
+- Coverage reporting with v8 provider
+
 ## Common Tasks
 
 ### Adding a New Level
 1. Add level definition to `LevelDefinitions.ts` in appropriate level set
 2. Define gridSize, blockedCells, name, description, and aiDifficulty
 3. Level will automatically be included in the linked list
+4. Run `npm test` to ensure no regressions
 
 ### Modifying Game Rules
 - Cell capacity calculation: `GridManager.calculateCellCapacity()`
 - Explosion logic: `Game.explodeCell()` and `Game.distributeDotsToAdjacentCells()`
 - Win condition: `Game.checkWinCondition()`
+- **Important:** Update corresponding tests after rule changes
 
 ### Adding UI Elements
 - Create elements in `GameUIManager.createUI()`
 - Update methods should be in GameUIManager (e.g., `updatePlayerIndicator()`)
 - Game scene calls UI manager methods, never manipulates UI directly
+- Add tests in `GameUIManager.test.ts` for new UI elements
 
 ## Design Document
 
