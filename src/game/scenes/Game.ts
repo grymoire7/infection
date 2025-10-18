@@ -83,11 +83,21 @@ export class Game extends Scene {
 
     /**
      * Determine what to load when scene starts:
-     * 1. If loadNextLevel flag is set, load the next level
-     * 2. If there's a saved game in progress, resume it
-     * 3. Otherwise, start a new level
+     * 1. If settings changed (especially level set), handle that first
+     * 2. If loadNextLevel flag is set, load the next level
+     * 3. If there's a saved game in progress, resume it
+     * 4. Otherwise, start a new level
      */
     private loadGameStateOrLevel(): void {
+        const settingsDirty = this.game.registry.get('settingsDirty');
+
+        // Priority 1: Handle settings changes (especially level set changes)
+        if (settingsDirty) {
+            console.log('Settings changed, handling settings update');
+            this.handleSettingsChange();
+            return;
+        }
+
         const shouldLoadNextLevel = this.game.registry.get('loadNextLevel') === true;
 
         if (shouldLoadNextLevel) {
@@ -692,21 +702,36 @@ export class Game extends Scene {
 
     private reloadAllSettings(): void {
         const settings = this.settingsManager.getCurrentSettings();
-        
-        this.humanPlayer = settings.playerColor;
-        const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
 
-        let aiDifficulty: 'easy' | 'medium' | 'hard' | 'expert' = 'easy';
-        if (this.currentLevel) {
-            aiDifficulty = this.currentLevel.getAIDifficulty();
+        // Check if level set was changed
+        const levelSetChanged = this.levelSetManager.hasLevelSetChanged();
+
+        if (levelSetChanged) {
+            console.log('Level set changed, loading new level set and starting from first level');
+            // Clear saved state since we're switching to a different level set
+            this.stateManager.clearSavedState();
+
+            // Load the new level set by ID
+            this.levelSetManager.setCurrentLevelSetById(settings.levelSetId);
+
+            // Load the first level of the new level set
+            // Note: loadLevel() calls initializeGameSettings() which will apply player color changes
+            const firstLevel = this.levelSetManager.getFirstLevelOfCurrentSet();
+            this.loadLevel(firstLevel);
+        } else {
+            // Level set didn't change, just update player colors and AI
+            this.humanPlayer = settings.playerColor;
+            const computerColor = this.humanPlayer === 'red' ? 'blue' : 'red';
+
+            let aiDifficulty: 'easy' | 'medium' | 'hard' | 'expert' = 'easy';
+            if (this.currentLevel) {
+                aiDifficulty = this.currentLevel.getAIDifficulty();
+            }
+
+            this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
+            this.currentPlayer = this.humanPlayer;
+
+            console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty})`);
         }
-
-        this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
-        this.currentPlayer = this.humanPlayer;
-
-        // Check if level set was changed - this clears the dirty flag
-        this.levelSetManager.hasLevelSetChanged();
-
-        console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty})`);
     }
 }
