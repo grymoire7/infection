@@ -200,16 +200,17 @@ The project has comprehensive test coverage using **Vitest 3.2.4**.
 
 ### Test Coverage Statistics
 
-**353 tests across 8 test files** covering all core game classes:
+**401 tests across 9 test files** covering all core game classes:
 
 - **Phase 1: Core Data Structures (69 tests)**
   - `Level.test.ts` - 28 tests for level data and linked list navigation
   - `LevelSet.test.ts` - 41 tests for level set management
 
-- **Phase 2: Manager Classes (147 tests)**
+- **Phase 2: Manager Classes (196 tests)**
   - `SettingsManager.test.ts` - 42 tests for settings persistence
-  - `GameStateManager.test.ts` - 57 tests for state management and undo
+  - `GameStateManager.test.ts` - 56 tests for state management and undo
   - `LevelSetManager.test.ts` - 48 tests for level set loading
+  - `BoardStateManager.test.ts` - 49 tests for board state and game logic
 
 - **Phase 3: Game Logic (88 tests)**
   - `GridManager.test.ts` - 48 tests for grid creation and cell capacity
@@ -237,14 +238,17 @@ npm run test:coverage
 ### Test File Locations
 
 All test files are co-located with their source files in `src/game/`:
-- `Level.test.ts` - Tests for `Level.ts`
-- `LevelSet.test.ts` - Tests for `LevelSet.ts`
-- `SettingsManager.test.ts` - Tests for `SettingsManager.ts`
-- `GameStateManager.test.ts` - Tests for `GameStateManager.ts`
-- `LevelSetManager.test.ts` - Tests for `LevelSetManager.ts`
-- `GridManager.test.ts` - Tests for `GridManager.ts`
-- `ComputerPlayer.test.ts` - Tests for `ComputerPlayer.ts`
-- `GameUIManager.test.ts` - Tests for `GameUIManager.ts`
+- `Level.test.ts` (28 tests) - Tests for `Level.ts`
+- `LevelSet.test.ts` (41 tests) - Tests for `LevelSet.ts`
+- `SettingsManager.test.ts` (42 tests) - Tests for `SettingsManager.ts`
+- `GameStateManager.test.ts` (56 tests) - Tests for `GameStateManager.ts`
+- `LevelSetManager.test.ts` (48 tests) - Tests for `LevelSetManager.ts`
+- `GridManager.test.ts` (48 tests) - Tests for `GridManager.ts`
+- `ComputerPlayer.test.ts` (40 tests) - Tests for `ComputerPlayer.ts`
+- `GameUIManager.test.ts` (49 tests) - Tests for `GameUIManager.ts`
+- `BoardStateManager.test.ts` (49 tests) - Tests for `BoardStateManager.ts`
+
+**Total: 401 tests across 9 test files**
 
 ### Writing New Tests
 
