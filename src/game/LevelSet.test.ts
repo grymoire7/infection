@@ -228,12 +228,6 @@ describe('LevelSet', () => {
 
     it('should return false when setting non-existent level', () => {
       const levelSet = new LevelSet(basicSetDefinition);
-      const otherSetDefinition: LevelSetDefinition = {
-        id: 'other-set',
-        name: 'Other Set',
-        description: 'Another set',
-        levelEntries: [{ levelId: 'level-non-existent', aiDifficulty: 'easy' }],
-      };
 
       // Create a mock level that doesn't exist in basicSetDefinition
       const mockLevelDef = {

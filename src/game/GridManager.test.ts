@@ -64,7 +64,7 @@ class MockSprite {
   scaleY: number = 1;
   flipX: boolean = false;
 
-  constructor(x: number, y: number, texture: string) {
+  constructor(x: number, y: number, _texture: string) {
     this.x = x;
     this.y = y;
   }
@@ -80,7 +80,7 @@ class MockSprite {
     return this;
   }
 
-  play(anim: string): this {
+  play(_anim: string): this {
     return this;
   }
 }
@@ -540,7 +540,6 @@ describe('GridManager', () => {
     it('should use correct fill color for default cells', () => {
       gridManager.createGrid(3, []);
 
-      const callArgs = (mockScene.add.rectangle as any).mock.calls[0];
       const createdCell = (mockScene.add.rectangle as any).mock.results[0].value;
 
       expect(createdCell.fillColor).toBe(0x444444);

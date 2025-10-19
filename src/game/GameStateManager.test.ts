@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { GameStateManager, CellState, MoveHistoryEntry, SavedGameState } from './GameStateManager';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { GameStateManager, CellState, MoveHistoryEntry } from './GameStateManager';
 import { Level } from './Level';
 
 // Mock Phaser's DataManager

@@ -198,7 +198,7 @@ describe('GameUIManager', () => {
 
       expect(ui.undoButton).toBeDefined();
       expect(ui.undoButton.text).toBe('Undo');
-      expect(ui.undoButton.backgroundColor).toBe('#666666');
+      expect((ui.undoButton as any).backgroundColor).toBe('#666666');
     });
 
     it('should create quit button', () => {
@@ -206,7 +206,7 @@ describe('GameUIManager', () => {
 
       expect(ui.quitButton).toBeDefined();
       expect(ui.quitButton.text).toBe('Quit');
-      expect(ui.quitButton.backgroundColor).toBe('#aa4444');
+      expect((ui.quitButton as any).backgroundColor).toBe('#aa4444');
     });
 
     it('should create player sprite with red by default', () => {
@@ -214,19 +214,19 @@ describe('GameUIManager', () => {
 
       expect(ui.currentPlayerSprite).toBeDefined();
       expect(ui.currentPlayerSprite.texture).toBe('evil-sprite');
-      expect(ui.currentPlayerSprite.currentAnim).toBe('evil-dot-pulse');
+      expect((ui.currentPlayerSprite as any).currentAnim).toBe('evil-dot-pulse');
     });
 
     it('should make undo button interactive', () => {
       const ui = uiManager.createUI();
 
-      expect(ui.undoButton.interactive).toBe(true);
+      expect((ui.undoButton as any).interactive).toBe(true);
     });
 
     it('should make quit button interactive', () => {
       const ui = uiManager.createUI();
 
-      expect(ui.quitButton.interactive).toBe(true);
+      expect((ui.quitButton as any).interactive).toBe(true);
     });
   });
 
@@ -237,7 +237,7 @@ describe('GameUIManager', () => {
       uiManager.updatePlayerIndicator('red');
 
       expect(ui.currentPlayerSprite.texture).toBe('evil-sprite');
-      expect(ui.currentPlayerSprite.currentAnim).toBe('evil-dot-pulse');
+      expect((ui.currentPlayerSprite as any).currentAnim).toBe('evil-dot-pulse');
     });
 
     it('should update sprite to blue', () => {
@@ -246,7 +246,7 @@ describe('GameUIManager', () => {
       uiManager.updatePlayerIndicator('blue');
 
       expect(ui.currentPlayerSprite.texture).toBe('good-sprite');
-      expect(ui.currentPlayerSprite.currentAnim).toBe('good-dot-pulse');
+      expect((ui.currentPlayerSprite as any).currentAnim).toBe('good-dot-pulse');
     });
 
     it('should switch between red and blue', () => {
@@ -270,7 +270,7 @@ describe('GameUIManager', () => {
       uiManager.updateUndoButton(true);
 
       expect(ui.undoButton.alpha).toBe(1);
-      expect(ui.undoButton.interactive).toBe(true);
+      expect((ui.undoButton as any).interactive).toBe(true);
     });
 
     it('should disable undo button when cannot undo', () => {
@@ -279,20 +279,20 @@ describe('GameUIManager', () => {
       uiManager.updateUndoButton(false);
 
       expect(ui.undoButton.alpha).toBe(0.5);
-      expect(ui.undoButton.interactive).toBe(false);
+      expect((ui.undoButton as any).interactive).toBe(false);
     });
 
     it('should toggle undo button state', () => {
       const ui = uiManager.createUI();
 
       uiManager.updateUndoButton(true);
-      expect(ui.undoButton.interactive).toBe(true);
+      expect((ui.undoButton as any).interactive).toBe(true);
 
       uiManager.updateUndoButton(false);
-      expect(ui.undoButton.interactive).toBe(false);
+      expect((ui.undoButton as any).interactive).toBe(false);
 
       uiManager.updateUndoButton(true);
-      expect(ui.undoButton.interactive).toBe(true);
+      expect((ui.undoButton as any).interactive).toBe(true);
     });
   });
 
@@ -378,7 +378,7 @@ describe('GameUIManager', () => {
 
       uiManager.disableUndoButton();
 
-      expect(ui.undoButton.interactive).toBe(false);
+      expect((ui.undoButton as any).interactive).toBe(false);
       expect(ui.undoButton.alpha).toBe(0.3);
     });
   });
@@ -389,7 +389,7 @@ describe('GameUIManager', () => {
 
       uiManager.disableQuitButton();
 
-      expect(ui.quitButton.interactive).toBe(false);
+      expect((ui.quitButton as any).interactive).toBe(false);
       expect(ui.quitButton.alpha).toBe(0.3);
     });
   });
@@ -476,20 +476,20 @@ describe('GameUIManager', () => {
       const ui = uiManager.createUI();
 
       ui.undoButton.emit('pointerover');
-      expect(ui.undoButton.backgroundColor).toBe('#888888');
+      expect((ui.undoButton as any).backgroundColor).toBe('#888888');
 
       ui.undoButton.emit('pointerout');
-      expect(ui.undoButton.backgroundColor).toBe('#666666');
+      expect((ui.undoButton as any).backgroundColor).toBe('#666666');
     });
 
     it('should change quit button color on hover', () => {
       const ui = uiManager.createUI();
 
       ui.quitButton.emit('pointerover');
-      expect(ui.quitButton.backgroundColor).toBe('#cc6666');
+      expect((ui.quitButton as any).backgroundColor).toBe('#cc6666');
 
       ui.quitButton.emit('pointerout');
-      expect(ui.quitButton.backgroundColor).toBe('#aa4444');
+      expect((ui.quitButton as any).backgroundColor).toBe('#aa4444');
     });
   });
 
@@ -588,8 +588,8 @@ describe('GameUIManager', () => {
       uiManager.disableUndoButton();
       uiManager.disableQuitButton();
 
-      expect(ui.undoButton.interactive).toBe(false);
-      expect(ui.quitButton.interactive).toBe(false);
+      expect((ui.undoButton as any).interactive).toBe(false);
+      expect((ui.quitButton as any).interactive).toBe(false);
 
       // Show game over screen
       uiManager.showGameOverScreen('Red', onRestart);

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LevelSetManager } from './LevelSetManager';
 import { LevelSet } from './LevelSet';
-import { Level } from './Level';
 
 // Mock the LevelDefinitions module
 vi.mock('./LevelDefinitions', () => ({
@@ -518,8 +517,6 @@ describe('LevelSetManager', () => {
     });
 
     it('should handle level progression within a set', () => {
-      const currentSet = levelSetManager.getCurrentLevelSet();
-
       // Start at first level
       const level1 = levelSetManager.getFirstLevelOfCurrentSet();
       expect(level1.getId()).toBe('level-1');
