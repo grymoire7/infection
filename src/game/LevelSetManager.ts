@@ -91,7 +91,27 @@ export class LevelSetManager {
      * Get the current level set based on registry settings
      */
     getCurrentLevelSet(): LevelSet {
-        const currentLevelSet = this.gameRegistry.get('currentLevelSet') || this.getDefaultLevelSet();
+        // First check if we have a currentLevelSet in the registry
+        let currentLevelSet = this.gameRegistry.get('currentLevelSet');
+
+        // If not, try to load by levelSetId from registry
+        if (!currentLevelSet) {
+            const levelSetId = this.gameRegistry.get('levelSetId');
+            if (levelSetId) {
+                currentLevelSet = this.getLevelSet(levelSetId);
+                // Cache it in the registry for future use
+                if (currentLevelSet) {
+                    this.gameRegistry.set('currentLevelSet', currentLevelSet);
+                }
+            }
+        }
+
+        // Fall back to default if we still don't have a level set
+        if (!currentLevelSet) {
+            currentLevelSet = this.getDefaultLevelSet();
+            this.gameRegistry.set('currentLevelSet', currentLevelSet);
+        }
+
         console.log('LevelSetManager.getCurrentLevelSet:', currentLevelSet);
         return currentLevelSet;
     }
