@@ -1,8 +1,9 @@
-import { GameObjects, Scene } from 'phaser';
+import { GameObjects } from 'phaser';
 
 import { EventBus } from '../EventBus';
+import { BaseScene } from '../BaseScene';
 
-export class MainMenu extends Scene
+export class MainMenu extends BaseScene
 {
     background: GameObjects.Image;
     logo: GameObjects.Image;
@@ -92,7 +93,7 @@ export class MainMenu extends Scene
             dot.setData('currentAngle', startAngle);
             
             // Create circular movement tween using a custom property
-            const tween = this.tweens.addCounter({
+            const tween = (this.tweens as Phaser.Tweens.TweenManager).addCounter({
                 from: 0,
                 to: 360,
                 duration: speed,
@@ -105,8 +106,9 @@ export class MainMenu extends Scene
                     dot.y = dot.getData('centerY') + Math.sin(angleRad) * dot.getData('radius');
                 }
             });
-            
+
             this.dotTweens.push(tween);
+            this.addTween(tween); // Register for automatic cleanup
         }
     }
 
@@ -161,6 +163,34 @@ export class MainMenu extends Scene
         });
     }
 
+    /**
+     * Override shutdown to handle scene-specific cleanup
+     */
+    public shutdown(): void {
+        console.log('MainMenu: Starting shutdown cleanup');
+
+        // Stop animated dots (existing cleanup logic)
+        this.stopAnimatedDots();
+
+        // Clean up menu items
+        this.menuItems.forEach(item => {
+            if (item) {
+                this.safeRemoveInteractive(item);
+                this.safeDestroy(item);
+            }
+        });
+        this.menuItems = [];
+
+        // Clean up other display objects
+        this.safeDestroy(this.title);
+        this.safeDestroy(this.background);
+
+        // Call parent shutdown for base cleanup
+        super.shutdown();
+
+        console.log('MainMenu: Shutdown cleanup completed');
+    }
+
     stopAnimatedDots()
     {
         // Stop all dot tweens
@@ -170,7 +200,7 @@ export class MainMenu extends Scene
             }
         });
         this.dotTweens = [];
-        
+
         // Remove all animated dots
         this.animatedDots.forEach(dot => {
             if (dot) {

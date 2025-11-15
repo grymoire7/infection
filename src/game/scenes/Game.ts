@@ -1,5 +1,4 @@
 import { EventBus } from '../EventBus';
-import { Scene } from 'phaser';
 import { ComputerPlayer } from '../ComputerPlayer';
 import { GameStateManager } from '../GameStateManager';
 import { GameUIManager } from '../GameUIManager';
@@ -9,10 +8,11 @@ import { GridManager } from '../GridManager';
 import { SettingsManager } from '../SettingsManager';
 import { VisualDotManager } from '../VisualDotManager';
 import { BoardStateManager } from '../BoardStateManager';
+import { BaseScene } from '../BaseScene';
 
 type PlayerColor = 'red' | 'blue';
 
-export class Game extends Scene {
+export class Game extends BaseScene {
     // Game configuration constants
     private static readonly COMPUTER_MOVE_DELAY = 1000;
     private static readonly EXPLOSION_DELAY = 300;
@@ -733,5 +733,57 @@ export class Game extends Scene {
 
             console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty})`);
         }
+    }
+
+    /**
+     * Override shutdown to handle complex scene-specific cleanup
+     */
+    public shutdown(): void {
+        console.log('Game: Starting shutdown cleanup');
+
+        // Clear any pending timers
+        this.time.clearPendingEvents();
+
+        // Clean up game components in reverse order of creation
+        if (this.visualDotManager) {
+            this.visualDotManager.clearAll();
+        }
+
+        if (this.gridManager) {
+            // GridManager doesn't have explicit cleanup, but we can remove its references
+            this.addCleanupTask(() => {
+                // Any grid-specific cleanup would go here
+            });
+        }
+
+        if (this.uiManager) {
+            this.addCleanupTask(() => {
+                // Clean up any UI-specific resources
+            });
+        }
+
+        if (this.stateManager) {
+            this.stateManager.clearSavedState();
+        }
+
+        // Clean up managers
+        this.visualDotManager = null!;
+        this.gridManager = null!;
+        this.uiManager = null!;
+        this.stateManager = null!;
+        this.settingsManager = null!;
+        this.levelSetManager = null!;
+        this.computerPlayer = null;
+
+        // Clean up display objects
+        this.safeDestroy(this.background);
+
+        // Clean up any remaining input handlers
+        this.input.removeAllListeners();
+
+        // Call parent shutdown for base cleanup
+        super.shutdown();
+
+        console.log('Game: Shutdown cleanup completed');
     }
 }

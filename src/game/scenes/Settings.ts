@@ -1,9 +1,10 @@
-import { GameObjects, Scene } from 'phaser';
+import { GameObjects } from 'phaser';
 import { EventBus } from '../EventBus';
 import { LEVEL_SETS } from '../LevelDefinitions';
 import { SettingsManager, GameSettings } from '../SettingsManager';
+import { BaseScene } from '../BaseScene';
 
-export class Settings extends Scene
+export class Settings extends BaseScene
 {
     background: GameObjects.Image;
     title: GameObjects.Text;
@@ -204,5 +205,30 @@ export class Settings extends Scene
         const displayText = levelSet ? levelSet.name : 'Default Levels';
         this.levelSetButton.setText(displayText);
         this.levelSetButton.setColor('#ffffff');
+    }
+
+    /**
+     * Override shutdown to handle scene-specific cleanup
+     */
+    public shutdown(): void {
+        console.log('Settings: Starting shutdown cleanup');
+
+        // Clean up interactive elements
+        this.safeRemoveInteractive(this.soundToggleButton);
+        this.safeRemoveInteractive(this.playerColorButton);
+        this.safeRemoveInteractive(this.levelSetButton);
+
+        // Clean up display objects
+        this.safeDestroy(this.soundToggleButton);
+        this.safeDestroy(this.playerColorButton);
+        this.safeDestroy(this.levelSetButton);
+        this.safeDestroy(this.playerSprite);
+        this.safeDestroy(this.title);
+        this.safeDestroy(this.background);
+
+        // Call parent shutdown for base cleanup
+        super.shutdown();
+
+        console.log('Settings: Shutdown cleanup completed');
     }
 }

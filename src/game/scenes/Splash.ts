@@ -1,11 +1,12 @@
-import { GameObjects, Scene } from 'phaser';
-
+import { GameObjects } from 'phaser';
 import { EventBus } from '../EventBus';
+import { BaseScene } from '../BaseScene';
 
-export class Splash extends Scene
+export class Splash extends BaseScene
 {
     background: GameObjects.Image;
     title: GameObjects.Text;
+    subtitle: GameObjects.Text;
     animatedDots: any[] = [];
     dotTweens: Phaser.Tweens.Tween[] = [];
 
@@ -30,7 +31,7 @@ export class Splash extends Scene
         }).setOrigin(0.5).setDepth(100);
 
         const subtitleFontSize = Math.min(24, this.cameras.main.width * .25);
-        this.title = this.add.text(centerX, centerY * 1.1, 'Germs vs White Cells', {
+        this.subtitle = this.add.text(centerX, centerY * 1.1, 'Germs vs White Cells', {
             fontFamily: 'Arial Black', fontSize: subtitleFontSize, color: '#44ff44',
             stroke: '#005500', strokeThickness: 5,
             align: 'center'
@@ -88,7 +89,7 @@ export class Splash extends Scene
             dot.setData('currentAngle', startAngle);
             
             // Create circular movement tween using a custom property
-            const tween = this.tweens.addCounter({
+            const tween = (this.tweens as Phaser.Tweens.TweenManager).addCounter({
                 from: 0,
                 to: 360,
                 duration: speed,
@@ -101,7 +102,9 @@ export class Splash extends Scene
                     dot.y = dot.getData('centerY') + Math.sin(angleRad) * dot.getData('radius');
                 }
             });
-            
+
+            // Register tween with BaseScene for automatic cleanup
+            this.addTween(tween);
             this.dotTweens.push(tween);
         }
     }
@@ -115,7 +118,7 @@ export class Splash extends Scene
             }
         });
         this.dotTweens = [];
-        
+
         // Remove all animated dots
         this.animatedDots.forEach(dot => {
             if (dot) {
@@ -125,4 +128,20 @@ export class Splash extends Scene
         this.animatedDots = [];
     }
 
+    public shutdown(): void {
+        console.log('Splash: Starting shutdown cleanup');
+
+        // Clean up display objects
+        this.safeDestroy(this.background);
+        this.safeDestroy(this.title);
+        this.safeDestroy(this.subtitle);
+
+        // Clean up animated dots
+        this.stopAnimatedDots();
+
+        // Call parent shutdown for base cleanup
+        super.shutdown();
+
+        console.log('Splash: Shutdown cleanup completed');
+    }
 }

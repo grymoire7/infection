@@ -1,8 +1,9 @@
-import { GameObjects, Scene } from 'phaser';
+import { GameObjects } from 'phaser';
 import { EventBus } from '../EventBus';
 import { LevelSetManager } from '../LevelSetManager';
+import { BaseScene } from '../BaseScene';
 
-export class LevelOver extends Scene
+export class LevelOver extends BaseScene
 {
     camera: Phaser.Cameras.Scene2D.Camera;
     background: GameObjects.Image;
@@ -157,5 +158,23 @@ export class LevelOver extends Scene
     changeScene ()
     {
         this.scene.start('MainMenu');
+    }
+
+    public shutdown(): void {
+        console.log('LevelOver: Starting shutdown cleanup');
+
+        // Clean up display objects
+        this.safeDestroy(this.background);
+        this.safeDestroy(this.levelCompleteText);
+        this.safeDestroy(this.winnerText);
+        this.safeDestroy(this.levelInfoText);
+        this.safeDestroy(this.nextLevelButton);
+        this.safeDestroy(this.restartButton);
+        this.safeDestroy(this.mainMenuButton);
+
+        // Call parent shutdown for base cleanup
+        super.shutdown();
+
+        console.log('LevelOver: Shutdown cleanup completed');
     }
 }

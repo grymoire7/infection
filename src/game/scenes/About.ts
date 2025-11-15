@@ -1,12 +1,14 @@
-import { GameObjects, Scene } from 'phaser';
+import { GameObjects } from 'phaser';
 import { EventBus } from '../EventBus';
+import { BaseScene } from '../BaseScene';
 
-export class About extends Scene
+export class About extends BaseScene
 {
     background: GameObjects.Image;
     title: GameObjects.Text;
     backButton: GameObjects.Text;
     htmlElement: HTMLDivElement | null = null;
+    private resizeHandler: (() => void) | null = null;
 
     constructor ()
     {
@@ -117,7 +119,7 @@ export class About extends Scene
         document.body.appendChild(this.htmlElement);
 
         // Add resize listener to make it responsive
-        const resizeHandler = () => {
+        this.resizeHandler = () => {
             if (this.htmlElement) {
                 const gameContainer = document.getElementById('game-container');
                 const containerHeight = gameContainer ? gameContainer.clientHeight : window.innerHeight;
@@ -126,7 +128,7 @@ export class About extends Scene
                     containerHeight - 200,
                     window.innerHeight - 200
                 );
-                
+
                 this.htmlElement.style.height = `${safeHeight}px`;
                 this.htmlElement.style.maxHeight = '60vh';
                 this.htmlElement.style.fontSize = Math.min(16, window.innerWidth / 50) + 'px';
@@ -134,11 +136,11 @@ export class About extends Scene
             }
         };
 
-        window.addEventListener('resize', resizeHandler);
+        window.addEventListener('resize', this.resizeHandler);
 
         // Clean up HTML element when scene shuts down or is destroyed
         this.events.on('shutdown', () => {
-            window.removeEventListener('resize', resizeHandler);
+            window.removeEventListener('resize', this.resizeHandler!);
             if (this.htmlElement && this.htmlElement.parentNode) {
                 this.htmlElement.parentNode.removeChild(this.htmlElement);
                 this.htmlElement = null;
@@ -146,11 +148,36 @@ export class About extends Scene
         });
 
         this.events.on('destroy', () => {
-            window.removeEventListener('resize', resizeHandler);
+            window.removeEventListener('resize', this.resizeHandler!);
             if (this.htmlElement && this.htmlElement.parentNode) {
                 this.htmlElement.parentNode.removeChild(this.htmlElement);
                 this.htmlElement = null;
             }
         });
+    }
+
+    public shutdown(): void {
+        console.log('About: Starting shutdown cleanup');
+
+        // Clean up display objects
+        this.safeDestroy(this.background);
+        this.safeDestroy(this.title);
+        this.safeDestroy(this.backButton);
+
+        // Clean up HTML element and event listeners
+        if (this.resizeHandler) {
+            window.removeEventListener('resize', this.resizeHandler);
+            this.resizeHandler = null;
+        }
+
+        if (this.htmlElement && this.htmlElement.parentNode) {
+            this.htmlElement.parentNode.removeChild(this.htmlElement);
+            this.htmlElement = null;
+        }
+
+        // Call parent shutdown for base cleanup
+        super.shutdown();
+
+        console.log('About: Shutdown cleanup completed');
     }
 }

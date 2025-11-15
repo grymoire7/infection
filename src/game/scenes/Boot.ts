@@ -1,6 +1,6 @@
-import { Scene } from 'phaser';
+import { BaseScene } from '../BaseScene';
 
-export class Boot extends Scene
+export class Boot extends BaseScene
 {
     constructor ()
     {
@@ -18,5 +18,14 @@ export class Boot extends Scene
     create ()
     {
         this.scene.start('Preloader');
+    }
+
+    public shutdown(): void {
+        console.log('Boot: Starting shutdown cleanup');
+
+        // Call parent shutdown for base cleanup
+        super.shutdown();
+
+        console.log('Boot: Shutdown cleanup completed');
     }
 }
