@@ -29,7 +29,8 @@
         "test": "vitest",
         "test:ui": "vitest --ui",
         "test:run": "vitest run",
-        "test:coverage": "vitest run --coverage"
+        "test:coverage": "vitest run --coverage",
+        "test:live": "node scripts/launch-live-testing"
     },
     "dependencies": {
         "phaser": "^3.90.0",

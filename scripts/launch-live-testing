@@ -1,0 +1,180 @@
+#!/usr/bin/env node
+
+/**
+ * Live Testing Launcher
+ *
+ * This script ensures the dev server is running and opens the live testing page.
+ * It provides a seamless way to access the memory testing dashboard.
+ */
+
+const { spawn } = require('child_process');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+
+// Configuration
+const DEV_SERVER_PORT = 8080;
+const DEV_SERVER_HOST = 'localhost';
+const LIVE_TESTING_PATH = '/live-testing.html';
+const PACKAGE_JSON_PATH = path.join(__dirname, '../package.json');
+
+// Colors for terminal output
+const colors = {
+    reset: '\x1b[0m',
+    bright: '\x1b[1m',
+    red: '\x1b[31m',
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    blue: '\x1b[34m',
+    magenta: '\x1b[35m',
+    cyan: '\x1b[36m'
+};
+
+function log(message, color = 'reset') {
+    console.log(`${colors[color]}${message}${colors.reset}`);
+}
+
+function checkDevServerRunning() {
+    return new Promise((resolve) => {
+        const options = {
+            hostname: DEV_SERVER_HOST,
+            port: DEV_SERVER_PORT,
+            path: '/',
+            method: 'GET',
+            timeout: 2000
+        };
+
+        const req = http.request(options, (res) => {
+            resolve(res.statusCode === 200);
+        });
+
+        req.on('error', () => resolve(false));
+        req.on('timeout', () => {
+            req.destroy();
+            resolve(false);
+        });
+
+        req.end();
+    });
+}
+
+function startDevServer() {
+    return new Promise((resolve, reject) => {
+        log('🚀 Starting development server...', 'cyan');
+
+        // Check if we're in the right directory (has package.json)
+        if (!fs.existsSync(PACKAGE_JSON_PATH)) {
+            log('❌ Error: package.json not found. Please run this script from the project root.', 'red');
+            process.exit(1);
+        }
+
+        const devServer = spawn('npm', ['run', 'dev'], {
+            stdio: ['pipe', 'pipe', 'pipe'],
+            cwd: path.dirname(PACKAGE_JSON_PATH)
+        });
+
+        let serverReady = false;
+
+        devServer.stdout.on('data', (data) => {
+            const output = data.toString();
+            process.stdout.write(data);
+
+            // Look for Vite's ready message
+            if (output.includes('Local:') || output.includes('ready in')) {
+                serverReady = true;
+                log('✅ Development server started successfully!', 'green');
+                resolve(devServer);
+            }
+        });
+
+        devServer.stderr.on('data', (data) => {
+            process.stderr.write(data);
+        });
+
+        devServer.on('error', (error) => {
+            log(`❌ Failed to start dev server: ${error.message}`, 'red');
+            reject(error);
+        });
+
+        // Fallback timeout in case we don't detect the ready message
+        setTimeout(() => {
+            if (!serverReady) {
+                log('⚠️  Dev server may still be starting...', 'yellow');
+                resolve(devServer);
+            }
+        }, 5000);
+    });
+}
+
+function openBrowser(url) {
+    const start = process.platform === 'darwin' ? 'open' :
+                  process.platform === 'win32' ? 'start' : 'xdg-open';
+
+    spawn(start, [url], { stdio: 'ignore' });
+}
+
+async function main() {
+    log('🧠 Live Testing Launcher', 'bright');
+    log('============================', 'cyan');
+
+    try {
+        const isServerRunning = await checkDevServerRunning();
+
+        let devServerProcess = null;
+
+        if (!isServerRunning) {
+            devServerProcess = await startDevServer();
+
+            // Give server a moment to fully start
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        } else {
+            log('✅ Development server is already running!', 'green');
+        }
+
+        const liveTestingUrl = `http://${DEV_SERVER_HOST}:${DEV_SERVER_PORT}${LIVE_TESTING_PATH}`;
+
+        log(`🌐 Opening Live Testing Dashboard...`, 'cyan');
+        log(`   URL: ${liveTestingUrl}`, 'blue');
+
+        openBrowser(liveTestingUrl);
+
+        log('', 'reset');
+        log('📊 Live Testing Dashboard Features:', 'bright');
+        log('   • Real-time memory metrics monitoring', 'green');
+        log('   • EventBus memory leak validation', 'green');
+        log('   • Scene transition memory testing', 'green');
+        log('   • Object lifecycle management verification', 'green');
+        log('   • Interactive memory pressure testing', 'green');
+        log('', 'reset');
+
+        if (devServerProcess) {
+            log('💡 Tip: Press Ctrl+C to stop the development server', 'yellow');
+
+            // Keep the script running to maintain the dev server
+            process.on('SIGINT', () => {
+                log('\n🛑 Shutting down development server...', 'yellow');
+                devServerProcess.kill();
+                process.exit(0);
+            });
+
+            // Keep the process alive
+            setInterval(() => {}, 1000);
+        } else {
+            log('🎉 Live Testing Dashboard opened in your browser!', 'green');
+            log('   The development server was already running.', 'blue');
+        }
+
+    } catch (error) {
+        log(`❌ Error: ${error.message}`, 'red');
+        process.exit(1);
+    }
+}
+
+// Handle uncaught promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    log(`❌ Unhandled Rejection: ${reason}`, 'red');
+    process.exit(1);
+});
+
+// Run the main function
+main();
