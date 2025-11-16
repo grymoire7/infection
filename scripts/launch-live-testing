@@ -1,10 +1,17 @@
 #!/usr/bin/env node
 
 /**
- * Live Testing Launcher
+ * Live Testing Launcher - All-in-One Testing Experience
  *
- * This script ensures the dev server is running and opens the live testing page.
- * It provides a seamless way to access the memory testing dashboard.
+ * This script manages both the development server and test status server,
+ * providing a seamless way to access the complete testing dashboard.
+ *
+ * Features:
+ * - Auto-starts dev server if needed
+ * - Auto-starts test status server for real-time unit test results
+ * - Opens live testing dashboard in browser
+ * - Graceful shutdown on Ctrl+C
+ * - Unified logging for both services
  */
 
 const { spawn } = require('child_process');
@@ -15,6 +22,7 @@ const path = require('path');
 // Configuration
 const DEV_SERVER_PORT = 8080;
 const DEV_SERVER_HOST = 'localhost';
+const TEST_STATUS_PORT = 3001;
 const LIVE_TESTING_PATH = '/live-testing.html';
 const PACKAGE_JSON_PATH = path.join(__dirname, '../package.json');
 
@@ -34,11 +42,11 @@ function log(message, color = 'reset') {
     console.log(`${colors[color]}${message}${colors.reset}`);
 }
 
-function checkDevServerRunning() {
+function checkServerRunning(host, port) {
     return new Promise((resolve) => {
         const options = {
-            hostname: DEV_SERVER_HOST,
-            port: DEV_SERVER_PORT,
+            hostname: host,
+            port: port,
             path: '/',
             method: 'GET',
             timeout: 2000
@@ -58,15 +66,34 @@ function checkDevServerRunning() {
     });
 }
 
+function checkTestStatusServer() {
+    return new Promise((resolve) => {
+        const options = {
+            hostname: 'localhost',
+            port: TEST_STATUS_PORT,
+            path: '/test-status',
+            method: 'GET',
+            timeout: 2000
+        };
+
+        const req = http.request(options, (res) => {
+            resolve(res.statusCode === 200);
+        });
+
+        req.on('error', () => resolve(false));
+        req.on('timeout', () => {
+            req.destroy();
+            resolve(false);
+        });
+
+        req.end();
+    });
+}
+
+
 function startDevServer() {
     return new Promise((resolve, reject) => {
-        log('🚀 Starting development server...', 'cyan');
-
-        // Check if we're in the right directory (has package.json)
-        if (!fs.existsSync(PACKAGE_JSON_PATH)) {
-            log('❌ Error: package.json not found. Please run this script from the project root.', 'red');
-            process.exit(1);
-        }
+        log('🌐 Starting development server...', 'cyan');
 
         const devServer = spawn('npm', ['run', 'dev'], {
             stdio: ['pipe', 'pipe', 'pipe'],
@@ -77,7 +104,6 @@ function startDevServer() {
 
         devServer.stdout.on('data', (data) => {
             const output = data.toString();
-            process.stdout.write(data);
 
             // Look for Vite's ready message
             if (output.includes('Local:') || output.includes('ready in')) {
@@ -96,7 +122,7 @@ function startDevServer() {
             reject(error);
         });
 
-        // Fallback timeout in case we don't detect the ready message
+        // Fallback timeout
         setTimeout(() => {
             if (!serverReady) {
                 log('⚠️  Dev server may still be starting...', 'yellow');
@@ -106,6 +132,49 @@ function startDevServer() {
     });
 }
 
+function startTestStatusServer() {
+    return new Promise((resolve, reject) => {
+        log('🧪 Starting test status server...', 'magenta');
+
+        const testServer = spawn('node', ['scripts/test-status-server.js'], {
+            stdio: ['pipe', 'pipe', 'pipe'],
+            cwd: path.dirname(PACKAGE_JSON_PATH)
+        });
+
+        let serverReady = false;
+
+        testServer.stdout.on('data', (data) => {
+            const output = data.toString();
+            process.stdout.write(data);
+
+            // Look for server ready message
+            if (output.includes('Test Status Server running')) {
+                serverReady = true;
+                log('✅ Test status server started successfully!', 'green');
+                resolve(testServer);
+            }
+        });
+
+        testServer.stderr.on('data', (data) => {
+            process.stderr.write(data);
+        });
+
+        testServer.on('error', (error) => {
+            log(`❌ Failed to start test status server: ${error.message}`, 'red');
+            reject(error);
+        });
+
+        // Fallback timeout
+        setTimeout(() => {
+            if (!serverReady) {
+                log('⚠️  Test status server may still be starting...', 'yellow');
+                resolve(testServer);
+            }
+        }, 3000);
+    });
+}
+
+
 function openBrowser(url) {
     const start = process.platform === 'darwin' ? 'open' :
                   process.platform === 'win32' ? 'start' : 'xdg-open';
@@ -113,23 +182,72 @@ function openBrowser(url) {
     spawn(start, [url], { stdio: 'ignore' });
 }
 
+// Track running processes for cleanup
+let devServerProcess = null;
+let testServerProcess = null;
+
+// Graceful shutdown handler
+function handleShutdown() {
+    log('\n🛑 Shutting down servers...', 'yellow');
+
+    let shutdownPromises = [];
+
+    if (testServerProcess) {
+        log('   🧪 Stopping test status server...', 'magenta');
+        testServerProcess.kill();
+        shutdownPromises.push(
+            new Promise(resolve => {
+                testServerProcess.on('exit', resolve);
+                setTimeout(resolve, 2000); // Force resolve after 2 seconds
+            })
+        );
+    }
+
+    if (devServerProcess) {
+        log('   🌐 Stopping development server...', 'cyan');
+        devServerProcess.kill();
+        shutdownPromises.push(
+            new Promise(resolve => {
+                devServerProcess.on('exit', resolve);
+                setTimeout(resolve, 2000); // Force resolve after 2 seconds
+            })
+        );
+    }
+
+    Promise.all(shutdownPromises).then(() => {
+        log('✅ All servers stopped gracefully', 'green');
+        process.exit(0);
+    });
+}
+
 async function main() {
-    log('🧠 Live Testing Launcher', 'bright');
-    log('============================', 'cyan');
+    log('🧠 Live Testing Launcher - All-in-One Testing Experience', 'bright');
+    log('===============================================', 'cyan');
+
+    // Set up graceful shutdown
+    process.on('SIGINT', handleShutdown);
+    process.on('SIGTERM', handleShutdown);
 
     try {
-        const isServerRunning = await checkDevServerRunning();
+        // Check which servers are already running
+        const isDevServerRunning = await checkServerRunning(DEV_SERVER_HOST, DEV_SERVER_PORT);
+        const isTestServerRunning = await checkTestStatusServer();
 
-        let devServerProcess = null;
-
-        if (!isServerRunning) {
+        // Start servers that aren't running
+        if (!isDevServerRunning) {
             devServerProcess = await startDevServer();
-
-            // Give server a moment to fully start
-            await new Promise(resolve => setTimeout(resolve, 2000));
         } else {
             log('✅ Development server is already running!', 'green');
         }
+
+        if (!isTestServerRunning) {
+            testServerProcess = await startTestStatusServer();
+        } else {
+            log('✅ Test status server is already running!', 'green');
+        }
+
+        // Give servers a moment to fully start
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         const liveTestingUrl = `http://${DEV_SERVER_HOST}:${DEV_SERVER_PORT}${LIVE_TESTING_PATH}`;
 
@@ -139,33 +257,48 @@ async function main() {
         openBrowser(liveTestingUrl);
 
         log('', 'reset');
-        log('📊 Live Testing Dashboard Features:', 'bright');
-        log('   • Real-time memory metrics monitoring', 'green');
-        log('   • EventBus memory leak validation', 'green');
-        log('   • Scene transition memory testing', 'green');
-        log('   • Object lifecycle management verification', 'green');
-        log('   • Interactive memory pressure testing', 'green');
+        log('🎯 Complete Testing Dashboard Features:', 'bright');
+        log('   • 📊 Real-time memory metrics monitoring', 'green');
+        log('   • 🧪 Unit test status with live refresh', 'green');
+        log('   • 🔬 Vitest UI instructions for interactive testing', 'green');
+        log('   • 🧩 EventBus memory leak validation', 'green');
+        log('   • 🎮 Scene transition memory testing', 'green');
+        log('   • 🔄 Object lifecycle verification', 'green');
+        log('   • 💾 Interactive memory pressure testing', 'green');
         log('', 'reset');
 
-        if (devServerProcess) {
-            log('💡 Tip: Press Ctrl+C to stop the development server', 'yellow');
+        // Show server status
+        const serverStatus = [];
+        if (isDevServerRunning) serverStatus.push('✅ Dev Server');
+        if (isTestServerRunning) serverStatus.push('✅ Test Status Server');
+        if (!isDevServerRunning) serverStatus.push('🚀 Dev Server');
+        if (!isTestServerRunning) serverStatus.push('🚀 Test Status Server');
 
-            // Keep the script running to maintain the dev server
-            process.on('SIGINT', () => {
-                log('\n🛑 Shutting down development server...', 'yellow');
-                devServerProcess.kill();
-                process.exit(0);
-            });
+        log(`📡 Active Services: ${serverStatus.join(', ')}`, 'blue');
+        log('', 'reset');
 
-            // Keep the process alive
+        if (devServerProcess || testServerProcess) {
+            log('💡 Tip: Press Ctrl+C to gracefully shut down all servers', 'yellow');
+            log('   Both servers will be stopped automatically', 'yellow');
+            log('', 'reset');
+
+            // Keep the script running to maintain servers
             setInterval(() => {}, 1000);
         } else {
             log('🎉 Live Testing Dashboard opened in your browser!', 'green');
-            log('   The development server was already running.', 'blue');
+            log('   All servers were already running independently.', 'blue');
+            log('', 'reset');
+            log('💡 You can stop individual servers as needed', 'yellow');
+            process.exit(0);
         }
 
     } catch (error) {
         log(`❌ Error: ${error.message}`, 'red');
+
+        // Cleanup any started processes
+        if (devServerProcess) devServerProcess.kill();
+        if (testServerProcess) testServerProcess.kill();
+
         process.exit(1);
     }
 }
