@@ -27,8 +27,15 @@ export class SettingsManager {
             });
         }
 
-        // Ensure registry is synced with localStorage on initialization
-        this.loadSettings();
+        // Only sync with localStorage on first instance creation
+        // This prevents multiple instances from causing issues
+        if (!this.gameRegistry.get('settingsManagerInitialized')) {
+            console.log('[SettingsManager] First instance - loading settings from localStorage');
+            this.loadSettings();
+            this.gameRegistry.set('settingsManagerInitialized', true);
+        } else {
+            console.log('[SettingsManager] Additional instance detected - skipping localStorage sync');
+        }
     }
 
     /**
@@ -51,6 +58,10 @@ export class SettingsManager {
      * Save all settings to localStorage and sync with game registry
      */
     saveSettings(settings: GameSettings): void {
+        // Check if settings actually changed to avoid unnecessary dirty flags
+        const currentSettings = this.getCurrentSettings();
+        const hasChanges = this.hasSettingsChanged(currentSettings, settings);
+
         this.saveBooleanSetting('soundEffects', settings.soundEffectsEnabled);
         this.saveStringSetting('playerColor', settings.playerColor);
         this.saveStringSetting('levelSetId', settings.levelSetId);
@@ -58,8 +69,32 @@ export class SettingsManager {
         // Sync with game registry
         this.syncToRegistry(settings);
 
-        // Mark settings as changed
-        this.gameRegistry.set('settingsDirty', true);
+        // Only mark as dirty if settings actually changed
+        if (hasChanges) {
+            this.gameRegistry.set('settingsDirty', true);
+            console.log('[SettingsManager] Settings actually changed, marking as dirty');
+        } else {
+            console.log('[SettingsManager] Settings unchanged, not marking as dirty');
+        }
+    }
+
+    /**
+     * Check if settings have actually changed
+     */
+    private hasSettingsChanged(oldSettings: GameSettings, newSettings: GameSettings): boolean {
+        const soundChanged = oldSettings.soundEffectsEnabled !== newSettings.soundEffectsEnabled;
+        const colorChanged = oldSettings.playerColor !== newSettings.playerColor;
+        const levelSetChanged = oldSettings.levelSetId !== newSettings.levelSetId;
+
+        console.log('[SettingsManager] Settings comparison:', {
+            old: oldSettings,
+            new: newSettings,
+            soundChanged,
+            colorChanged,
+            levelSetChanged
+        });
+
+        return soundChanged || colorChanged || levelSetChanged;
     }
 
     /**

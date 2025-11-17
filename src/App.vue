@@ -5,6 +5,7 @@ import type { MainMenu } from './game/scenes/MainMenu';
 import PhaserGameWrapper from './components/PhaserGameWrapper.vue';
 import ErrorBoundary from './components/ErrorBoundary.vue';
 import { errorLogger } from './game/ErrorLogger';
+import { EventBus } from './game/EventBus';
 
 //  References to the PhaserGame component (game and scene are exposed)
 const phaserRef = ref();
@@ -20,29 +21,54 @@ const goToMainMenu = () => {
 const goToSettings = () => {
     const scene = toRaw(phaserRef.value.scene) as Phaser.Scene;
     if (scene) {
-        scene.scene.start('Settings');
+        const currentSceneKey = scene.scene.key;
+        if (currentSceneKey === 'Game') {
+            console.log('[App] ARCHITECTURE CHANGE: Use start() but rely on GameStateManager preservation');
+            // Simplify: Use regular scene transition but rely on GameStateManager
+            // which already saves game state to registry on every move
+            scene.scene.start('Settings');
+        } else {
+            // For other scenes (MainMenu, etc.), use regular start
+            scene.scene.start('Settings');
+        }
     }
 }
 
 const playGame = () => {
     const scene = toRaw(phaserRef.value.scene) as Phaser.Scene;
-    if (scene) {
-        // Check if there's a saved game state to resume
-        const savedGameState = scene.game.registry.get('gameState');
-        if (savedGameState) {
-            // Resume the existing game
-            scene.scene.start('Game');
-        } else {
-            // Start a new game and clear any previous state
-            scene.game.registry.remove('gameState');
-            scene.scene.start('Game');
-        }
+    if (!scene) {
+        console.error('[App] No scene available for playGame');
+        return;
+    }
+
+    const currentSceneKey = scene.scene.key;
+    const gameManager = scene.scene.manager;
+
+    console.log('[App] Debug info:', {
+        currentSceneKey,
+        allScenes: Object.keys(gameManager.scenes),
+        sceneKeys: gameManager.sceneKeys,
+        active: gameManager.isActive()
+    });
+
+    if (currentSceneKey === 'Game') {
+        // We're already in the Game scene, do nothing
+        console.log('[App] Already in Game scene');
+    } else if (currentSceneKey === 'Settings') {
+        console.log('[App] ARCHITECTURE CHANGE: Starting Game scene - GameStateManager will restore saved state');
+        // Simplify: Always start fresh - Game scene will handle restoring saved state
+        scene.scene.start('Game');
+    } else {
+        // From MainMenu or elsewhere, start the Game scene fresh
+        console.log('[App] Starting Game scene from', currentSceneKey);
+        scene.scene.start('Game');
     }
 }
 
 // Event emitted from the PhaserGame component
 const currentScene = (scene: any) => {
     // Update current scene name for button state management
+    console.log('[App] Scene change event received:', scene?.scene?.key);
     currentSceneName.value = scene.scene.key;
 }
 

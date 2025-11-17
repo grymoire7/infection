@@ -45,13 +45,15 @@ export class Game extends BaseScene {
     }
 
     create(): void {
+        console.log('[Game] ===== SCENE CREATE START =====');
         this.initializeCore();
         this.initializeManagers();
         this.initializeUI();
         this.initializeGameSettings();
         this.loadGameStateOrLevel();
         this.updateUI();
-        
+
+        console.log('[Game] ===== SCENE CREATE END =====');
         EventBus.emit('current-scene-ready', this);
     }
 
@@ -117,26 +119,40 @@ export class Game extends BaseScene {
      * Resume a saved game from registry
      */
     private resumeSavedGame(): void {
+        console.log('[Game] ===== RESUME SAVED GAME START =====');
         const savedState = this.stateManager.loadFromRegistry();
+        console.log('[Game] Loaded saved state:', savedState ? 'SUCCESS' : 'FAILED');
         if (!savedState) {
             console.warn('Failed to load saved state, starting new level');
             this.startNewLevel();
             return;
         }
 
-        // Restore level info and board state
+        console.log('[Game] Restoring level info and board state...');
+        console.log('[Game] Saved boardState:', JSON.stringify(savedState.boardState, null, 2));
+        console.log('[Game] Saved currentPlayer:', savedState.currentPlayer);
+        console.log('[Game] Saved humanPlayer:', savedState.humanPlayer);
+
+        // Restore level info and game properties
         this.currentLevel = savedState.currentLevel;
         this.setLevelProperties(this.currentLevel);
-        this.boardStateManager.setState(savedState.boardState);
         this.currentPlayer = savedState.currentPlayer;
         this.humanPlayer = savedState.humanPlayer;
         this.restoreAIFromSavedState(savedState);
 
-        // Create grid and visuals
+        console.log('[Game] Creating grid and visuals...');
+        // Create grid and visuals FIRST
         this.createGrid();
+
+        console.log('[Game] Restoring board state AFTER grid creation...');
+        // THEN restore board state to avoid being reset by createGrid()
+        this.boardStateManager.setState(savedState.boardState);
+
+        // FINALLY recreate visuals with the restored state
         this.recreateAllVisualDots();
         this.updateAllCellOwnership();
 
+        console.log('[Game] ===== RESUME SAVED GAME END =====');
         // Check if game was already over when saved
         this.handleGameOverIfNeeded(savedState);
     }
@@ -554,10 +570,17 @@ export class Game extends BaseScene {
     }
 
     recreateAllVisualDots(): void {
+        console.log('[Game] ===== RECREATE ALL VISUAL DOTS START =====');
+        const boardState = this.boardStateManager.getState();
+        console.log('[Game] Board state for recreation:', JSON.stringify(boardState, null, 2));
+        console.log('[Game] VisualDotManager exists:', !!this.visualDotManager);
+        console.log('[Game] GridManager exists:', !!this.gridManager);
+
         this.visualDotManager.recreateAll(
-            this.boardStateManager.getState(),
+            boardState,
             (row, col) => this.gridManager.getCellCenter(row, col)
         );
+        console.log('[Game] ===== RECREATE ALL VISUAL DOTS END =====');
     }
 
     updateAllCellOwnership(): void {
@@ -680,12 +703,28 @@ export class Game extends BaseScene {
     }
 
     wake(): void {
+        console.log('[Game] ===== SCENE WAKE START =====');
+        console.log('[Game] Waking up - checking registry state...');
+
         const settingsDirty = this.game.registry.get('settingsDirty');
+        console.log('[Game] Settings dirty:', settingsDirty);
+
+        const hasSavedState = this.stateManager.hasSavedState();
+        console.log('[Game] Has saved state:', hasSavedState);
+
         if (settingsDirty) {
+            console.log('[Game] Handling settings change during wake');
             this.handleSettingsChange();
-        } else if (!this.stateManager.hasSavedState()) {
+        } else if (hasSavedState) {
+            console.log('[Game] Waking with saved state - resuming game');
+            this.resumeSavedGame();
+        } else {
+            console.log('[Game] Waking without saved state - starting new level');
             this.startNewLevel();
         }
+
+        console.log('[Game] ===== SCENE WAKE END =====');
+        EventBus.emit('current-scene-ready', this);
     }
 
     private handleSettingsChange(): void {

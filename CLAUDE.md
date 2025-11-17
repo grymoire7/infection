@@ -2,6 +2,101 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🚨 MANDATORY DEBUGGING PROTOCOL
+
+**FOR ANY TECHNICAL ISSUE - ALWAYS use systematic debugging:**
+
+- Bug reports, test failures, unexpected behavior, performance issues
+- Regression issues, integration problems, build failures
+- **Before attempting ANY fix, use the `superpowers:systematic-debugging` skill**
+
+**FORBIDDEN PATTERNS (cause more bugs than they fix):**
+- "Quick fixes" and guesswork - **STRICTLY PROHIBITED**
+- Trying random API calls without understanding root cause
+- Making multiple changes at once
+- Skipping evidence gathering because issue "seems simple"
+
+**DEBUGGING WORKFLOW:**
+1. **Evidence Gathering First:** Add comprehensive logging to understand what's actually happening
+2. **Pattern Analysis:** Compare working vs broken implementations
+3. **Single Hypothesis Testing:** Make one targeted change to test theory
+4. **Root Cause Fixes:** Address the actual cause, not symptoms
+
+**REMEMBER:** Systematic debugging is 5x faster than guess-and-check thrashing.
+
+## Debugging Best Practices
+
+### Essential Instrumentation
+All scenes should have comprehensive lifecycle logging in development mode:
+
+```typescript
+// In BaseScene or each scene
+create() {
+    console.log(`[${this.constructor.name}] ===== SCENE CREATE START =====`);
+    // ... existing code ...
+    console.log(`[${this.constructor.name}] ===== SCENE CREATE END =====`);
+}
+
+wake() {
+    console.log(`[${this.constructor.name}] ===== SCENE WAKE START =====`);
+    // ... existing code ...
+    console.log(`[${this.constructor.name}] ===== SCENE WAKE END =====`);
+}
+
+sleep() {
+    console.log(`[${this.constructor.name}] ===== SCENE SLEEP START =====`);
+}
+
+shutdown() {
+    console.log(`[${this.constructor.name}] ===== SCENE SHUTDOWN START =====`);
+}
+```
+
+### State Change Visibility
+Critical state operations should log their data:
+
+```typescript
+// GameStateManager
+saveMove() {
+    // ... existing code ...
+    console.log(`[GameStateManager] Saved state: ${JSON.stringify(boardState)}`);
+}
+
+// BoardStateManager
+setState(boardState) {
+    console.log(`[BoardStateManager] Setting state: ${JSON.stringify(boardState)}`);
+    // ... existing code ...
+}
+```
+
+### Scene Transition Patterns
+For scene transitions, always verify the actual state:
+
+```typescript
+// In App.vue or scene transition code
+console.log(`[TRANSITION] Before: scene=${currentScene.key}, active=${gameManager.isActive()}`);
+const result = this.scene.start('TargetScene');
+console.log(`[TRANSITION] After: scene=${currentScene.key}, result=${result}`);
+```
+
+### Common Issue Patterns
+Learn from these resolved issues:
+
+**Scene State Not Preserved:**
+- **Symptom:** Scene transitions lose game state
+- **Root Cause:** Using `start()` instead of `sleep()`/`wake()` or wrong order of operations
+- **Fix:** Verify scene lifecycle, preserve state in registry, check operation order
+
+**Visual State Not Restored:**
+- **Symptom:** Data restored correctly but visuals missing
+- **Root Cause:** State set before visual components created, or wrong API calls
+- **Fix:** Check component creation order, log what recreation methods receive
+
+**API Calls Not Working:**
+- **Symptom:** Phaser API calls succeed but no effect
+- **Root Cause:** Wrong API usage, outdated docs, misunderstanding of return values
+- **Fix:** Check current documentation, add diagnostics to verify API behavior
+
 ## Project Overview
 
 "Infection! Germs vs White Cells" is a 2D turn-based grid game built with:
