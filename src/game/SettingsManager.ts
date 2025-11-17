@@ -16,6 +16,17 @@ export class SettingsManager {
 
     constructor(gameRegistry: Phaser.Data.DataManager) {
         this.gameRegistry = gameRegistry;
+
+        // Add debugging in development mode
+        if (process.env.NODE_ENV === 'development') {
+            this.gameRegistry.events.on('changedata', (parent, key, value) => {
+                if (['soundEffectsEnabled', 'playerColor', 'levelSetId'].includes(key)) {
+                    console.log(`[SettingsManager] Setting changed: ${key} = ${value}`);
+                    this.validateSetting(key as keyof GameSettings, value);
+                }
+            });
+        }
+
         // Ensure registry is synced with localStorage on initialization
         this.loadSettings();
     }
@@ -66,6 +77,9 @@ export class SettingsManager {
      * Update a single setting
      */
     updateSetting<K extends keyof GameSettings>(key: K, value: GameSettings[K]): void {
+        // Validate setting before updating
+        this.validateSetting(key, value);
+
         const currentSettings = this.getCurrentSettings();
         currentSettings[key] = value;
         this.saveSettings(currentSettings);
@@ -152,5 +166,39 @@ export class SettingsManager {
      */
     static getDefaultSettings(): GameSettings {
         return { ...SettingsManager.DEFAULT_SETTINGS };
+    }
+
+    /**
+     * Validate setting value (development only)
+     */
+    private validateSetting<K extends keyof GameSettings>(key: K, value: GameSettings[K]): void {
+        if (process.env.NODE_ENV !== 'development') {
+            return;
+        }
+
+        let error = '';
+
+        switch (key) {
+            case 'playerColor':
+                if (value !== 'red' && value !== 'blue') {
+                    error = `Invalid playerColor: ${value}`;
+                }
+                break;
+            case 'soundEffectsEnabled':
+                if (typeof value !== 'boolean') {
+                    error = `Invalid soundEffectsEnabled: ${value}`;
+                }
+                break;
+            case 'levelSetId':
+                if (!value || typeof value !== 'string') {
+                    error = `Invalid levelSetId: ${value}`;
+                }
+                break;
+        }
+
+        if (error) {
+            console.error(`[SettingsManager] Validation failed for ${key}:`, error);
+            throw new Error(error);
+        }
     }
 }

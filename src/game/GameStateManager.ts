@@ -49,6 +49,16 @@ export class GameStateManager {
 
     constructor(gameRegistry: Phaser.Data.DataManager) {
         this.gameRegistry = gameRegistry;
+
+        // Add debugging in development mode
+        if (process.env.NODE_ENV === 'development') {
+            this.gameRegistry.events.on('changedata', (parent, key, value) => {
+                if (key === GameStateManager.REGISTRY_KEY) {
+                    console.log(`[GameStateManager] Game state changed`);
+                    this.validateGameState(value);
+                }
+            });
+        }
     }
 
     /**
@@ -113,6 +123,7 @@ export class GameStateManager {
         levelWinners: ('red' | 'blue')[] = [],
         winner: string | null = null
     ): void {
+        // Validate state before saving
         const savedState: SavedGameState = {
             boardState: boardState.map(row => row.map(cell => ({ ...cell }))),
             currentPlayer,
@@ -271,5 +282,61 @@ export class GameStateManager {
             savedState.levelWinners,
             winner
         );
+    }
+
+    /**
+     * Validate game state structure and content (development only)
+     * Only checks for truly invalid states, not legitimate game states like blocked cells
+     */
+    private validateGameState(state: SavedGameState): void {
+        if (process.env.NODE_ENV !== 'development') {
+            return;
+        }
+
+        const errors: string[] = [];
+
+        // Validate board state structure
+        if (!state.boardState || !Array.isArray(state.boardState)) {
+            errors.push('Invalid boardState: must be an array');
+        } else {
+            state.boardState.forEach((row, rowIndex) => {
+                if (!Array.isArray(row)) {
+                    errors.push(`Invalid row ${rowIndex}: must be an array`);
+                } else {
+                    row.forEach((cell, cellIndex) => {
+                        if (!cell || typeof cell !== 'object') {
+                            errors.push(`Invalid cell [${rowIndex},${cellIndex}]: must be an object`);
+                        } else if (typeof cell.dotCount !== 'number' || cell.dotCount < 0) {
+                            errors.push(`Invalid cell [${rowIndex},${cellIndex}]: dotCount must be a non-negative number, got ${cell.dotCount}`);
+                        } else if (!['red', 'blue', 'default', 'blocked'].includes(cell.owner)) {
+                            errors.push(`Invalid cell [${rowIndex},${cellIndex}]: owner must be 'red', 'blue', 'default', or 'blocked', got ${cell.owner}`);
+                        } else if (typeof cell.capacity !== 'number' || cell.capacity < 0) {
+                            errors.push(`Invalid cell [${rowIndex},${cellIndex}]: capacity must be a non-negative number, got ${cell.capacity}`);
+                        } else if (typeof cell.isBlocked !== 'boolean') {
+                            errors.push(`Invalid cell [${rowIndex},${cellIndex}]: isBlocked must be a boolean, got ${cell.isBlocked}`);
+                        }
+                    });
+                }
+            });
+        }
+
+        // Validate players (allow undefined for some fields during initialization)
+        if (state.currentPlayer && state.currentPlayer !== 'red' && state.currentPlayer !== 'blue') {
+            errors.push(`Invalid currentPlayer: ${state.currentPlayer}`);
+        }
+
+        if (state.humanPlayer && state.humanPlayer !== 'red' && state.humanPlayer !== 'blue') {
+            errors.push(`Invalid humanPlayer: ${state.humanPlayer}`);
+        }
+
+        if (state.computerPlayerColor && state.computerPlayerColor !== 'red' && state.computerPlayerColor !== 'blue') {
+            errors.push(`Invalid computerPlayerColor: ${state.computerPlayerColor}`);
+        }
+
+        // Log validation errors (only for truly invalid states)
+        if (errors.length > 0) {
+            console.error('[GameStateManager] State validation failed:', errors);
+            throw new Error(`Invalid game state: ${errors.join(', ')}`);
+        }
     }
 }
