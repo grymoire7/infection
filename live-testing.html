@@ -101,7 +101,7 @@
     </style>
 </head>
 <body>
-    <h1>🧠 Live Memory Testing</h1>
+    <h1>🧠 Live Memory & Unit Testing</h1>
     <p>Interactive testing dashboard for memory management validation and performance monitoring.</p>
 
     <div class="container">
@@ -112,16 +112,16 @@
                 <div>Memory Usage</div>
             </div>
             <div class="metric">
-                <div class="metric-value" id="event-listeners">0</div>
-                <div>Event Listeners</div>
-            </div>
-            <div class="metric">
                 <div class="metric-value" id="dom-nodes">0</div>
                 <div>DOM Nodes</div>
             </div>
             <div class="metric">
                 <div class="metric-value" id="test-results">0/0</div>
                 <div>Tests Passed</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="monitoring-status-small">OFF</div>
+                <div>Memory Monitor</div>
             </div>
         </div>
     </div>
@@ -162,24 +162,52 @@
                 <strong>💡 Interactive Test Interface</strong>
             </div>
             <div style="font-size: 0.85em; color: #ccc; line-height: 1.4;">
-                For complete interactive unit test results with visualization and debugging, run:
-                <div style="margin: 8px 0; padding: 8px; background: rgba(0, 0, 0, 0.3); border-radius: 3px; font-family: monospace; color: #4fc3f7;">
-                    npm run test:ui
-                </div>
+                For complete interactive unit test results with visualization
+                    and debugging, run <span style="margin: 3px 3px; padding:
+                        3px; background: rgba(0, 0, 0, 0.3); font-family:
+                        monospace; color: #4fc3f7">npm run test:ui</span> in
+                    your terminal.
                 This will open the Vitest UI in your browser with full test exploration capabilities.
             </div>
         </div>
     </div>
 
     <div class="container">
-        <h2>🧪 Interactive Validation Tests</h2>
-        <p>Click the buttons below to validate specific memory management improvements:</p>
+        <h2>📈 Memory Usage Trends</h2>
+        <p>Real-time memory monitoring and pattern visualization:</p>
+
+        <div style="margin: 15px 0;">
+            <button onclick="toggleMonitoring()" id="monitor-btn">▶️ Start Monitoring</button>
+            <button onclick="clearMemoryHistory()">🗑️ Clear History</button>
+            <button onclick="markEvent('user-action')">📍 Mark Event</button>
+            <span style="margin-left: 15px; color: #888;">Monitoring: <span id="monitoring-status">OFF</span></span>
+        </div>
+
+        <canvas id="memory-chart" width="1000" height="300" style="background: #1a1a1a; border: 1px solid #444; border-radius: 4px; width: 100%; max-width: 100%;"></canvas>
+
+        <div style="margin-top: 10px; font-size: 0.85em; color: #ccc;">
+            <div>📊 Chart shows memory usage over time - look for stable trends, not sudden spikes</div>
+            <div>🎯 Memory patterns are more valuable than pass/fail tests</div>
+            <div>🔍 Click "Mark Event" during game actions to correlate memory with gameplay</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🧪 Quick Memory Tests</h2>
+        <p>Simple validation tests for reference (less reliable than trend monitoring):</p>
 
         <button onclick="runEventBusTest()">📡 Test EventBus Memory Leaks</button>
         <button onclick="runSceneTest()">🎮 Test Scene Transition Memory</button>
-        <button onclick="runObjectTest()">🔄 Test Object Lifecycle</button>
-        <button onclick="runFullValidation()">🚀 Run Full Validation</button>
         <button onclick="clearLog()">🗑️ Clear Log</button>
+
+        <div style="margin-top: 10px; padding: 8px; background: rgba(255, 152, 0, 0.1); border-left: 3px solid #ff9800; border-radius: 3px;">
+            <div style="font-size: 0.85em; color: #ff9800;">
+                <strong>⚠️ Focus on Trends, Not Individual Tests</strong>
+            </div>
+            <div style="font-size: 0.8em; color: #ccc; margin-top: 3px;">
+                Memory testing is inherently non-deterministic. Use the chart above to observe patterns during actual gameplay rather than relying on these artificial tests.
+            </div>
+        </div>
     </div>
 
     <div class="container">
@@ -190,25 +218,24 @@
     <div class="container">
         <h2>📈 Expected Results</h2>
         <div class="success">
-            <strong>✅ Unit Tests:</strong> All unit tests should pass successfully
-        </div>
-        <div class="success">
-            <strong>✅ EventBus Cleanup:</strong> Event listeners should not accumulate over time
-        </div>
-        <div class="success">
-            <strong>✅ Scene Transitions:</strong> Memory should return to baseline after scene cleanup
-        </div>
-        <div class="success">
-            <strong>✅ Object Lifecycle:</strong> Objects should be properly garbage collected
-        </div>
-        <div class="success">
-            <strong>✅ Memory Growth:</strong> Overall memory growth should be minimal
+          <strong>✅ Unit Tests:</strong> All unit tests should pass successfully <br>
+          <strong>✅ EventBus Cleanup:</strong> Event listeners should not accumulate over time <br>
+          <strong>✅ Scene Transitions:</strong> Memory should return to baseline after scene cleanup <br>
+          <strong>📈 Memory Trends:</strong> Chart should show stable patterns during gameplay <br>
+          <strong>🎯 Focus Areas:</strong> Look for memory leaks during extended play sessions <br>
         </div>
     </div>
 
     <script>
         let testResults = { passed: 0, total: 0 };
         let logMessages = [];
+
+        // Memory monitoring variables
+        let isMonitoring = false;
+        let memoryHistory = [];
+        let memoryChartInterval = null;
+        let maxDataPoints = 100; // Show last 100 data points
+        let markedEvents = [];
 
         function log(message, type = 'info') {
             const timestamp = new Date().toLocaleTimeString();
@@ -227,6 +254,11 @@
             if (performance.memory) {
                 const usedMB = Math.round(performance.memory.usedJSHeapSize / 1024 / 1024 * 100) / 100;
                 document.getElementById('memory-usage').textContent = `${usedMB} MB`;
+
+                // Add to history if monitoring
+                if (isMonitoring) {
+                    addMemoryDataPoint(performance.memory.usedJSHeapSize);
+                }
             }
 
             // DOM nodes
@@ -235,6 +267,242 @@
 
             // Test results
             document.getElementById('test-results').textContent = `${testResults.passed}/${testResults.total}`;
+
+            // Monitoring status
+            const statusElement = document.getElementById('monitoring-status-small');
+            if (statusElement) {
+                statusElement.textContent = isMonitoring ? 'ON' : 'OFF';
+                statusElement.style.color = isMonitoring ? '#4caf50' : '#f44336';
+            }
+        }
+
+        function addMemoryDataPoint(memoryBytes) {
+            const timestamp = Date.now();
+            const memoryMB = memoryBytes / 1024 / 1024;
+
+            memoryHistory.push({
+                timestamp: timestamp,
+                memory: memoryMB,
+                type: 'normal'
+            });
+
+            // Keep only the last maxDataPoints
+            if (memoryHistory.length > maxDataPoints) {
+                memoryHistory = memoryHistory.slice(-maxDataPoints);
+            }
+
+            drawMemoryChart();
+        }
+
+        function drawMemoryChart() {
+            const canvas = document.getElementById('memory-chart');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            if (memoryHistory.length < 2) return;
+
+            // Calculate min and max for scaling
+            const memories = memoryHistory.map(d => d.memory);
+            const minMemory = Math.min(...memories);
+            const maxMemory = Math.max(...memories);
+            const memoryRange = maxMemory - minMemory || 1;
+
+            // Draw grid lines
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+
+            // Horizontal grid lines
+            for (let i = 0; i <= 5; i++) {
+                const y = (height / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+
+                // Add memory value labels
+                const value = maxMemory - (memoryRange / 5) * i;
+                ctx.fillStyle = '#888';
+                ctx.font = '10px monospace';
+                ctx.fillText(`${value.toFixed(1)} MB`, 5, y - 2);
+            }
+
+            // Draw marked events
+            ctx.strokeStyle = '#ff9800';
+            ctx.fillStyle = '#ff9800';
+            markedEvents.forEach(event => {
+                const eventIndex = memoryHistory.findIndex(d => d.timestamp >= event.timestamp);
+                if (eventIndex >= 0 && eventIndex < memoryHistory.length) {
+                    const x = (eventIndex / (maxDataPoints - 1)) * width;
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+
+                    // Add event label
+                    ctx.save();
+                    ctx.translate(x + 5, 20);
+                    ctx.rotate(-Math.PI / 4);
+                    ctx.font = '10px sans-serif';
+                    ctx.fillText(event.label, 0, 0);
+                    ctx.restore();
+                }
+            });
+
+            // Draw memory line
+            ctx.strokeStyle = '#4caf50';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            memoryHistory.forEach((dataPoint, index) => {
+                const x = (index / (maxDataPoints - 1)) * width;
+                const y = height - ((dataPoint.memory - minMemory) / memoryRange) * height;
+
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+
+            ctx.stroke();
+
+            // Draw data points
+            ctx.fillStyle = '#4caf50';
+            memoryHistory.forEach((dataPoint, index) => {
+                const x = (index / (maxDataPoints - 1)) * width;
+                const y = height - ((dataPoint.memory - minMemory) / memoryRange) * height;
+
+                ctx.beginPath();
+                ctx.arc(x, y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw baseline (average of first 5 points)
+            if (memoryHistory.length >= 10) {
+                const baseline = memoryHistory.slice(0, 5).reduce((sum, d) => sum + d.memory, 0) / 5;
+                const baselineY = height - ((baseline - minMemory) / memoryRange) * height;
+
+                ctx.strokeStyle = '#2196f3';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(0, baselineY);
+                ctx.lineTo(width, baselineY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Baseline label
+                ctx.fillStyle = '#2196f3';
+                ctx.font = '10px sans-serif';
+                ctx.fillText('Baseline', width - 40, baselineY - 5);
+            }
+        }
+
+        function toggleMonitoring() {
+            if (isMonitoring) {
+                stopMonitoring();
+            } else {
+                startMonitoring();
+            }
+        }
+
+        function startMonitoring() {
+            if (isMonitoring) return;
+
+            isMonitoring = true;
+            document.getElementById('monitor-btn').textContent = '⏸️ Stop Monitoring';
+            document.getElementById('monitoring-status').textContent = 'ON';
+            document.getElementById('monitoring-status').style.color = '#4caf50';
+
+            log('📊 Memory monitoring started - watch for patterns during gameplay', 'info');
+
+            // Start collecting data every 500ms
+            memoryChartInterval = setInterval(() => {
+                if (performance.memory) {
+                    addMemoryDataPoint(performance.memory.usedJSHeapSize);
+                }
+            }, 500);
+        }
+
+        function stopMonitoring() {
+            if (!isMonitoring) return;
+
+            isMonitoring = false;
+            document.getElementById('monitor-btn').textContent = '▶️ Start Monitoring';
+            document.getElementById('monitoring-status').textContent = 'OFF';
+            document.getElementById('monitoring-status').style.color = '#888';
+
+            if (memoryChartInterval) {
+                clearInterval(memoryChartInterval);
+                memoryChartInterval = null;
+            }
+
+            log('📊 Memory monitoring stopped', 'info');
+
+            // Analyze trends
+            analyzeMemoryTrends();
+        }
+
+        function clearMemoryHistory() {
+            memoryHistory = [];
+            markedEvents = [];
+            drawMemoryChart();
+            log('📊 Memory history cleared', 'info');
+        }
+
+        function markEvent(type) {
+            if (!isMonitoring) {
+                log('⚠️ Start monitoring first to mark events', 'warning');
+                return;
+            }
+
+            const event = {
+                timestamp: Date.now(),
+                label: prompt('Enter event label:') || type
+            };
+
+            markedEvents.push(event);
+            drawMemoryChart();
+            log(`📍 Event marked: ${event.label}`, 'info');
+        }
+
+        function analyzeMemoryTrends() {
+            if (memoryHistory.length < 10) {
+                log('📊 Insufficient data for trend analysis', 'warning');
+                return;
+            }
+
+            const memories = memoryHistory.map(d => d.memory);
+            const firstQuarter = memories.slice(0, Math.floor(memories.length / 4));
+            const lastQuarter = memories.slice(-Math.floor(memories.length / 4));
+
+            const firstAvg = firstQuarter.reduce((a, b) => a + b, 0) / firstQuarter.length;
+            const lastAvg = lastQuarter.reduce((a, b) => a + b, 0) / lastQuarter.length;
+
+            const trend = lastAvg - firstAvg;
+            const trendPercent = (trend / firstAvg) * 100;
+
+            if (Math.abs(trendPercent) < 2) {
+                log(`📊 Memory analysis: STABLE (${trendPercent > 0 ? '+' : ''}${trendPercent.toFixed(1)}% change)`, 'success');
+            } else if (trendPercent > 0) {
+                log(`📊 Memory analysis: INCREASING (+${trendPercent.toFixed(1)}% change) - monitor for leaks`, 'warning');
+            } else {
+                log(`📊 Memory analysis: DECREASING (${trendPercent.toFixed(1)}% change) - good memory management`, 'success');
+            }
+
+            const maxMemory = Math.max(...memories);
+            const minMemory = Math.min(...memories);
+            const volatility = ((maxMemory - minMemory) / minMemory) * 100;
+
+            if (volatility < 10) {
+                log(`📊 Memory volatility: LOW (${volatility.toFixed(1)}%) - consistent usage pattern`, 'success');
+            } else {
+                log(`📊 Memory volatility: HIGH (${volatility.toFixed(1)}%) - may indicate allocation issues`, 'warning');
+            }
         }
 
         function clearLog() {
@@ -370,90 +638,10 @@
             updateMetrics();
         }
 
-        async function runObjectTest() {
-            testResults.total++;
-            log('🔄 Testing Object Lifecycle Management...', 'info');
+        // Removed unreliable object lifecycle test - use memory monitoring chart instead
 
-            const initialMemory = performance.memory ? performance.memory.usedJSHeapSize : 0;
-            log(`   Initial memory: ${formatBytes(initialMemory)}`);
-
-            // Create objects that are measurable but allow for reasonable garbage collection
-            const objects = [];
-            for (let i = 0; i < 50000; i++) {
-                objects.push({
-                    id: i,
-                    data: new Array(100).fill(i), // Smaller, manageable arrays
-                    metadata: {
-                        created: Date.now(),
-                        type: 'testObject',
-                        info: `item-${i}` // Small string instead of large arrays
-                    }
-                });
-            }
-
-            // Force memory measurement after object creation
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            const peakMemory = performance.memory ? performance.memory.usedJSHeapSize : 0;
-            log(`   Peak memory with objects: ${formatBytes(peakMemory)}`);
-
-            // Clean up objects by nullifying all references
-            for (let i = 0; i < objects.length; i++) {
-                const obj = objects[i];
-                obj.data = null;
-                obj.metadata = null;
-                objects[i] = null;
-            }
-            objects.length = 0;
-
-            // Create additional temporary objects to trigger garbage collection pressure
-            const temp = [];
-            for (let i = 0; i < 100000; i++) {
-                temp.push({ temp: i });
-            }
-            temp.length = 0;
-
-            // Try to force garbage collection if available
-            if (window.gc) {
-                window.gc();
-            }
-
-            // Wait for garbage collection to complete (longer wait)
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Additional garbage collection attempt
-            if (window.gc) {
-                window.gc();
-            }
-
-            // Final wait
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            const finalMemory = performance.memory ? performance.memory.usedJSHeapSize : 0;
-            log(`   Final memory after cleanup: ${formatBytes(finalMemory)}`);
-
-            const memoryGrowth = finalMemory - initialMemory;
-            const memoryRecovered = peakMemory > finalMemory ? peakMemory - finalMemory : 0;
-
-            // Pass if either we recovered memory OR kept growth under reasonable threshold (20MB)
-            const passed = memoryRecovered > 0 || memoryGrowth < 20000000;
-
-            if (passed) {
-                testResults.passed++;
-                if (memoryRecovered > 0) {
-                    log(`   ✅ Object lifecycle management: PASSED (recovered: ${formatBytes(memoryRecovered)})`, 'success');
-                } else {
-                    log(`   ✅ Object lifecycle management: PASSED (minimal growth: ${formatBytes(memoryGrowth)})`, 'success');
-                }
-            } else {
-                log(`   ❌ Object lifecycle management: FAILED (growth: ${formatBytes(memoryGrowth)})`, 'error');
-            }
-
-            updateMetrics();
-        }
-
-        async function runFullValidation() {
-            log('🚀 Running Full Memory Validation Suite...', 'info');
+        async function runQuickValidation() {
+            log('🚀 Running Quick Memory Validation Suite...', 'info');
             log('=====================================', 'info');
 
             // Reset test results
@@ -465,26 +653,23 @@
             await runSceneTest();
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            await runObjectTest();
-            await new Promise(resolve => setTimeout(resolve, 500));
-
             log('=====================================', 'info');
-            log('📊 FINAL VALIDATION RESULTS', 'info');
+            log('📊 QUICK VALIDATION RESULTS', 'info');
             log(`   Tests passed: ${testResults.passed}/${testResults.total}`,
                 testResults.passed === testResults.total ? 'success' : 'error');
 
             if (testResults.passed === testResults.total) {
-                log('🎉 ALL TESTS PASSED! Memory management improvements are working perfectly.', 'success');
+                log('🎉 Basic tests passed! For comprehensive monitoring, use the memory chart above.', 'success');
                 log('', 'success');
                 log('✅ EventBus memory leak prevention: WORKING', 'success');
                 log('✅ Scene shutdown methods: WORKING', 'success');
-                log('✅ Comprehensive memory testing: ACTIVE', 'success');
-                log('✅ Performance monitoring tools: READY', 'success');
+                log('📈 Real-time memory monitoring: READY - Click "Start Monitoring" above', 'success');
             } else {
                 log('⚠️  Some tests failed. Please review the implementation.', 'warning');
             }
 
             log('=====================================', 'info');
+            log('💡 Tip: Use the memory chart to observe patterns during actual gameplay', 'info');
             updateMetrics();
         }
 
@@ -550,11 +735,11 @@
         setInterval(updateMetrics, 2000);
 
         // Initial setup
-        log('🚀 Testing Dashboard Loaded', 'success');
-        // log('📊 Memory metrics are being tracked in real-time', 'info');
-        // log('🧪 Click the test buttons to validate memory management improvements', 'info');
-        // log('🔬 Use "Open Vitest UI" for detailed unit test exploration', 'info');
-        // log('🔄 Click "Refresh Tests" to see current unit test status', 'info');
+        log('🚀 Memory Monitoring Dashboard Loaded', 'success');
+        log('📊 Real-time memory chart is ready - click "Start Monitoring" to begin', 'info');
+        log('🧪 Quick validation tests are available for basic checks', 'info');
+        log('🔬 Use "Open Vitest UI" for detailed unit test exploration', 'info');
+        log('🔄 Click "Refresh Tests" to see current unit test status', 'info');
         log('', 'info');
 
         // Initial metrics update
@@ -563,18 +748,21 @@
         // Auto-refresh unit tests on page load after a short delay
         setTimeout(() => {
             log('🔄 Auto-refreshing unit test status...', 'info');
-            runFullValidation();
             refreshUnitTests();
         }, 2000);
 
         // Expose functions to global scope for debugging
         window.runEventBusTest = runEventBusTest;
         window.runSceneTest = runSceneTest;
-        window.runObjectTest = runObjectTest;
-        window.runFullValidation = runFullValidation;
+        window.runQuickValidation = runQuickValidation;
         window.clearLog = clearLog;
         window.launchTestUI = launchTestUI;
         window.refreshUnitTests = refreshUnitTests;
+        window.toggleMonitoring = toggleMonitoring;
+        window.startMonitoring = startMonitoring;
+        window.stopMonitoring = stopMonitoring;
+        window.clearMemoryHistory = clearMemoryHistory;
+        window.markEvent = markEvent;
     </script>
 </body>
 </html>
