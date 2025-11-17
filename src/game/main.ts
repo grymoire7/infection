@@ -9,6 +9,7 @@ import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
 import { Settings } from './scenes/Settings';
 import { Splash } from './scenes/Splash';
+import { errorLogger } from './ErrorLogger';
 
 // Find out more information about the Game Config at:
 // https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
@@ -45,9 +46,28 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 const StartGame = (parent: string) => {
+    try {
+        const game = new Game({ ...config, parent });
 
-    return new Game({ ...config, parent });
+        // Set up global error handling for the game instance
+        game.events.on('destroy', () => {
+            console.log('[Game] Game instance destroyed');
+        });
 
+        // Store game instance globally for error recovery
+        if (typeof window !== 'undefined') {
+            (window as any).gameInstance = game;
+        }
+
+        return game;
+    } catch (error) {
+        errorLogger.logPhaserError(error, {
+            component: 'StartGame',
+            action: 'game-initialization'
+        });
+        console.error('[StartGame] Failed to initialize game:', error);
+        throw error;
+    }
 }
 
 export default StartGame;

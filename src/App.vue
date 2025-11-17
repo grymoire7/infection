@@ -2,7 +2,9 @@
 import Phaser from 'phaser';
 import { ref, toRaw } from 'vue';
 import type { MainMenu } from './game/scenes/MainMenu';
-import PhaserGame from './PhaserGame.vue';
+import PhaserGameWrapper from './components/PhaserGameWrapper.vue';
+import ErrorBoundary from './components/ErrorBoundary.vue';
+import { errorLogger } from './game/ErrorLogger';
 
 //  References to the PhaserGame component (game and scene are exposed)
 const phaserRef = ref();
@@ -42,6 +44,18 @@ const playGame = () => {
 const currentScene = (scene: any) => {
     // Update current scene name for button state management
     currentSceneName.value = scene.scene.key;
+}
+
+// Handle game errors
+const handleGameError = (error: Error) => {
+    console.error('[App] Game error:', error);
+    // Could add global error handling UI here
+}
+
+// Handle game recovery
+const handleGameRecovered = () => {
+    console.log('[App] Game recovered from error');
+    currentSceneName.value = 'MainMenu';
 }
 
 </script>
@@ -110,18 +124,26 @@ const currentScene = (scene: any) => {
 </style>
 
 <template>
-    <div class="game-container">
-        <PhaserGame ref="phaserRef" @current-active-scene="currentScene" />
-        <div class="controls">
-            <div>
-                <button class="button" @click="goToMainMenu" :disabled="currentSceneName === 'MainMenu'">Main Menu</button>
-            </div>
-            <div>
-                <button class="button" @click="goToSettings" :disabled="currentSceneName === 'Settings'">Settings</button>
-            </div>
-            <div>
-                <button class="button" @click="playGame" :disabled="currentSceneName === 'Game'">Play Game</button>
+    <ErrorBoundary @error="handleGameError" @recovered="handleGameRecovered">
+        <div class="game-container">
+            <!-- PhaserGameWrapper with error boundaries re-enabled -->
+            <PhaserGameWrapper
+                ref="phaserRef"
+                @current-active-scene="currentScene"
+                @game-error="handleGameError"
+                @game-recovered="handleGameRecovered"
+            />
+            <div class="controls">
+                <div>
+                    <button class="button" @click="goToMainMenu" :disabled="currentSceneName === 'MainMenu'">Main Menu</button>
+                </div>
+                <div>
+                    <button class="button" @click="goToSettings" :disabled="currentSceneName === 'Settings'">Settings</button>
+                </div>
+                <div>
+                    <button class="button" @click="playGame" :disabled="currentSceneName === 'Game'">Play Game</button>
+                </div>
             </div>
         </div>
-    </div>
+    </ErrorBoundary>
 </template>

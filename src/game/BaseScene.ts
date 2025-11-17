@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { EventBusManager } from './EventBus';
+import { errorLogger } from './ErrorLogger';
 
 /**
  * Base scene class that provides common cleanup and shutdown functionality
@@ -119,5 +120,58 @@ export abstract class BaseScene extends Scene {
     protected cleanupArray<T extends Phaser.GameObjects.GameObject>(array: T[]): void {
         array.forEach(item => this.safeDestroy(item));
         array.length = 0;
+    }
+
+    /**
+     * Safely transition to another scene with error handling
+     */
+    protected safeSceneTransition(targetScene: string, data?: any): void {
+        try {
+            const currentSceneName = this.constructor.name;
+            console.log(`[BaseScene] Transitioning from ${currentSceneName} to ${targetScene}`);
+
+            this.scene.start(targetScene, data);
+        } catch (error) {
+            errorLogger.logSceneError(error, this.constructor.name, targetScene);
+            console.error(`[BaseScene] Scene transition failed:`, error);
+
+            // Fallback: try to go to MainMenu
+            if (targetScene !== 'MainMenu') {
+                try {
+                    console.log('[BaseScene] Falling back to MainMenu');
+                    this.scene.start('MainMenu');
+                } catch (fallbackError) {
+                    console.error('[BaseScene] Fallback to MainMenu also failed:', fallbackError);
+                    errorLogger.logSceneError(fallbackError, this.constructor.name, 'MainMenu');
+                }
+            }
+        }
+    }
+
+    /**
+     * Wrap a scene method with error handling
+     */
+    protected wrapWithErrorHandling(methodName: string, method: Function): Function {
+        return (...args: any[]) => {
+            try {
+                return method.apply(this, args);
+            } catch (error) {
+                errorLogger.logPhaserError(error, {
+                    component: 'Scene',
+                    scene: this.constructor.name,
+                    action: `scene-${methodName}`
+                });
+                console.error(`[${this.constructor.name}] Error in ${methodName}:`, error);
+
+                // For critical scene methods, try to transition to safe state
+                if (['create', 'init'].includes(methodName)) {
+                    setTimeout(() => {
+                        this.safeSceneTransition('MainMenu');
+                    }, 100);
+                }
+
+                throw error;
+            }
+        };
     }
 }
