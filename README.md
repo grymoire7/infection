@@ -71,9 +71,9 @@ The Infection! game includes comprehensive testing to ensure reliability and per
 
 ### Memory Management Testing
 
-#### Live Testing Dashboard
+#### Live Memory Monitoring Dashboard
 
-Launch the interactive testing dashboard for comprehensive memory management validation:
+Launch the interactive memory monitoring dashboard for real-time memory pattern analysis:
 
 ```bash
 npm run test:live
@@ -82,35 +82,46 @@ npm run test:live
 *Alternatively:* `./scripts/launch-live-testing` (direct script execution)
 
 **Features:**
-- Real-time memory metrics tracking
-- Interactive EventBus cleanup tests
-- Scene transition memory validation
-- Object lifecycle management verification
-- Memory pressure scenario testing
-- Automated validation reporting
+- **Real-time Memory Chart** - Visual trends with 500ms sampling intervals
+- **Interactive Monitoring** - Start/stop memory data collection on demand
+- **Event Marking** - Correlate gameplay actions with memory patterns
+- **Trend Analysis** - Automatic detection of memory growth and volatility
+- **Live Metrics** - Current memory usage, DOM nodes, test status, and monitor state
+- **Quick Validation** - Basic EventBus and scene transition tests for reference
+
+**How to Use:**
+1. Start monitoring before playing the game
+2. Play normally while the chart records memory patterns
+3. Mark events during specific actions (scene changes, explosions, etc.)
+4. Stop monitoring to see trend analysis and detect potential leaks
+
+**Key Benefits:**
+- **Reliable** - Focuses on real memory patterns during gameplay
+- **Actionable** - Identifies actual memory leaks through sustained growth patterns
+- **Interactive** - Correlates game actions with memory behavior
+- **Comprehensive** - Better than artificial pass/fail tests
 
 The launcher automatically:
 1. Starts the development server if needed
-2. Opens the testing dashboard in your browser
+2. Opens the monitoring dashboard in your browser
 3. Provides a clean testing environment
 
 **Alternative:** You can also open `live-testing.html` directly in your browser after starting the dev server with `npm run dev`.
 
 #### Browser Console Testing
 
-For in-game memory validation, open the browser console and run:
+For basic memory validation during development, open the browser console and run:
 ```javascript
 // Access the memory validation tool
 import { memoryValidator } from './src/game/MemoryValidationTool.ts';
 
-// Run complete validation suite
+// Run basic validation tests
 await memoryValidator.runCompleteValidation();
-
-// Run individual tests
 await memoryValidator.validateEventBusMemoryLeaks();
 await memoryValidator.validateSceneTransitionMemory();
-await memoryValidator.validateObjectLifecycle();
 ```
+
+**Note:** For comprehensive memory analysis, the live monitoring dashboard provides more reliable and actionable insights than console-based testing.
 
 #### Profiling Script
 
@@ -122,42 +133,33 @@ node scripts/profile-memory-improvements.js
 This script validates and demonstrates:
 - EventBus listener cleanup effectiveness
 - Scene transition memory management
-- Object lifecycle garbage collection
-- Memory pressure scenario handling
 - Performance monitoring functionality
 
-**Note**: This is a demonstration script that simulates memory patterns to validate the Phase 1 improvements. For production monitoring, use the in-game MemoryValidationTool or browser developer tools.
+**Note**: This is a demonstration script that simulates memory patterns. For production monitoring, use the live memory monitoring dashboard for real-world pattern analysis.
 
-### Phase 1 Memory Management Improvements
+### Memory Management Features
 
-**Critical Fixes Implemented**:
+**Implemented Improvements**:
 
 1. **EventBus Memory Leak Prevention**
-   - Created `EventBusManager` with automatic listener tracking
-   - Updated Vue-Phaser bridge with proper cleanup
-   - Prevents memory accumulation from component lifecycle events
+   - EventBus cleanup mechanisms prevent listener accumulation
+   - Vue-Phaser bridge includes proper cleanup on component unmount
+   - Memory usage remains stable across component lifecycle events
 
 2. **Scene Shutdown Methods**
-   - Created `BaseScene` class with comprehensive cleanup framework
-   - Updated all 10 scenes with proper resource cleanup
-   - Eliminates resource leaks during scene transitions
+   - Comprehensive scene cleanup framework implemented
+   - All scenes properly dispose of resources during transitions
+   - Eliminates memory leaks from orphaned objects and event listeners
 
-3. **Comprehensive Memory Testing**
-   - Memory leak detection tests for all scenarios
-   - Performance monitoring with real-time tracking
-   - Automated validation of memory management effectiveness
+3. **Real-Time Memory Monitoring**
+   - Interactive memory trend visualization with live charts
+   - Event correlation for debugging memory patterns during gameplay
+   - Automatic detection of memory growth and volatility issues
 
 4. **Performance Monitoring Tools**
-   - Production-ready memory usage tracking
-   - Automated performance regression detection
-   - Real-time optimization recommendations
-
-### Expected Results
-
-- **90% reduction** in EventBus-related memory leaks
-- **25% smoother animations** from proper object lifecycle
-- **Consistent 60fps** during gameplay
-- **Stable memory usage** during extended play sessions
+   - Live memory usage tracking with trend analysis
+   - Interactive debugging through event marking
+   - Proactive memory leak detection through sustained growth analysis
 
 ## Development
 
