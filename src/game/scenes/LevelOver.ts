@@ -15,6 +15,11 @@ export class LevelOver extends BaseScene
     mainMenuButton: GameObjects.Text;
 
     private levelSetManager: LevelSetManager;
+    private buttonEventHandlers: Map<GameObjects.Text, {
+        pointerdown?: () => void,
+        pointerover?: () => void,
+        pointerout?: () => void
+    }> = new Map();
 
     constructor ()
     {
@@ -87,25 +92,32 @@ export class LevelOver extends BaseScene
             }).setOrigin(0.5);
 
             this.nextLevelButton.setInteractive();
-            this.nextLevelButton.on('pointerdown', () => {
-                // Store level progression info to load next level
-                console.log('LevelOver: Next Level button clicked');
-                console.log('LevelOver: Current level info in registry:', {
-                    levelSet: currentLevelSet.getId(),
-                    level: currentLevel.getId()
-                });
-                this.game.registry.set('loadNextLevel', true);
-                console.log('LevelOver: Set loadNextLevel flag to true, starting Game scene');
-                this.scene.start('Game');
-            });
 
-            this.nextLevelButton.on('pointerover', () => {
-                this.nextLevelButton.setBackgroundColor('#44aa44');
-            });
+            const nextLevelHandlers = {
+                pointerdown: () => {
+                    // Store level progression info to load next level
+                    console.log('LevelOver: Next Level button clicked');
+                    console.log('LevelOver: Current level info in registry:', {
+                        levelSet: currentLevelSet.getId(),
+                        level: currentLevel.getId()
+                    });
+                    this.game.registry.set('loadNextLevel', true);
+                    console.log('LevelOver: Set loadNextLevel flag to true, starting Game scene');
+                    this.scene.start('Game');
+                },
+                pointerover: () => {
+                    this.nextLevelButton.setBackgroundColor('#44aa44');
+                },
+                pointerout: () => {
+                    this.nextLevelButton.setBackgroundColor('#228822');
+                }
+            };
 
-            this.nextLevelButton.on('pointerout', () => {
-                this.nextLevelButton.setBackgroundColor('#228822');
-            });
+            this.nextLevelButton.on('pointerdown', nextLevelHandlers.pointerdown);
+            this.nextLevelButton.on('pointerover', nextLevelHandlers.pointerover);
+            this.nextLevelButton.on('pointerout', nextLevelHandlers.pointerout);
+
+            this.buttonEventHandlers.set(this.nextLevelButton, nextLevelHandlers);
         }
 
         // Restart Game button
@@ -118,17 +130,24 @@ export class LevelOver extends BaseScene
         }).setOrigin(0.5);
 
         this.restartButton.setInteractive();
-        this.restartButton.on('pointerdown', () => {
-            this.scene.start('Game');
-        });
 
-        this.restartButton.on('pointerover', () => {
-            this.restartButton.setBackgroundColor('#555555');
-        });
+        const restartHandlers = {
+            pointerdown: () => {
+                this.scene.start('Game');
+            },
+            pointerover: () => {
+                this.restartButton.setBackgroundColor('#555555');
+            },
+            pointerout: () => {
+                this.restartButton.setBackgroundColor('#333333');
+            }
+        };
 
-        this.restartButton.on('pointerout', () => {
-            this.restartButton.setBackgroundColor('#333333');
-        });
+        this.restartButton.on('pointerdown', restartHandlers.pointerdown);
+        this.restartButton.on('pointerover', restartHandlers.pointerover);
+        this.restartButton.on('pointerout', restartHandlers.pointerout);
+
+        this.buttonEventHandlers.set(this.restartButton, restartHandlers);
 
         // Main Menu button
         this.mainMenuButton = this.add.text(centerX, centerY * (hasNextLevel ? 1.0 : 0.85), 'Main Menu', {
@@ -140,17 +159,24 @@ export class LevelOver extends BaseScene
         }).setOrigin(0.5);
 
         this.mainMenuButton.setInteractive();
-        this.mainMenuButton.on('pointerdown', () => {
-            this.scene.start('MainMenu');
-        });
 
-        this.mainMenuButton.on('pointerover', () => {
-            this.mainMenuButton.setBackgroundColor('#888888');
-        });
+        const mainMenuHandlers = {
+            pointerdown: () => {
+                this.scene.start('MainMenu');
+            },
+            pointerover: () => {
+                this.mainMenuButton.setBackgroundColor('#888888');
+            },
+            pointerout: () => {
+                this.mainMenuButton.setBackgroundColor('#666666');
+            }
+        };
 
-        this.mainMenuButton.on('pointerout', () => {
-            this.mainMenuButton.setBackgroundColor('#666666');
-        });
+        this.mainMenuButton.on('pointerdown', mainMenuHandlers.pointerdown);
+        this.mainMenuButton.on('pointerover', mainMenuHandlers.pointerover);
+        this.mainMenuButton.on('pointerout', mainMenuHandlers.pointerout);
+
+        this.buttonEventHandlers.set(this.mainMenuButton, mainMenuHandlers);
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -162,6 +188,9 @@ export class LevelOver extends BaseScene
 
     public shutdown(): void {
         console.log('LevelOver: Starting shutdown cleanup');
+
+        // Clean up button event listeners
+        this.cleanupButtonListeners();
 
         // Clean up display objects
         this.safeDestroy(this.background);
@@ -176,5 +205,38 @@ export class LevelOver extends BaseScene
         super.shutdown();
 
         console.log('LevelOver: Shutdown cleanup completed');
+    }
+
+    /**
+     * Clean up all button event listeners
+     * Call this during scene shutdown to prevent memory leaks
+     */
+    private cleanupButtonListeners(): void {
+        if (!this.buttonEventHandlers || this.buttonEventHandlers.size === 0) {
+            console.log('[LevelOver] No button event listeners to clean up');
+            return;
+        }
+
+        console.log(`[LevelOver] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
+
+        // Remove all event listeners that we added
+        this.buttonEventHandlers.forEach((handlers, button) => {
+            if (button && handlers) {
+                if (handlers.pointerdown) {
+                    button.off('pointerdown', handlers.pointerdown);
+                }
+                if (handlers.pointerover) {
+                    button.off('pointerover', handlers.pointerover);
+                }
+                if (handlers.pointerout) {
+                    button.off('pointerout', handlers.pointerout);
+                }
+            }
+        });
+
+        this.buttonEventHandlers.clear();
+
+        // Note: We don't destroy buttons here - that's handled by safeDestroy() calls
+        // We just remove our event listeners to prevent memory leaks and ghost interactions
     }
 }
