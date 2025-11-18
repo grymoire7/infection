@@ -128,10 +128,11 @@ export class Game extends BaseScene {
             return;
         }
 
-        // If boardState is empty, it means no moves were made yet - just start new level instead
+        // If boardState is empty, it means no moves were made yet
+        // Load the saved level but initialize it fresh (don't restore empty board state)
         if (!savedState.boardState || savedState.boardState.length === 0) {
-            console.log('[Game] Saved state has empty board (no moves made yet), starting new level instead');
-            this.startNewLevel();
+            console.log('[Game] Saved state has empty board (no moves made yet), loading saved level fresh');
+            this.loadLevel(savedState.currentLevel);
             return;
         }
 
@@ -784,6 +785,13 @@ export class Game extends BaseScene {
                 console.log('[Game] Restoring saved game after settings change');
                 const savedState = this.stateManager.loadFromRegistry();
                 if (savedState) {
+                    // If boardState is empty (no moves made yet), just reload the level fresh
+                    if (!savedState.boardState || savedState.boardState.length === 0) {
+                        console.log('[Game] Saved state has empty board after settings change, loading level fresh');
+                        this.loadLevel(savedState.currentLevel);
+                        return;
+                    }
+
                     // Restore level info and game properties
                     this.currentLevel = savedState.currentLevel;
                     this.setLevelProperties(this.currentLevel);
