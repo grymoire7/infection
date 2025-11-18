@@ -5,6 +5,11 @@ export class GameUIManager {
     private undoButton: Phaser.GameObjects.Text;
     private quitButton: Phaser.GameObjects.Text;
     private currentPlayerSprite: Phaser.GameObjects.Sprite;
+    private buttonEventHandlers: Map<Phaser.GameObjects.Text, {
+        pointerover?: () => void,
+        pointerout?: () => void,
+        pointerdown?: () => void
+    }> = new Map();
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -87,48 +92,60 @@ export class GameUIManager {
         const buttonFontSize = Math.min(20, this.scene.cameras.main.width / 40);
         const buttonX = Math.min(50, this.scene.cameras.main.width * 0.05);
         const buttonY = Math.min(150, this.scene.cameras.main.height * 0.22);
-        
+
         this.undoButton = this.scene.add.text(buttonX, buttonY, 'Undo', {
-            fontFamily: 'Arial', 
-            fontSize: buttonFontSize, 
+            fontFamily: 'Arial',
+            fontSize: buttonFontSize,
             color: '#ffffff',
             backgroundColor: '#666666',
             padding: { x: 12, y: 6 }
         }).setOrigin(0);
 
         this.undoButton.setInteractive();
-        
-        this.undoButton.on('pointerover', () => {
-            this.undoButton.setBackgroundColor('#888888');
-        });
 
-        this.undoButton.on('pointerout', () => {
-            this.undoButton.setBackgroundColor('#666666');
-        });
+        const handlers = {
+            pointerover: () => {
+                this.undoButton.setBackgroundColor('#888888');
+            },
+            pointerout: () => {
+                this.undoButton.setBackgroundColor('#666666');
+            }
+        };
+
+        this.undoButton.on('pointerover', handlers.pointerover);
+        this.undoButton.on('pointerout', handlers.pointerout);
+
+        this.buttonEventHandlers.set(this.undoButton, handlers);
     }
 
     private createQuitButton(): void {
         const buttonFontSize = Math.min(20, this.scene.cameras.main.width / 40);
         const buttonX = Math.min(50, this.scene.cameras.main.width * 0.05);
         const buttonY = Math.min(200, this.scene.cameras.main.height * 0.29);
-        
+
         this.quitButton = this.scene.add.text(buttonX, buttonY, 'Quit', {
-            fontFamily: 'Arial', 
-            fontSize: buttonFontSize, 
+            fontFamily: 'Arial',
+            fontSize: buttonFontSize,
             color: '#ffffff',
             backgroundColor: '#aa4444',
             padding: { x: 12, y: 6 }
         }).setOrigin(0);
 
         this.quitButton.setInteractive();
-        
-        this.quitButton.on('pointerover', () => {
-            this.quitButton.setBackgroundColor('#cc6666');
-        });
 
-        this.quitButton.on('pointerout', () => {
-            this.quitButton.setBackgroundColor('#aa4444');
-        });
+        const handlers = {
+            pointerover: () => {
+                this.quitButton.setBackgroundColor('#cc6666');
+            },
+            pointerout: () => {
+                this.quitButton.setBackgroundColor('#aa4444');
+            }
+        };
+
+        this.quitButton.on('pointerover', handlers.pointerover);
+        this.quitButton.on('pointerout', handlers.pointerout);
+
+        this.buttonEventHandlers.set(this.quitButton, handlers);
     }
 
     /**
@@ -163,6 +180,12 @@ export class GameUIManager {
      */
     setUndoButtonHandler(handler: () => void): void {
         this.undoButton.on('pointerdown', handler);
+
+        // Add the pointerdown handler to the existing handlers for this button
+        const existingHandlers = this.buttonEventHandlers.get(this.undoButton);
+        if (existingHandlers) {
+            existingHandlers.pointerdown = handler;
+        }
     }
 
     /**
@@ -170,6 +193,12 @@ export class GameUIManager {
      */
     setQuitButtonHandler(handler: () => void): void {
         this.quitButton.on('pointerdown', handler);
+
+        // Add the pointerdown handler to the existing handlers for this button
+        const existingHandlers = this.buttonEventHandlers.get(this.quitButton);
+        if (existingHandlers) {
+            existingHandlers.pointerdown = handler;
+        }
     }
 
     /**
@@ -232,5 +261,38 @@ export class GameUIManager {
     disableQuitButton(): void {
         this.quitButton.removeInteractive();
         this.quitButton.setAlpha(0.3);
+    }
+
+    /**
+     * Clean up all event listeners from UI buttons
+     * Call this during scene shutdown to prevent memory leaks
+     */
+    cleanup(): void {
+        if (!this.buttonEventHandlers || this.buttonEventHandlers.size === 0) {
+            console.log('[GameUIManager] No event listeners to clean up');
+            return;
+        }
+
+        console.log(`[GameUIManager] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
+
+        // Remove all event listeners that we added
+        this.buttonEventHandlers.forEach((handlers, button) => {
+            if (button && handlers) {
+                if (handlers.pointerover) {
+                    button.off('pointerover', handlers.pointerover);
+                }
+                if (handlers.pointerout) {
+                    button.off('pointerout', handlers.pointerout);
+                }
+                if (handlers.pointerdown) {
+                    button.off('pointerdown', handlers.pointerdown);
+                }
+            }
+        });
+
+        this.buttonEventHandlers.clear();
+
+        // Note: We don't destroy buttons here - the scene will handle that
+        // We just remove our event listeners to prevent memory leaks
     }
 }

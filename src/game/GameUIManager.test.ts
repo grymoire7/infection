@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameUIManager } from './GameUIManager';
 
-// Mock Phaser's Text GameObject
+// Mock Phaser's Text GameObject with EventEmitter support
 class MockText {
   x: number;
   y: number;
@@ -12,7 +12,7 @@ class MockText {
   alpha: number = 1;
   interactive: boolean = false;
   backgroundColor: string = '';
-  private eventHandlers: Map<string, Function> = new Map();
+  private eventHandlers: Map<string, Function[]> = new Map();
 
   constructor(x: number, y: number, text: string, style: any) {
     this.x = x;
@@ -54,13 +54,38 @@ class MockText {
   }
 
   on(event: string, handler: Function): this {
-    this.eventHandlers.set(event, handler);
+    if (!this.eventHandlers.has(event)) {
+      this.eventHandlers.set(event, []);
+    }
+    this.eventHandlers.get(event)!.push(handler);
     return this;
   }
 
+  off(event: string, handler: Function): this {
+    const handlers = this.eventHandlers.get(event);
+    if (handlers) {
+      const index = handlers.indexOf(handler);
+      if (index !== -1) {
+        handlers.splice(index, 1);
+      }
+    }
+    return this;
+  }
+
+  listenerCount(event: string): number {
+    const handlers = this.eventHandlers.get(event);
+    return handlers ? handlers.length : 0;
+  }
+
   emit(event: string): void {
-    const handler = this.eventHandlers.get(event);
-    if (handler) handler();
+    const handlers = this.eventHandlers.get(event);
+    if (handlers) {
+      handlers.forEach(handler => handler());
+    }
+  }
+
+  destroy(): void {
+    this.eventHandlers.clear();
   }
 }
 
@@ -680,6 +705,88 @@ describe('GameUIManager', () => {
         call[2].includes('blue Player Wins!')
       );
       expect(call2).toBeDefined();
+    });
+  });
+
+  describe('Event Cleanup', () => {
+    describe('button listener removal', () => {
+      it('should remove all undo button listeners on cleanup', () => {
+        uiManager.createUI();
+        const undoHandler = vi.fn();
+        uiManager.setUndoButtonHandler(undoHandler);
+
+        const undoButton = uiManager.undoButton;
+
+        expect(undoButton.listenerCount('pointerdown')).toBeGreaterThan(0);
+        expect(undoButton.listenerCount('pointerover')).toBeGreaterThan(0);
+        expect(undoButton.listenerCount('pointerout')).toBeGreaterThan(0);
+
+        uiManager.cleanup();
+
+        expect(undoButton.listenerCount('pointerdown')).toBe(0);
+        expect(undoButton.listenerCount('pointerover')).toBe(0);
+        expect(undoButton.listenerCount('pointerout')).toBe(0);
+      });
+
+      it('should remove all quit button listeners on cleanup', () => {
+        uiManager.createUI();
+        const quitHandler = vi.fn();
+        uiManager.setQuitButtonHandler(quitHandler);
+
+        const quitButton = uiManager.quitButton;
+
+        expect(quitButton.listenerCount('pointerdown')).toBeGreaterThan(0);
+
+        uiManager.cleanup();
+
+        expect(quitButton.listenerCount('pointerdown')).toBe(0);
+      });
+
+      it('should handle multiple cleanup calls safely', () => {
+        uiManager.createUI();
+
+        expect(() => {
+          uiManager.cleanup();
+          uiManager.cleanup(); // Second call
+          uiManager.cleanup(); // Third call
+        }).not.toThrow();
+      });
+    });
+
+    describe('handler invocation after cleanup', () => {
+      it('should not call undo callback after cleanup', () => {
+        uiManager.createUI();
+        const undoSpy = vi.fn();
+        uiManager.setUndoButtonHandler(undoSpy);
+
+        // Before cleanup
+        uiManager.undoButton.emit('pointerdown');
+        expect(undoSpy).toHaveBeenCalledTimes(1);
+
+        // After cleanup
+        uiManager.cleanup();
+        uiManager.undoButton.emit('pointerdown');
+
+        // Should not have been called again
+        expect(undoSpy).toHaveBeenCalledTimes(1);
+      });
+
+      it('should not call quit callback after cleanup', () => {
+        uiManager.createUI();
+        const quitSpy = vi.fn();
+        uiManager.setQuitButtonHandler(quitSpy);
+
+        // Before cleanup
+        uiManager.quitButton.emit('pointerdown');
+        expect(quitSpy).toHaveBeenCalledTimes(1);
+
+        // After cleanup
+        uiManager.cleanup();
+        uiManager.quitButton.emit('pointerdown');
+
+        // Should not have been called again
+        expect(quitSpy).toHaveBeenCalledTimes(1);
+      });
     });
   });
 });

@@ -821,9 +821,8 @@ export class Game extends BaseScene {
         }
 
         if (this.uiManager) {
-            this.addCleanupTask(() => {
-                // Clean up any UI-specific resources
-            });
+            // Clean up UI button event listeners
+            this.uiManager.cleanup();
         }
 
         if (this.stateManager) {
