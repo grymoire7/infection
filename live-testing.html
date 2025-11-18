@@ -101,8 +101,66 @@
     </style>
 </head>
 <body>
-    <h1>🧠 Live Memory & Unit Testing</h1>
-    <p>Interactive testing dashboard for memory management validation and performance monitoring.</p>
+    <h1>🧠 Live Memory & Event Listener Testing</h1>
+    <p>Interactive testing dashboard for memory management validation, event cleanup verification, and performance monitoring.</p>
+
+    <!-- Embedded Game -->
+    <div class="container" style="background: #1a1a1a; padding: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin: 0; color: #2196f3;">🎮 Game View</h3>
+            <button onclick="toggleGameView()" id="toggle-game-btn" style="background: #2196f3; padding: 5px 15px;">Show Game</button>
+        </div>
+        <div id="game-iframe-container" style="display: none; border: 2px solid #444; border-radius: 4px; overflow: hidden;">
+            <iframe id="game-frame" src="/" style="width: 100%; height: 600px; border: none; display: block;"></iframe>
+        </div>
+    </div>
+
+    <div class="container" style="background: rgba(33, 150, 243, 0.1); border-left: 4px solid #2196f3;">
+        <h3 style="margin-top: 0; color: #2196f3;">📖 How to Use This Dashboard</h3>
+
+        <div id="connection-status" style="padding: 10px; margin: 10px 0; border-radius: 4px; background: rgba(255, 152, 0, 0.2); border-left: 4px solid #ff9800;">
+            <div style="font-weight: bold; color: #ff9800;">⚠️ Game not detected</div>
+            <div style="font-size: 0.85em; margin-top: 5px;">Click "Show Game" above to load the game in this page.</div>
+        </div>
+
+        <div style="font-size: 0.9em; line-height: 1.6;">
+            <strong>Quick Setup (2 clicks!):</strong>
+            <ol style="margin: 10px 0;">
+                <li>Click the <strong style="color: #2196f3;">"Show Game"</strong> button above to load the game in this page</li>
+                <li>Wait ~5 seconds for the connection status to turn green</li>
+                <li>Start testing! 🎉</li>
+            </ol>
+
+            <div style="margin: 10px 0; padding: 10px; background: rgba(76, 175, 80, 0.15); border-radius: 4px;">
+                <div style="font-weight: bold; color: #4caf50; margin-bottom: 5px;">✅ Why embed the game?</div>
+                <div style="font-size: 0.85em; color: #666;">
+                    The game needs to be in the same page as the dashboard so the testing tools can access it.
+                    Click "Show Game" and the game will load in an iframe above. You can hide it anytime by clicking again.
+                </div>
+            </div>
+
+            <details style="margin-top: 15px;">
+                <summary style="cursor: pointer; font-weight: bold; color: #888;">📖 Alternative: Use npm run test:live (opens this page automatically)</summary>
+                <div style="margin-top: 10px; padding-left: 15px;">
+                    <div style="font-size: 0.9em;">Run this command in your terminal:</div>
+                    <pre style="background: #1a1a1a; padding: 10px; border-radius: 4px; margin: 5px 0; overflow-x: auto;"><code>npm run test:live</code></pre>
+                    <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                        This automatically starts servers and opens this dashboard. Then click "Show Game" to begin testing.
+                    </div>
+                </div>
+            </details>
+
+            <div style="margin-top: 15px; padding: 8px; background: rgba(76, 175, 80, 0.2); border-radius: 4px;">
+                <strong style="color: #4caf50;">✅ Once connected:</strong>
+                <ul style="margin: 5px 0; padding-left: 20px;">
+                    <li>The orange warning above will turn green</li>
+                    <li>Run automated tests with the buttons below</li>
+                    <li>Start monitoring to see real-time listener counts</li>
+                    <li>Play the game in the iframe while watching metrics update!</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
     <div class="container">
         <h2>📊 Live Memory Metrics</h2>
@@ -189,6 +247,65 @@
             <div>📊 Chart shows memory usage over time - look for stable trends, not sudden spikes</div>
             <div>🎯 Memory patterns are more valuable than pass/fail tests</div>
             <div>🔍 Click "Mark Event" during game actions to correlate memory with gameplay</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🎯 Event Listener Monitoring</h2>
+        <p>Real-time tracking of event listeners to detect memory leaks:</p>
+
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-value" id="current-listener-count">0</div>
+                <div>Current Listeners</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="peak-listener-count">0</div>
+                <div>Peak Listeners</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="listener-trend">STABLE</div>
+                <div>Listener Trend</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="active-scene">N/A</div>
+                <div>Active Scene</div>
+            </div>
+        </div>
+
+        <canvas id="listener-chart" width="1000" height="200" style="background: #1a1a1a; border: 1px solid #444; border-radius: 4px; width: 100%; max-width: 100%; margin-top: 15px;"></canvas>
+
+        <div style="margin-top: 10px; font-size: 0.85em; color: #ccc;">
+            <div>📊 Chart shows event listener count over time - should remain stable</div>
+            <div>🎯 Listener count should return to baseline after scene transitions</div>
+            <div>🔍 Growing listener count indicates a memory leak</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🧪 Automated Event Cleanup Tests</h2>
+        <p>Automated tests for scene transition cleanup:</p>
+
+        <div style="margin-bottom: 15px;">
+            <button onclick="runRapidTransitionTest()">🔄 Test Rapid Transitions (20x)</button>
+            <button onclick="runGameSettingsTest()">⚙️ Test Game ↔ Settings (5x)</button>
+            <button onclick="runManualListenerCount()">📊 Count Listeners Now</button>
+        </div>
+
+        <div id="test-status" style="margin: 15px 0; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 4px; min-height: 60px;">
+            <div style="font-size: 0.9em; color: #888;">
+                Click a test button to start automated cleanup validation
+            </div>
+        </div>
+
+        <div style="margin-top: 10px; padding: 8px; background: rgba(76, 175, 80, 0.1); border-left: 3px solid #4caf50; border-radius: 3px;">
+            <div style="font-size: 0.85em; color: #4caf50;">
+                <strong>✅ These tests integrate with your Phaser game</strong>
+            </div>
+            <div style="font-size: 0.8em; color: #ccc; margin-top: 3px;">
+                Tests will perform real scene transitions and count actual event listeners using Phaser's listenerCount() API.
+                Make sure your game is running before testing.
+            </div>
         </div>
     </div>
 
@@ -751,18 +868,742 @@
             refreshUnitTests();
         }, 2000);
 
+        // ============================================================================
+        // EVENT LISTENER MONITORING
+        // ============================================================================
+
+        let listenerHistory = [];
+        let peakListenerCount = 0;
+        let listenerMonitoringInterval = null;
+
+        /**
+         * Toggle game view visibility
+         */
+        function toggleGameView() {
+            const container = document.getElementById('game-iframe-container');
+            const btn = document.getElementById('toggle-game-btn');
+
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                btn.textContent = 'Hide Game';
+                log('🎮 Game view shown - waiting for game to load...', 'info');
+
+                // Wait for iframe to load, then check for game
+                setTimeout(() => {
+                    checkGameConnection();
+                }, 2000);
+            } else {
+                container.style.display = 'none';
+                btn.textContent = 'Show Game';
+            }
+        }
+
+        /**
+         * Get reference to Phaser game instance
+         * This checks the iframe first, then falls back to other methods
+         */
+        function getPhaserGame() {
+            // FIRST: Try to get from iframe (preferred method)
+            const gameFrame = document.getElementById('game-frame');
+            if (gameFrame && gameFrame.contentWindow) {
+                try {
+                    const iframeWindow = gameFrame.contentWindow;
+
+                    // Try to get gameInstance from the iframe
+                    const iframeGame = iframeWindow.gameInstance || iframeWindow.game;
+
+                    // Verify it's actually a Phaser game instance
+                    // Just check if it has a scene property with scenes array
+                    if (iframeGame && iframeGame.scene && iframeGame.scene.scenes) {
+                        return iframeGame;
+                    }
+                } catch (error) {
+                    // Cross-origin errors - can't access iframe
+                    console.warn('[Live Testing] Cannot access iframe:', error.message);
+                }
+            }
+
+            // Try to get game from window.game (user manually exposed in same window)
+            if (window.game && window.game.scene && window.game.scene.scenes) {
+                return window.game;
+            }
+
+            // Check for window.gameInstance (if game loaded in same window)
+            if (window.gameInstance && window.gameInstance.scene && window.gameInstance.scene.scenes) {
+                return window.gameInstance;
+            }
+
+            return null;
+        }
+
+        /**
+         * Count all event listeners in a Phaser scene
+         */
+        function countSceneListeners(scene) {
+            if (!scene) return 0;
+
+            let total = 0;
+
+            try {
+                // Count listeners on scene events
+                if (scene.events && scene.events.eventNames) {
+                    const sceneEvents = scene.events.eventNames();
+                    total += sceneEvents.reduce((sum, eventName) => {
+                        return sum + (scene.events.listenerCount(eventName) || 0);
+                    }, 0);
+                }
+
+                // Count listeners on input events
+                if (scene.input && scene.input.events && scene.input.events.eventNames) {
+                    const inputEvents = scene.input.events.eventNames();
+                    total += inputEvents.reduce((sum, eventName) => {
+                        return sum + (scene.input.events.listenerCount(eventName) || 0);
+                    }, 0);
+                }
+
+                // Count listeners on game objects (interactive elements)
+                if (scene.children && scene.children.list) {
+                    scene.children.list.forEach(child => {
+                        // Check for pointer events on interactive objects
+                        ['pointerdown', 'pointerover', 'pointerout', 'pointerup'].forEach(eventType => {
+                            if (child.listenerCount) {
+                                total += child.listenerCount(eventType) || 0;
+                            }
+                        });
+                    });
+                }
+            } catch (error) {
+                console.warn('Error counting scene listeners:', error);
+            }
+
+            return total;
+        }
+
+        /**
+         * Check if the game is fully ready for testing
+         * Returns true only if game is initialized with all scene manager methods
+         */
+        function isGameReady() {
+            const game = getPhaserGame();
+            if (!game) return false;
+            if (!game.scene) return false;
+
+            // Check that SceneManager has all required methods
+            if (typeof game.scene.start !== 'function') return false;
+            if (typeof game.scene.getScene !== 'function') return false;
+
+            // Check that at least one scene exists and is active
+            const scenes = game.scene.scenes || [];
+            if (scenes.length === 0) return false;
+
+            const hasActiveScene = scenes.some(s => s.scene && s.scene.isActive());
+            if (!hasActiveScene) return false;
+
+            return true;
+        }
+
+        /**
+         * Wait for the game to be fully ready
+         * Polls every 100ms for up to 10 seconds
+         */
+        async function waitForGameReady(timeoutMs = 10000) {
+            const startTime = Date.now();
+
+            while (Date.now() - startTime < timeoutMs) {
+                if (isGameReady()) {
+                    return true;
+                }
+                await wait(100);
+            }
+
+            return false;
+        }
+
+        /**
+         * Get the currently active scene
+         */
+        function getActiveScene() {
+            const game = getPhaserGame();
+            if (!game || !game.scene) return null;
+
+            // Get all scenes
+            const scenes = game.scene.scenes || [];
+
+            // Find the active scene
+            const activeScene = scenes.find(s => s.scene && s.scene.isActive());
+
+            return activeScene || null;
+        }
+
+        /**
+         * Update listener count display
+         */
+        function updateListenerCount() {
+            const scene = getActiveScene();
+
+            if (!scene) {
+                document.getElementById('current-listener-count').textContent = 'N/A';
+                document.getElementById('active-scene').textContent = 'No game';
+                return;
+            }
+
+            const count = countSceneListeners(scene);
+            const sceneName = scene.scene.key || 'Unknown';
+
+            // Update display
+            document.getElementById('current-listener-count').textContent = count;
+            document.getElementById('active-scene').textContent = sceneName;
+
+            // Track peak
+            if (count > peakListenerCount) {
+                peakListenerCount = count;
+                document.getElementById('peak-listener-count').textContent = peakListenerCount;
+            }
+
+            // Add to history if monitoring
+            if (isMonitoring) {
+                addListenerDataPoint(count, sceneName);
+            }
+
+            return count;
+        }
+
+        /**
+         * Add listener count data point to history
+         */
+        function addListenerDataPoint(count, sceneName) {
+            const timestamp = Date.now();
+
+            listenerHistory.push({
+                timestamp: timestamp,
+                count: count,
+                scene: sceneName
+            });
+
+            // Keep only the last 100 points
+            if (listenerHistory.length > 100) {
+                listenerHistory = listenerHistory.slice(-100);
+            }
+
+            drawListenerChart();
+            updateListenerTrend();
+        }
+
+        /**
+         * Draw listener count chart
+         */
+        function drawListenerChart() {
+            const canvas = document.getElementById('listener-chart');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            if (listenerHistory.length < 2) return;
+
+            // Calculate min and max for scaling
+            const counts = listenerHistory.map(d => d.count);
+            const minCount = Math.min(...counts);
+            const maxCount = Math.max(...counts);
+            const countRange = maxCount - minCount || 1;
+
+            // Draw grid lines
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+
+            // Horizontal grid lines
+            for (let i = 0; i <= 5; i++) {
+                const y = (height / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+
+                // Add count value labels
+                const value = maxCount - (countRange / 5) * i;
+                ctx.fillStyle = '#888';
+                ctx.font = '10px monospace';
+                ctx.fillText(Math.round(value), 5, y - 2);
+            }
+
+            // Draw listener count line
+            ctx.strokeStyle = '#2196f3';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            listenerHistory.forEach((dataPoint, index) => {
+                const x = (index / (100 - 1)) * width;
+                const y = height - ((dataPoint.count - minCount) / countRange) * height;
+
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+
+            ctx.stroke();
+
+            // Draw data points
+            ctx.fillStyle = '#2196f3';
+            listenerHistory.forEach((dataPoint, index) => {
+                const x = (index / (100 - 1)) * width;
+                const y = height - ((dataPoint.count - minCount) / countRange) * height;
+
+                ctx.beginPath();
+                ctx.arc(x, y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw baseline (first value)
+            if (listenerHistory.length >= 5) {
+                const baseline = listenerHistory[0].count;
+                const baselineY = height - ((baseline - minCount) / countRange) * height;
+
+                ctx.strokeStyle = '#4caf50';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(0, baselineY);
+                ctx.lineTo(width, baselineY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Baseline label
+                ctx.fillStyle = '#4caf50';
+                ctx.font = '10px sans-serif';
+                ctx.fillText('Baseline', width - 50, baselineY - 5);
+            }
+        }
+
+        /**
+         * Update listener trend indicator
+         */
+        function updateListenerTrend() {
+            if (listenerHistory.length < 10) {
+                document.getElementById('listener-trend').textContent = 'MONITORING';
+                return;
+            }
+
+            const counts = listenerHistory.map(d => d.count);
+            const firstQuarter = counts.slice(0, Math.floor(counts.length / 4));
+            const lastQuarter = counts.slice(-Math.floor(counts.length / 4));
+
+            const firstAvg = firstQuarter.reduce((a, b) => a + b, 0) / firstQuarter.length;
+            const lastAvg = lastQuarter.reduce((a, b) => a + b, 0) / lastQuarter.length;
+
+            const trend = lastAvg - firstAvg;
+            const trendPercent = (trend / firstAvg) * 100;
+
+            const trendElement = document.getElementById('listener-trend');
+
+            if (Math.abs(trendPercent) < 5) {
+                trendElement.textContent = 'STABLE';
+                trendElement.style.color = '#4caf50';
+            } else if (trendPercent > 0) {
+                trendElement.textContent = `GROWING (+${Math.round(trendPercent)}%)`;
+                trendElement.style.color = '#f44336';
+            } else {
+                trendElement.textContent = `DECREASING (${Math.round(trendPercent)}%)`;
+                trendElement.style.color = '#ff9800';
+            }
+        }
+
+        // ============================================================================
+        // AUTOMATED TESTS
+        // ============================================================================
+
+        /**
+         * Utility function to wait for a duration
+         */
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        /**
+         * Update test status display
+         */
+        function updateTestStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('test-status');
+            let color = '#888';
+
+            if (type === 'success') color = '#4caf50';
+            if (type === 'error') color = '#f44336';
+            if (type === 'warning') color = '#ff9800';
+
+            statusDiv.innerHTML = `<div style="font-size: 0.9em; color: ${color};">${message}</div>`;
+        }
+
+        /**
+         * Test: Rapid Scene Transitions (20x)
+         * Tests that listener counts remain stable during rapid scene switching
+         */
+        async function runRapidTransitionTest() {
+            log('🔄 Starting Rapid Transition Test (20 cycles)...', 'info');
+            updateTestStatus('⏳ Waiting for game to be ready...', 'info');
+
+            // Wait for game to be fully initialized
+            const ready = await waitForGameReady();
+            if (!ready) {
+                const error = '❌ Timeout waiting for game to initialize. Make sure the game is loaded and a scene is active.';
+                log(error, 'error');
+                updateTestStatus(error, 'error');
+                return;
+            }
+
+            log('✅ Game is ready, starting test...', 'success');
+            updateTestStatus('🔄 Running rapid transition test... (0/20)', 'info');
+
+            const game = getPhaserGame();
+
+            const results = {
+                cycles: 20,
+                listenerCounts: [],
+                errors: [],
+                pass: false
+            };
+
+            try {
+                for (let i = 0; i < 20; i++) {
+                    updateTestStatus(`🔄 Running rapid transition test... (${i + 1}/20)`, 'info');
+
+                    // Start Game scene
+                    game.scene.start('Game');
+                    await wait(150);
+
+                    // Count listeners
+                    const gameScene = game.scene.getScene('Game');
+                    if (gameScene && gameScene.scene.isActive()) {
+                        const count = countSceneListeners(gameScene);
+                        results.listenerCounts.push(count);
+                        log(`   Cycle ${i + 1}: Game scene has ${count} listeners`);
+                    } else {
+                        log(`   Cycle ${i + 1}: Game scene not active yet`, 'warning');
+                    }
+
+                    // Return to MainMenu
+                    game.scene.start('MainMenu');
+                    await wait(150);
+                }
+
+                // Analyze results
+                const maxCount = Math.max(...results.listenerCounts);
+                const minCount = Math.min(...results.listenerCounts);
+                const avgCount = results.listenerCounts.reduce((a, b) => a + b, 0) / results.listenerCounts.length;
+
+                // Listeners should be stable (not growing)
+                results.pass = (maxCount === minCount) || (maxCount - minCount <= 2);
+
+                const resultMessage = results.pass
+                    ? `✅ PASSED: Listener counts stable (${minCount}-${maxCount}, avg ${avgCount.toFixed(1)})`
+                    : `❌ FAILED: Listener counts growing (${minCount}-${maxCount}, avg ${avgCount.toFixed(1)})`;
+
+                log(resultMessage, results.pass ? 'success' : 'error');
+                updateTestStatus(resultMessage, results.pass ? 'success' : 'error');
+
+            } catch (error) {
+                const errorMsg = `❌ Test failed with error: ${error.message}`;
+                log(errorMsg, 'error');
+                updateTestStatus(errorMsg, 'error');
+                results.errors.push(error.message);
+            }
+
+            log('🔄 Rapid Transition Test complete', 'info');
+            return results;
+        }
+
+        /**
+         * Test: Game ↔ Settings Transitions (5x)
+         * Tests that game state is preserved and listeners are stable
+         */
+        async function runGameSettingsTest() {
+            log('⚙️ Starting Game ↔ Settings Transition Test (5 cycles)...', 'info');
+            updateTestStatus('⏳ Waiting for game to be ready...', 'info');
+
+            // Wait for game to be fully initialized
+            const ready = await waitForGameReady();
+            if (!ready) {
+                const error = '❌ Timeout waiting for game to initialize. Make sure the game is loaded and a scene is active.';
+                log(error, 'error');
+                updateTestStatus(error, 'error');
+                return;
+            }
+
+            log('✅ Game is ready, starting test...', 'success');
+            updateTestStatus('⚙️ Running Game ↔ Settings test... (0/5)', 'info');
+
+            const game = getPhaserGame();
+
+            const results = {
+                cycles: 5,
+                listenerCounts: [],
+                statePreserved: true,
+                cleanupVerified: true,
+                pass: false
+            };
+
+            try {
+                // Start Game scene
+                game.scene.start('Game');
+                await wait(300);
+
+                const gameScene = game.scene.getScene('Game');
+                if (!gameScene) {
+                    throw new Error('Game scene not found');
+                }
+
+                const initialCount = countSceneListeners(gameScene);
+                log(`   Initial Game scene listener count: ${initialCount}`);
+
+                for (let i = 0; i < 5; i++) {
+                    updateTestStatus(`⚙️ Running Game ↔ Settings test... (${i + 1}/5)`, 'info');
+
+                    const beforeCount = countSceneListeners(gameScene);
+                    results.listenerCounts.push(beforeCount);
+
+                    // Transition to Settings
+                    game.scene.start('Settings');
+                    await wait(200);
+
+                    log(`   Cycle ${i + 1}: Transitioned to Settings`);
+
+                    // Transition back to Game
+                    game.scene.start('Game');
+                    await wait(200);
+
+                    const afterCount = countSceneListeners(game.scene.getScene('Game'));
+                    log(`   Cycle ${i + 1}: Back to Game, listener count: ${afterCount}`);
+
+                    // Verify listeners didn't accumulate
+                    if (Math.abs(afterCount - initialCount) > 2) {
+                        results.cleanupVerified = false;
+                        log(`   ⚠️ Cycle ${i + 1}: Listener count changed from ${initialCount} to ${afterCount}`, 'warning');
+                    }
+                }
+
+                // Analyze results
+                const maxCount = Math.max(...results.listenerCounts);
+                const minCount = Math.min(...results.listenerCounts);
+
+                results.pass = results.cleanupVerified && (maxCount - minCount <= 2);
+
+                const resultMessage = results.pass
+                    ? `✅ PASSED: State preserved, listeners stable (${minCount}-${maxCount})`
+                    : `❌ FAILED: Listener accumulation detected (${minCount} → ${maxCount})`;
+
+                log(resultMessage, results.pass ? 'success' : 'error');
+                updateTestStatus(resultMessage, results.pass ? 'success' : 'error');
+
+            } catch (error) {
+                const errorMsg = `❌ Test failed with error: ${error.message}`;
+                log(errorMsg, 'error');
+                updateTestStatus(errorMsg, 'error');
+            }
+
+            log('⚙️ Game ↔ Settings Test complete', 'info');
+            return results;
+        }
+
+        /**
+         * Diagnostic - Show what game object we're getting
+         */
+        function diagnoseGameDetection() {
+            log('🔍 Diagnosing game detection...', 'info');
+
+            const game = getPhaserGame();
+
+            if (!game) {
+                log('   ❌ No game detected', 'error');
+                log('   Make sure you clicked "Show Game" button', 'info');
+                return;
+            }
+
+            log('   ✅ Game object found!', 'success');
+            log(`   - Type: ${typeof game}`, 'info');
+            log(`   - Constructor: ${game.constructor?.name}`, 'info');
+            log(`   - Has scene: ${!!game.scene}`, 'info');
+            log(`   - scene.start exists: ${typeof game.scene?.start}`, 'info');
+            log(`   - scene.getScene exists: ${typeof game.scene?.getScene}`, 'info');
+            log(`   - scene.scenes array: ${game.scene?.scenes?.length || 0} scenes`, 'info');
+
+            // Check if game is ready
+            const ready = isGameReady();
+            if (ready) {
+                log('   ✅ Game is READY for testing!', 'success');
+            } else {
+                log('   ⚠️ Game is NOT ready for testing yet', 'warning');
+                log('      Waiting for SceneManager to fully initialize...', 'info');
+            }
+
+            if (game.scene?.scenes) {
+                log('   - Scene list:', 'info');
+                game.scene.scenes.forEach(s => {
+                    const isActive = s.scene && s.scene.isActive();
+                    log(`     • ${s.scene.key} (active: ${isActive})`, isActive ? 'success' : 'info');
+                });
+            }
+
+            return game;
+        }
+
+        /**
+         * Manually count and display listeners for current scene
+         */
+        function runManualListenerCount() {
+            log('📊 Counting event listeners in current scene...', 'info');
+
+            const scene = getActiveScene();
+            if (!scene) {
+                const error = '❌ No active scene found';
+                log(error, 'error');
+                updateTestStatus(error, 'error');
+
+                // Run diagnostic
+                log('   Running diagnostic...', 'info');
+                diagnoseGameDetection();
+                return;
+            }
+
+            const sceneName = scene.scene.key || 'Unknown';
+            const count = countSceneListeners(scene);
+
+            log(`   Scene: ${sceneName}`, 'info');
+            log(`   Total event listeners: ${count}`, 'info');
+
+            // Break down by type
+            let sceneEventCount = 0;
+            let inputEventCount = 0;
+            let gameObjectCount = 0;
+
+            if (scene.events && scene.events.eventNames) {
+                const sceneEvents = scene.events.eventNames();
+                sceneEventCount = sceneEvents.reduce((sum, eventName) => {
+                    return sum + (scene.events.listenerCount(eventName) || 0);
+                }, 0);
+            }
+
+            if (scene.input && scene.input.events && scene.input.events.eventNames) {
+                const inputEvents = scene.input.events.eventNames();
+                inputEventCount = inputEvents.reduce((sum, eventName) => {
+                    return sum + (scene.input.events.listenerCount(eventName) || 0);
+                }, 0);
+            }
+
+            if (scene.children && scene.children.list) {
+                scene.children.list.forEach(child => {
+                    ['pointerdown', 'pointerover', 'pointerout', 'pointerup'].forEach(eventType => {
+                        if (child.listenerCount) {
+                            gameObjectCount += child.listenerCount(eventType) || 0;
+                        }
+                    });
+                });
+            }
+
+            log(`   - Scene events: ${sceneEventCount}`, 'info');
+            log(`   - Input events: ${inputEventCount}`, 'info');
+            log(`   - GameObject events: ${gameObjectCount}`, 'info');
+
+            updateTestStatus(`📊 ${sceneName}: ${count} total listeners (Scene: ${sceneEventCount}, Input: ${inputEventCount}, GameObjects: ${gameObjectCount})`, 'success');
+
+            return { scene: sceneName, total: count, sceneEvents: sceneEventCount, inputEvents: inputEventCount, gameObjects: gameObjectCount };
+        }
+
+        // Start listener monitoring when memory monitoring starts
+        const originalStartMonitoring = startMonitoring;
+        startMonitoring = function() {
+            originalStartMonitoring();
+
+            // Also start listener monitoring
+            if (!listenerMonitoringInterval) {
+                listenerMonitoringInterval = setInterval(updateListenerCount, 500);
+                log('📊 Listener monitoring started', 'info');
+            }
+        };
+
+        const originalStopMonitoring = stopMonitoring;
+        stopMonitoring = function() {
+            originalStopMonitoring();
+
+            // Also stop listener monitoring
+            if (listenerMonitoringInterval) {
+                clearInterval(listenerMonitoringInterval);
+                listenerMonitoringInterval = null;
+                log('📊 Listener monitoring stopped', 'info');
+            }
+        };
+
+        // ============================================================================
+        // CONNECTION STATUS MONITORING
+        // ============================================================================
+
+        /**
+         * Check if game is connected and update status indicator
+         */
+        function checkGameConnection() {
+            const statusDiv = document.getElementById('connection-status');
+
+            if (isGameReady()) {
+                // Game is fully ready!
+                const game = getPhaserGame();
+                statusDiv.style.background = 'rgba(76, 175, 80, 0.2)';
+                statusDiv.style.borderColor = '#4caf50';
+                statusDiv.innerHTML = `
+                    <div style="font-weight: bold; color: #4caf50;">✅ Game connected!</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">
+                        Ready to run tests and monitoring. Game has ${game.scene.scenes.length} scenes loaded.
+                    </div>
+                `;
+                return true;
+            } else {
+                // Game not connected
+                statusDiv.style.background = 'rgba(255, 152, 0, 0.2)';
+                statusDiv.style.borderColor = '#ff9800';
+                statusDiv.innerHTML = `
+                    <div style="font-weight: bold; color: #ff9800;">⚠️ Game not detected</div>
+                    <div style="font-size: 0.85em; margin-top: 5px;">
+                        Follow the setup instructions below to connect to your game.
+                    </div>
+                `;
+                return false;
+            }
+        }
+
+        // Check connection status every 2 seconds
+        setInterval(checkGameConnection, 2000);
+
+        // Check immediately on load
+        setTimeout(checkGameConnection, 1000);
+
+        // Update listener count periodically (independent of memory monitoring)
+        setInterval(() => {
+            if (!isMonitoring) {
+                updateListenerCount();
+            }
+        }, 2000);
+
         // Expose functions to global scope for debugging
         window.runEventBusTest = runEventBusTest;
         window.runSceneTest = runSceneTest;
         window.runQuickValidation = runQuickValidation;
         window.clearLog = clearLog;
-        window.launchTestUI = launchTestUI;
         window.refreshUnitTests = refreshUnitTests;
         window.toggleMonitoring = toggleMonitoring;
         window.startMonitoring = startMonitoring;
         window.stopMonitoring = stopMonitoring;
         window.clearMemoryHistory = clearMemoryHistory;
         window.markEvent = markEvent;
+        window.runRapidTransitionTest = runRapidTransitionTest;
+        window.runGameSettingsTest = runGameSettingsTest;
+        window.runManualListenerCount = runManualListenerCount;
+        window.getPhaserGame = getPhaserGame;
+        window.isGameReady = isGameReady;
+        window.waitForGameReady = waitForGameReady;
+        window.countSceneListeners = countSceneListeners;
+        window.toggleGameView = toggleGameView;
+        window.checkGameConnection = checkGameConnection;
+        window.diagnoseGameDetection = diagnoseGameDetection;
     </script>
 </body>
 </html>

@@ -128,6 +128,13 @@ export class Game extends BaseScene {
             return;
         }
 
+        // If boardState is empty, it means no moves were made yet - just start new level instead
+        if (!savedState.boardState || savedState.boardState.length === 0) {
+            console.log('[Game] Saved state has empty board (no moves made yet), starting new level instead');
+            this.startNewLevel();
+            return;
+        }
+
         console.log('[Game] Restoring level info and board state...');
         console.log('[Game] Saved boardState:', JSON.stringify(savedState.boardState, null, 2));
         console.log('[Game] Saved currentPlayer:', savedState.currentPlayer);

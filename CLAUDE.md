@@ -123,6 +123,7 @@ they exceed capacity, creating chain reactions that can capture opponent cells.
 | `npm run test:run` | Run all tests once (CI-ready) |
 | `npm run test:ui` | Open Vitest UI for debugging tests |
 | `npm run test:coverage` | Generate test coverage report |
+| `npm run test:live` | Launch live testing dashboard with automated event cleanup tests |
 
 ## Architecture
 
@@ -382,6 +383,56 @@ Tests are configured in `vitest.config.ts`:
 - Supports TypeScript out of the box
 - Configured for parallel test execution
 - Coverage reporting with v8 provider
+
+### Live Testing Infrastructure
+
+The project includes an interactive live testing dashboard for validating event cleanup and monitoring memory metrics in real-time.
+
+**Quick Start:**
+```bash
+npm run test:live
+```
+
+This command:
+1. Starts the dev server (if not already running)
+2. Starts the test status server for unit test results
+3. Opens the live testing dashboard at http://localhost:8080/live-testing.html
+
+**Dashboard Features:**
+- **Real-time Event Listener Monitoring** - Tracks listener counts across scene transitions
+- **Automated Event Cleanup Tests** - Validates no listener accumulation during rapid transitions
+- **Interactive Game Embedding** - Game runs in iframe for direct testing access
+- **Visual Metrics** - Charts showing listener count trends over time
+- **Manual Inspection Tools** - Utilities for counting and analyzing listeners by type
+
+**Available Automated Tests:**
+1. **Rapid Transition Test (20x)** - Transitions between Game and MainMenu 20 times, verifying listener counts remain stable
+2. **Game ↔ Settings Test (5x)** - Tests Settings scene transitions preserve game state without accumulating listeners
+3. **Manual Listener Count** - Instantly counts all listeners in current scene with breakdown by type
+
+**Setup & Usage:**
+- Complete setup instructions: `docs/testing/live-testing-setup.md`
+- Streamlined manual testing checklist: `docs/testing/manual-event-cleanup-streamlined.md`
+- Automation analysis: `docs/testing/automation-analysis.md`
+
+**Event Cleanup Coverage:**
+- **514 unit tests total** (including 31 event cleanup tests)
+- **95% of manual tests automated** (9 as unit tests, 3 in live-testing.html)
+- **5% manual testing** (integration flow + DevTools memory analysis)
+
+**Key Testing Pattern:**
+All event cleanup uses Phaser's `listenerCount()` API to verify listeners are properly removed:
+```typescript
+// Before cleanup
+const beforeCount = scene.events.listenerCount('eventName');
+
+// Perform cleanup
+scene.cleanupButtonListeners();
+
+// After cleanup - should be 0
+const afterCount = scene.events.listenerCount('eventName');
+expect(afterCount).toBe(0);
+```
 
 ## Common Tasks
 

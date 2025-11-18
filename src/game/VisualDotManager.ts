@@ -111,6 +111,12 @@ export class VisualDotManager {
         boardState: { owner: PlayerColor | 'default' | 'blocked'; dotCount: number }[][],
         getCellCenter: (row: number, col: number) => { x: number; y: number }
     ): void {
+        // Handle empty board state (new game with no moves yet)
+        // This happens when user starts game and immediately transitions away before making moves
+        if (!boardState || boardState.length === 0) {
+            return;
+        }
+
         for (let row = 0; row < this.gridSize; row++) {
             for (let col = 0; col < this.gridSize; col++) {
                 const cellState = boardState[row][col];

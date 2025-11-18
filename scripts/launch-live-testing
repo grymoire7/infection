@@ -20,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Configuration
-const DEV_SERVER_PORT = 8080;
+const DEV_SERVER_PORT = 8080; // Changed from 8081 to 8080 (vite default)
 const DEV_SERVER_HOST = 'localhost';
 const TEST_STATUS_PORT = 3001;
 const LIVE_TESTING_PATH = '/live-testing.html';
