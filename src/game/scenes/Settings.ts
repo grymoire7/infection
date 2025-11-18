@@ -12,9 +12,14 @@ export class Settings extends BaseScene
     playerColorButton: GameObjects.Text;
     playerSprite: GameObjects.Sprite;
     levelSetButton: GameObjects.Text;
-    
+
     private settingsManager: SettingsManager;
     private currentSettings: GameSettings;
+    private buttonEventHandlers: Map<GameObjects.Text, {
+        pointerdown?: () => void,
+        pointerover?: () => void,
+        pointerout?: () => void
+    }> = new Map();
 
     constructor ()
     {
@@ -64,17 +69,24 @@ export class Settings extends BaseScene
         }).setOrigin(0, 0.5);
 
         this.soundToggleButton.setInteractive();
-        this.soundToggleButton.on('pointerdown', () => {
-            this.toggleSoundEffects();
-        });
 
-        this.soundToggleButton.on('pointerover', () => {
-            this.soundToggleButton.setBackgroundColor('#888888');
-        });
+        const soundToggleHandlers = {
+            pointerdown: () => {
+                this.toggleSoundEffects();
+            },
+            pointerover: () => {
+                this.soundToggleButton.setBackgroundColor('#888888');
+            },
+            pointerout: () => {
+                this.soundToggleButton.setBackgroundColor('#666666');
+            }
+        };
 
-        this.soundToggleButton.on('pointerout', () => {
-            this.soundToggleButton.setBackgroundColor('#666666');
-        });
+        this.soundToggleButton.on('pointerdown', soundToggleHandlers.pointerdown);
+        this.soundToggleButton.on('pointerover', soundToggleHandlers.pointerover);
+        this.soundToggleButton.on('pointerout', soundToggleHandlers.pointerout);
+
+        this.buttonEventHandlers.set(this.soundToggleButton, soundToggleHandlers);
 
         // Player Selection
         const playerColorLabelY = centerY * 0.8;
@@ -102,17 +114,24 @@ export class Settings extends BaseScene
         }).setOrigin(0, 0.5);
 
         this.playerColorButton.setInteractive();
-        this.playerColorButton.on('pointerdown', () => {
-            this.togglePlayerColor();
-        });
 
-        this.playerColorButton.on('pointerover', () => {
-            this.playerSprite.setTint(0xcccccc);
-        });
+        const playerColorHandlers = {
+            pointerdown: () => {
+                this.togglePlayerColor();
+            },
+            pointerover: () => {
+                this.playerSprite.setTint(0xcccccc);
+            },
+            pointerout: () => {
+                this.playerSprite.clearTint();
+            }
+        };
 
-        this.playerColorButton.on('pointerout', () => {
-            this.playerSprite.clearTint();
-        });
+        this.playerColorButton.on('pointerdown', playerColorHandlers.pointerdown);
+        this.playerColorButton.on('pointerover', playerColorHandlers.pointerover);
+        this.playerColorButton.on('pointerout', playerColorHandlers.pointerout);
+
+        this.buttonEventHandlers.set(this.playerColorButton, playerColorHandlers);
 
         // Level Set Selection
         const levelSetLabelY = centerY * 0.95;
@@ -131,17 +150,24 @@ export class Settings extends BaseScene
         }).setOrigin(0, 0.5);
 
         this.levelSetButton.setInteractive();
-        this.levelSetButton.on('pointerdown', () => {
-            this.cycleLevelSet();
-        });
 
-        this.levelSetButton.on('pointerover', () => {
-            this.levelSetButton.setBackgroundColor('#888888');
-        });
+        const levelSetHandlers = {
+            pointerdown: () => {
+                this.cycleLevelSet();
+            },
+            pointerover: () => {
+                this.levelSetButton.setBackgroundColor('#888888');
+            },
+            pointerout: () => {
+                this.levelSetButton.setBackgroundColor('#666666');
+            }
+        };
 
-        this.levelSetButton.on('pointerout', () => {
-            this.levelSetButton.setBackgroundColor('#666666');
-        });
+        this.levelSetButton.on('pointerdown', levelSetHandlers.pointerdown);
+        this.levelSetButton.on('pointerover', levelSetHandlers.pointerover);
+        this.levelSetButton.on('pointerout', levelSetHandlers.pointerout);
+
+        this.buttonEventHandlers.set(this.levelSetButton, levelSetHandlers);
 
         this.updateSoundToggleButton();
         this.updatePlayerSprite();
@@ -213,6 +239,9 @@ export class Settings extends BaseScene
     public shutdown(): void {
         console.log('Settings: Starting shutdown cleanup');
 
+        // Clean up button event listeners
+        this.cleanupButtonListeners();
+
         // Clean up interactive elements
         this.safeRemoveInteractive(this.soundToggleButton);
         this.safeRemoveInteractive(this.playerColorButton);
@@ -230,5 +259,38 @@ export class Settings extends BaseScene
         super.shutdown();
 
         console.log('Settings: Shutdown cleanup completed');
+    }
+
+    /**
+     * Clean up all button event listeners
+     * Call this during scene shutdown to prevent memory leaks
+     */
+    private cleanupButtonListeners(): void {
+        if (!this.buttonEventHandlers || this.buttonEventHandlers.size === 0) {
+            console.log('[Settings] No button event listeners to clean up');
+            return;
+        }
+
+        console.log(`[Settings] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
+
+        // Remove all event listeners that we added
+        this.buttonEventHandlers.forEach((handlers, button) => {
+            if (button && handlers) {
+                if (handlers.pointerdown) {
+                    button.off('pointerdown', handlers.pointerdown);
+                }
+                if (handlers.pointerover) {
+                    button.off('pointerover', handlers.pointerover);
+                }
+                if (handlers.pointerout) {
+                    button.off('pointerout', handlers.pointerout);
+                }
+            }
+        });
+
+        this.buttonEventHandlers.clear();
+
+        // Note: We don't destroy buttons here - that's handled by safeDestroy() calls
+        // We just remove our event listeners to prevent memory leaks and ghost interactions
     }
 }
