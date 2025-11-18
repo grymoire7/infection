@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GridManager } from './GridManager';
 import { CellState } from './GameStateManager';
 
-// Mock Phaser's Rectangle GameObject
+// Mock Phaser's Rectangle GameObject with EventEmitter support
 class MockRectangle {
   x: number;
   y: number;
@@ -12,7 +12,7 @@ class MockRectangle {
   strokeColor: number;
   strokeWidth: number;
   interactive: boolean = false;
-  private eventHandlers: Map<string, Function> = new Map();
+  private eventHandlers: Map<string, Function[]> = new Map();
 
   constructor(x: number, y: number, width: number, height: number, fillColor: number) {
     this.x = x;
@@ -44,13 +44,38 @@ class MockRectangle {
   }
 
   on(event: string, handler: Function): this {
-    this.eventHandlers.set(event, handler);
+    if (!this.eventHandlers.has(event)) {
+      this.eventHandlers.set(event, []);
+    }
+    this.eventHandlers.get(event)!.push(handler);
     return this;
   }
 
+  off(event: string, handler: Function): this {
+    const handlers = this.eventHandlers.get(event);
+    if (handlers) {
+      const index = handlers.indexOf(handler);
+      if (index !== -1) {
+        handlers.splice(index, 1);
+      }
+    }
+    return this;
+  }
+
+  listenerCount(event: string): number {
+    const handlers = this.eventHandlers.get(event);
+    return handlers ? handlers.length : 0;
+  }
+
   emit(event: string): void {
-    const handler = this.eventHandlers.get(event);
-    if (handler) handler();
+    const handlers = this.eventHandlers.get(event);
+    if (handlers) {
+      handlers.forEach(handler => handler());
+    }
+  }
+
+  destroy(): void {
+    this.eventHandlers.clear();
   }
 }
 
@@ -664,6 +689,139 @@ describe('GridManager', () => {
       const result = gridManager.createGrid(100, []);
 
       expect(result.cellSize).toBe(40);
+    });
+  });
+
+  describe('Event Cleanup', () => {
+    describe('listener removal', () => {
+      it('should remove all pointerdown listeners on cleanup', () => {
+        gridManager.createGrid(3, []);
+
+        const dummyHandler = vi.fn();
+        // Add handlers via the real API
+        gridManager.makeCellInteractive(0, 0, dummyHandler, dummyHandler, dummyHandler);
+
+        const cell = gridManager.gridCells[0][0];
+
+        // Verify listeners were added
+        expect(cell.listenerCount('pointerdown')).toBeGreaterThan(0);
+        expect(cell.listenerCount('pointerover')).toBeGreaterThan(0);
+        expect(cell.listenerCount('pointerout')).toBeGreaterThan(0);
+
+        // Cleanup
+        gridManager.cleanup();
+
+        // Verify listeners were removed
+        expect(cell.listenerCount('pointerdown')).toBe(0);
+        expect(cell.listenerCount('pointerover')).toBe(0);
+        expect(cell.listenerCount('pointerout')).toBe(0);
+      });
+
+      it('should remove listeners from all cells in grid', () => {
+        gridManager.createGrid(3, []);
+
+        gridManager.cleanup();
+
+        // Check every cell
+        for (let row = 0; row < 3; row++) {
+          for (let col = 0; col < 3; col++) {
+            const cell = gridManager.gridCells[row][col];
+            expect(cell.listenerCount('pointerdown')).toBe(0);
+            expect(cell.listenerCount('pointerover')).toBe(0);
+            expect(cell.listenerCount('pointerout')).toBe(0);
+          }
+        }
+      });
+
+      it('should handle multiple cleanup calls safely', () => {
+        gridManager.createGrid(3, []);
+
+        // Should not throw or cause issues
+        expect(() => {
+          gridManager.cleanup();
+          gridManager.cleanup(); // Second call
+          gridManager.cleanup(); // Third call
+        }).not.toThrow();
+      });
+    });
+
+    describe('ghost interaction prevention', () => {
+      it('should not invoke handlers after cleanup', () => {
+        gridManager.createGrid(3, []);
+
+        const clickSpy = vi.fn();
+        const hoverSpy = vi.fn();
+        const outSpy = vi.fn();
+
+        // Add handlers via the real API
+        gridManager.makeCellInteractive(0, 0, hoverSpy, outSpy, clickSpy);
+
+        const cell = gridManager.gridCells[0][0];
+
+        // Emit event before cleanup
+        cell.emit('pointerdown');
+        expect(clickSpy).toHaveBeenCalledTimes(1);
+
+        // Cleanup
+        gridManager.cleanup();
+
+        // Try to emit event after cleanup
+        cell.emit('pointerdown');
+
+        // Handler should NOT have been called again
+        expect(clickSpy).toHaveBeenCalledTimes(1); // Still 1, not 2
+      });
+
+      it('should not respond to hover events on destroyed cells', () => {
+        gridManager.createGrid(3, []);
+
+        const hoverSpy = vi.fn();
+        const outSpy = vi.fn();
+        const clickSpy = vi.fn();
+
+        // Add handlers via the real API (makeCellInteractive)
+        gridManager.makeCellInteractive(1, 1, hoverSpy, outSpy, clickSpy);
+
+        const cell = gridManager.gridCells[1][1];
+
+        // Before cleanup
+        cell.emit('pointerover');
+        cell.emit('pointerout');
+        expect(hoverSpy).toHaveBeenCalledTimes(1);
+        expect(outSpy).toHaveBeenCalledTimes(1);
+
+        // After cleanup
+        gridManager.cleanup();
+        cell.emit('pointerover');
+        cell.emit('pointerout');
+
+        // Should not have incremented
+        expect(hoverSpy).toHaveBeenCalledTimes(1);
+        expect(outSpy).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('memory stability', () => {
+      it('should not accumulate listeners across grid recreations', () => {
+        const dummyHandler = vi.fn();
+
+        // Create and cleanup grid multiple times
+        for (let i = 0; i < 5; i++) {
+          gridManager.createGrid(3, []);
+          gridManager.makeCellInteractive(0, 0, dummyHandler, dummyHandler, dummyHandler);
+          gridManager.cleanup();
+        }
+
+        // Create one final time and add handlers
+        gridManager.createGrid(3, []);
+        gridManager.makeCellInteractive(0, 0, dummyHandler, dummyHandler, dummyHandler);
+
+        // Should have exactly 1 listener per event type (not 5)
+        const cell = gridManager.gridCells[0][0];
+        expect(cell.listenerCount('pointerdown')).toBe(1);
+        expect(cell.listenerCount('pointerover')).toBe(1);
+        expect(cell.listenerCount('pointerout')).toBe(1);
+      });
     });
   });
 });

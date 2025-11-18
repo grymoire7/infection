@@ -816,10 +816,8 @@ export class Game extends BaseScene {
         }
 
         if (this.gridManager) {
-            // GridManager doesn't have explicit cleanup, but we can remove its references
-            this.addCleanupTask(() => {
-                // Any grid-specific cleanup would go here
-            });
+            // Clean up grid cell event listeners
+            this.gridManager.cleanup();
         }
 
         if (this.uiManager) {

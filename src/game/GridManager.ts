@@ -17,6 +17,16 @@ export class GridManager {
     private gridStartY: number;
     private grid: Phaser.GameObjects.Rectangle[][];
     private blockedCells: { row: number; col: number }[] = [];
+    private cellEventHandlers: Map<Phaser.GameObjects.Rectangle, {
+        hover: () => void,
+        out: () => void,
+        click: () => void
+    }> = new Map();
+
+    // Public accessor for testing
+    get gridCells(): Phaser.GameObjects.Rectangle[][] {
+        return this.grid;
+    }
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -111,9 +121,19 @@ export class GridManager {
         // Only make cell interactive if it exists and is not blocked
         if (cell && !this.isCellBlocked(row, col)) {
             cell.setInteractive();
-            cell.on('pointerover', onHover);
-            cell.on('pointerout', onOut);
-            cell.on('pointerdown', onClick);
+
+            // Store handlers for cleanup
+            const handlers = {
+                hover: onHover,
+                out: onOut,
+                click: onClick
+            };
+
+            cell.on('pointerover', handlers.hover);
+            cell.on('pointerout', handlers.out);
+            cell.on('pointerdown', handlers.click);
+
+            this.cellEventHandlers.set(cell, handlers);
         }
     }
 
@@ -188,5 +208,32 @@ export class GridManager {
             cellSize: this.cellSize,
             gridSize: this.gridSize
         };
+    }
+
+    /**
+     * Clean up all event listeners from grid cells
+     * Call this during scene shutdown to prevent memory leaks
+     */
+    cleanup(): void {
+        if (!this.cellEventHandlers || this.cellEventHandlers.size === 0) {
+            console.log('[GridManager] No event listeners to clean up');
+            return;
+        }
+
+        console.log(`[GridManager] Cleaning up ${this.cellEventHandlers.size} cell event listeners`);
+
+        // Remove all event listeners that we added
+        this.cellEventHandlers.forEach((handlers, cell) => {
+            if (cell && handlers) {
+                cell.off('pointerover', handlers.hover);
+                cell.off('pointerout', handlers.out);
+                cell.off('pointerdown', handlers.click);
+            }
+        });
+
+        this.cellEventHandlers.clear();
+
+        // Note: We don't destroy cells here - the scene will handle that
+        // We just remove our event listeners to prevent memory leaks
     }
 }
