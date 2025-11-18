@@ -11,6 +11,11 @@ export class MainMenu extends BaseScene
     animatedDots: any[] = [];
     dotTweens: Phaser.Tweens.Tween[] = [];
     menuItems: GameObjects.Text[] = [];
+    private menuItemEventHandlers: Map<GameObjects.Text, {
+        pointerover?: () => void,
+        pointerout?: () => void,
+        pointerdown?: () => void
+    }> = new Map();
 
     constructor ()
     {
@@ -141,24 +146,29 @@ export class MainMenu extends BaseScene
 
             // Make menu item interactive
             menuItem.setInteractive();
-            
-            // Hover effects
-            menuItem.on('pointerover', () => {
-                menuItem.setColor('#44ff44');
-                menuItem.setScale(1.1);
-            });
 
-            menuItem.on('pointerout', () => {
-                menuItem.setColor('#ffffff');
-                menuItem.setScale(1.0);
-            });
+            // Store handlers for cleanup
+            const handlers = {
+                pointerover: () => {
+                    menuItem.setColor('#44ff44');
+                    menuItem.setScale(1.1);
+                },
+                pointerout: () => {
+                    menuItem.setColor('#ffffff');
+                    menuItem.setScale(1.0);
+                },
+                pointerdown: () => {
+                    this.stopAnimatedDots();
+                    option.action();
+                }
+            };
 
-            // Click handler
-            menuItem.on('pointerdown', () => {
-                this.stopAnimatedDots();
-                option.action();
-            });
+            // Attach event handlers
+            menuItem.on('pointerover', handlers.pointerover);
+            menuItem.on('pointerout', handlers.pointerout);
+            menuItem.on('pointerdown', handlers.pointerdown);
 
+            this.menuItemEventHandlers.set(menuItem, handlers);
             this.menuItems.push(menuItem);
         });
     }
@@ -171,6 +181,9 @@ export class MainMenu extends BaseScene
 
         // Stop animated dots (existing cleanup logic)
         this.stopAnimatedDots();
+
+        // Clean up menu item event listeners
+        this.cleanupMenuItemListeners();
 
         // Clean up menu items
         this.menuItems.forEach(item => {
@@ -189,6 +202,39 @@ export class MainMenu extends BaseScene
         super.shutdown();
 
         console.log('MainMenu: Shutdown cleanup completed');
+    }
+
+    /**
+     * Clean up all menu item event listeners
+     * Call this during scene shutdown to prevent memory leaks
+     */
+    private cleanupMenuItemListeners(): void {
+        if (!this.menuItemEventHandlers || this.menuItemEventHandlers.size === 0) {
+            console.log('[MainMenu] No menu item event listeners to clean up');
+            return;
+        }
+
+        console.log(`[MainMenu] Cleaning up ${this.menuItemEventHandlers.size} menu item event listeners`);
+
+        // Remove all event listeners that we added
+        this.menuItemEventHandlers.forEach((handlers, menuItem) => {
+            if (menuItem && handlers) {
+                if (handlers.pointerover) {
+                    menuItem.off('pointerover', handlers.pointerover);
+                }
+                if (handlers.pointerout) {
+                    menuItem.off('pointerout', handlers.pointerout);
+                }
+                if (handlers.pointerdown) {
+                    menuItem.off('pointerdown', handlers.pointerdown);
+                }
+            }
+        });
+
+        this.menuItemEventHandlers.clear();
+
+        // Note: We don't destroy menu items here - that's handled by the forEach loop above
+        // We just remove our event listeners to prevent memory leaks and ghost interactions
     }
 
     stopAnimatedDots()
