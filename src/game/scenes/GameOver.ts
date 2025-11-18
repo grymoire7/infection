@@ -14,6 +14,11 @@ export class GameOver extends BaseScene
     nextLevelButton: GameObjects.Text;
 
     private levelSetManager: LevelSetManager;
+    private buttonEventHandlers: Map<GameObjects.Text, {
+        pointerdown?: () => void,
+        pointerover?: () => void,
+        pointerout?: () => void
+    }> = new Map();
 
     constructor ()
     {
@@ -112,17 +117,24 @@ export class GameOver extends BaseScene
         }).setOrigin(0.5);
 
         this.restartButton.setInteractive();
-        this.restartButton.on('pointerdown', () => {
-            this.scene.start('Game');
-        });
 
-        this.restartButton.on('pointerover', () => {
-            this.restartButton.setBackgroundColor('#555555');
-        });
+        const restartHandlers = {
+            pointerdown: () => {
+                this.scene.start('Game');
+            },
+            pointerover: () => {
+                this.restartButton.setBackgroundColor('#555555');
+            },
+            pointerout: () => {
+                this.restartButton.setBackgroundColor('#333333');
+            }
+        };
 
-        this.restartButton.on('pointerout', () => {
-            this.restartButton.setBackgroundColor('#333333');
-        });
+        this.restartButton.on('pointerdown', restartHandlers.pointerdown);
+        this.restartButton.on('pointerover', restartHandlers.pointerover);
+        this.restartButton.on('pointerout', restartHandlers.pointerout);
+
+        this.buttonEventHandlers.set(this.restartButton, restartHandlers);
 
         // Main Menu button
         buttonY += centerY * 0.15;
@@ -135,17 +147,24 @@ export class GameOver extends BaseScene
         }).setOrigin(0.5);
 
         this.mainMenuButton.setInteractive();
-        this.mainMenuButton.on('pointerdown', () => {
-            this.scene.start('MainMenu');
-        });
 
-        this.mainMenuButton.on('pointerover', () => {
-            this.mainMenuButton.setBackgroundColor('#888888');
-        });
+        const mainMenuHandlers = {
+            pointerdown: () => {
+                this.scene.start('MainMenu');
+            },
+            pointerover: () => {
+                this.mainMenuButton.setBackgroundColor('#888888');
+            },
+            pointerout: () => {
+                this.mainMenuButton.setBackgroundColor('#666666');
+            }
+        };
 
-        this.mainMenuButton.on('pointerout', () => {
-            this.mainMenuButton.setBackgroundColor('#666666');
-        });
+        this.mainMenuButton.on('pointerdown', mainMenuHandlers.pointerdown);
+        this.mainMenuButton.on('pointerover', mainMenuHandlers.pointerover);
+        this.mainMenuButton.on('pointerout', mainMenuHandlers.pointerout);
+
+        this.buttonEventHandlers.set(this.mainMenuButton, mainMenuHandlers);
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -157,6 +176,9 @@ export class GameOver extends BaseScene
 
     public shutdown(): void {
         console.log('GameOver: Starting shutdown cleanup');
+
+        // Clean up button event listeners
+        this.cleanupButtonListeners();
 
         // Clean up display objects
         this.safeDestroy(this.background);
@@ -170,5 +192,38 @@ export class GameOver extends BaseScene
         super.shutdown();
 
         console.log('GameOver: Shutdown cleanup completed');
+    }
+
+    /**
+     * Clean up all button event listeners
+     * Call this during scene shutdown to prevent memory leaks
+     */
+    private cleanupButtonListeners(): void {
+        if (!this.buttonEventHandlers || this.buttonEventHandlers.size === 0) {
+            console.log('[GameOver] No button event listeners to clean up');
+            return;
+        }
+
+        console.log(`[GameOver] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
+
+        // Remove all event listeners that we added
+        this.buttonEventHandlers.forEach((handlers, button) => {
+            if (button && handlers) {
+                if (handlers.pointerdown) {
+                    button.off('pointerdown', handlers.pointerdown);
+                }
+                if (handlers.pointerover) {
+                    button.off('pointerover', handlers.pointerover);
+                }
+                if (handlers.pointerout) {
+                    button.off('pointerout', handlers.pointerout);
+                }
+            }
+        });
+
+        this.buttonEventHandlers.clear();
+
+        // Note: We don't destroy buttons here - that's handled by safeDestroy() calls
+        // We just remove our event listeners to prevent memory leaks and ghost interactions
     }
 }
