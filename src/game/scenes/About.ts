@@ -9,6 +9,11 @@ export class About extends BaseScene
     backButton: GameObjects.Text;
     htmlElement: HTMLDivElement | null = null;
     private resizeHandler: (() => void) | null = null;
+    private buttonEventHandlers: Map<GameObjects.Text, {
+        pointerdown?: () => void,
+        pointerover?: () => void,
+        pointerout?: () => void
+    }> = new Map();
 
     constructor ()
     {
@@ -44,17 +49,24 @@ export class About extends BaseScene
         }).setOrigin(0, 0.5);
 
         this.backButton.setInteractive();
-        this.backButton.on('pointerdown', () => {
-            this.scene.start('MainMenu');
-        });
 
-        this.backButton.on('pointerover', () => {
-            this.backButton.setBackgroundColor('#888888');
-        });
+        const backHandlers = {
+            pointerdown: () => {
+                this.scene.start('MainMenu');
+            },
+            pointerover: () => {
+                this.backButton.setBackgroundColor('#888888');
+            },
+            pointerout: () => {
+                this.backButton.setBackgroundColor('#666666');
+            }
+        };
 
-        this.backButton.on('pointerout', () => {
-            this.backButton.setBackgroundColor('#666666');
-        });
+        this.backButton.on('pointerdown', backHandlers.pointerdown);
+        this.backButton.on('pointerover', backHandlers.pointerover);
+        this.backButton.on('pointerout', backHandlers.pointerout);
+
+        this.buttonEventHandlers.set(this.backButton, backHandlers);
 
         this.createScrollableContent();
 
@@ -159,6 +171,9 @@ export class About extends BaseScene
     public shutdown(): void {
         console.log('About: Starting shutdown cleanup');
 
+        // Clean up button event listeners
+        this.cleanupButtonListeners();
+
         // Clean up display objects
         this.safeDestroy(this.background);
         this.safeDestroy(this.title);
@@ -179,5 +194,38 @@ export class About extends BaseScene
         super.shutdown();
 
         console.log('About: Shutdown cleanup completed');
+    }
+
+    /**
+     * Clean up all button event listeners
+     * Call this during scene shutdown to prevent memory leaks
+     */
+    private cleanupButtonListeners(): void {
+        if (!this.buttonEventHandlers || this.buttonEventHandlers.size === 0) {
+            console.log('[About] No button event listeners to clean up');
+            return;
+        }
+
+        console.log(`[About] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
+
+        // Remove all event listeners that we added
+        this.buttonEventHandlers.forEach((handlers, button) => {
+            if (button && handlers) {
+                if (handlers.pointerdown) {
+                    button.off('pointerdown', handlers.pointerdown);
+                }
+                if (handlers.pointerover) {
+                    button.off('pointerover', handlers.pointerover);
+                }
+                if (handlers.pointerout) {
+                    button.off('pointerout', handlers.pointerout);
+                }
+            }
+        });
+
+        this.buttonEventHandlers.clear();
+
+        // Note: We don't destroy buttons here - that's handled by safeDestroy() calls
+        // We just remove our event listeners to prevent memory leaks and ghost interactions
     }
 }
