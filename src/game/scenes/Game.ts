@@ -771,6 +771,33 @@ export class Game extends BaseScene {
             this.currentPlayer = this.humanPlayer;
 
             console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty})`);
+
+            // After updating settings, restore the saved game if it exists
+            if (this.stateManager.hasSavedState()) {
+                console.log('[Game] Restoring saved game after settings change');
+                const savedState = this.stateManager.loadFromRegistry();
+                if (savedState) {
+                    // Restore level info and game properties
+                    this.currentLevel = savedState.currentLevel;
+                    this.setLevelProperties(this.currentLevel);
+                    this.currentPlayer = savedState.currentPlayer;
+
+                    // Create grid and restore board state
+                    this.createGrid();
+                    this.boardStateManager.setState(savedState.boardState);
+
+                    // Recreate visuals with the restored state
+                    this.recreateAllVisualDots();
+                    this.updateAllCellOwnership();
+                } else {
+                    console.warn('[Game] Failed to load saved state, starting new level');
+                    this.startNewLevel();
+                }
+            } else {
+                // No saved state, start a new level
+                console.log('[Game] No saved state after settings change, starting new level');
+                this.startNewLevel();
+            }
         }
     }
 
