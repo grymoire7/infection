@@ -1,3 +1,4 @@
+import { Logger } from './ErrorLogger';
 import { LevelSetDefinition } from './GameStateManager';
 import { Level } from './Level';
 import { LEVELS } from './LevelDefinitions';
@@ -28,7 +29,7 @@ export class LevelSet {
                 this.levels.push(level);
                 index++;
             } else {
-                console.warn(`Level definition not found for ID: ${entry.levelId}`);
+                Logger.warn(`Level definition not found for ID: ${entry.levelId}`);
             }
         }
 

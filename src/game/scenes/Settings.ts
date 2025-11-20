@@ -3,6 +3,7 @@ import { EventBus } from '../EventBus';
 import { LEVEL_SETS } from '../LevelDefinitions';
 import { SettingsManager, GameSettings } from '../SettingsManager';
 import { BaseScene } from '../BaseScene';
+import { Logger } from '../ErrorLogger';
 
 export class Settings extends BaseScene
 {
@@ -182,7 +183,7 @@ export class Settings extends BaseScene
         this.settingsManager.updateSetting('soundEffectsEnabled', this.currentSettings.soundEffectsEnabled);
         this.updateSoundToggleButton();
         
-        console.log(`Sound effects ${this.currentSettings.soundEffectsEnabled ? 'enabled' : 'disabled'}`);
+        Logger.debug(`Sound effects ${this.currentSettings.soundEffectsEnabled ? 'enabled' : 'disabled'}`);
     }
 
     updateSoundToggleButton()
@@ -198,7 +199,7 @@ export class Settings extends BaseScene
         this.settingsManager.updateSetting('playerColor', this.currentSettings.playerColor);
         this.updatePlayerSprite();
         
-        console.log(`Player color set to: ${this.currentSettings.playerColor}`);
+        Logger.debug(`Player color set to: ${this.currentSettings.playerColor}`);
     }
 
     updatePlayerSprite()
@@ -222,7 +223,7 @@ export class Settings extends BaseScene
         this.settingsManager.updateSetting('levelSetId', this.currentSettings.levelSetId);
         this.updateLevelSetButton();
         
-        console.log(`Level Set changed to: ${this.currentSettings.levelSetId}`);
+        Logger.debug(`Level Set changed to: ${this.currentSettings.levelSetId}`);
     }
 
     updateLevelSetButton()
@@ -237,7 +238,7 @@ export class Settings extends BaseScene
      * Override shutdown to handle scene-specific cleanup
      */
     public shutdown(): void {
-        console.log('Settings: Starting shutdown cleanup');
+        Logger.debug('Settings: Starting shutdown cleanup');
 
         // Clean up button event listeners
         this.cleanupButtonListeners();
@@ -258,7 +259,7 @@ export class Settings extends BaseScene
         // Call parent shutdown for base cleanup
         super.shutdown();
 
-        console.log('Settings: Shutdown cleanup completed');
+        Logger.debug('Settings: Shutdown cleanup completed');
     }
 
     /**
@@ -267,11 +268,11 @@ export class Settings extends BaseScene
      */
     private cleanupButtonListeners(): void {
         if (!this.buttonEventHandlers || this.buttonEventHandlers.size === 0) {
-            console.log('[Settings] No button event listeners to clean up');
+            Logger.debug('[Settings] No button event listeners to clean up');
             return;
         }
 
-        console.log(`[Settings] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
+        Logger.debug(`[Settings] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
 
         // Remove all event listeners that we added
         this.buttonEventHandlers.forEach((handlers, button) => {

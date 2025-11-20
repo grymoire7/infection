@@ -53,6 +53,14 @@ describe('PerformanceMonitor', () => {
     afterEach(() => {
         vi.unstubAllGlobals();
         vi.useRealTimers();
+
+        // Clean up singleton state
+        if (monitor) {
+            monitor.stopMonitoring();
+        }
+
+        // Clear the singleton instance
+        (PerformanceMonitor as any).instance = null;
     });
 
     describe('basic functionality', () => {
@@ -72,13 +80,14 @@ describe('PerformanceMonitor', () => {
         });
 
         it('should ignore snapshots when not monitoring', () => {
-            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            // Just verify it doesn't throw an error
+            expect(() => {
+                monitor.takeSnapshot('should-be-ignored');
+            }).not.toThrow();
 
-            monitor.takeSnapshot('should-be-ignored');
-
-            expect(consoleSpy).toHaveBeenCalledWith('PerformanceMonitor: Not currently monitoring');
-
-            consoleSpy.mockRestore();
+            // Verify no measurements were taken
+            const report = monitor.stopMonitoring();
+            expect(report.measurements).toHaveLength(0);
         });
     });
 

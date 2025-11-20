@@ -1,6 +1,6 @@
 import { Scene } from 'phaser';
 import { EventBusManager } from './EventBus';
-import { errorLogger } from './ErrorLogger';
+import { errorLogger, Logger } from './ErrorLogger';
 
 /**
  * Base scene class that provides common cleanup and shutdown functionality
@@ -50,7 +50,7 @@ export abstract class BaseScene extends Scene {
      * Override this method to add scene-specific cleanup
      */
     public shutdown(): void {
-        console.log(`${this.constructor.name}: Starting shutdown cleanup`);
+        Logger.debug(`${this.constructor.name}: Starting shutdown cleanup`);
 
         // Stop all timers
         this.timers.forEach(timer => {
@@ -79,7 +79,7 @@ export abstract class BaseScene extends Scene {
             try {
                 task();
             } catch (error) {
-                console.error(`${this.constructor.name}: Error during cleanup task`, error);
+                Logger.error(`${this.constructor.name}: Error during cleanup task`, error);
             }
         });
         this.cleanupTasks = [];
@@ -93,7 +93,7 @@ export abstract class BaseScene extends Scene {
         // Clean up display objects
         this.children.removeAll(true);
 
-        console.log(`${this.constructor.name}: Shutdown cleanup completed`);
+        Logger.debug(`${this.constructor.name}: Shutdown cleanup completed`);
     }
 
     /**
@@ -128,20 +128,20 @@ export abstract class BaseScene extends Scene {
     protected safeSceneTransition(targetScene: string, data?: any): void {
         try {
             const currentSceneName = this.constructor.name;
-            console.log(`[BaseScene] Transitioning from ${currentSceneName} to ${targetScene}`);
+            Logger.debug(`[BaseScene] Transitioning from ${currentSceneName} to ${targetScene}`);
 
             this.scene.start(targetScene, data);
         } catch (error) {
             errorLogger.logSceneError(error, this.constructor.name, targetScene);
-            console.error(`[BaseScene] Scene transition failed:`, error);
+            Logger.error(`[BaseScene] Scene transition failed:`, error);
 
             // Fallback: try to go to MainMenu
             if (targetScene !== 'MainMenu') {
                 try {
-                    console.log('[BaseScene] Falling back to MainMenu');
+                    Logger.debug('[BaseScene] Falling back to MainMenu');
                     this.scene.start('MainMenu');
                 } catch (fallbackError) {
-                    console.error('[BaseScene] Fallback to MainMenu also failed:', fallbackError);
+                    Logger.error('[BaseScene] Fallback to MainMenu also failed:', fallbackError);
                     errorLogger.logSceneError(fallbackError, this.constructor.name, 'MainMenu');
                 }
             }
@@ -161,7 +161,7 @@ export abstract class BaseScene extends Scene {
                     scene: this.constructor.name,
                     action: `scene-${methodName}`
                 });
-                console.error(`[${this.constructor.name}] Error in ${methodName}:`, error);
+                Logger.error(`[${this.constructor.name}] Error in ${methodName}:`, error);
 
                 // For critical scene methods, try to transition to safe state
                 if (['create', 'init'].includes(methodName)) {

@@ -1,3 +1,5 @@
+import { Logger } from './ErrorLogger';
+
 /**
  * Minimal state debugging enhancement that builds on Phaser's built-in Data Manager
  *
@@ -70,14 +72,14 @@ export class SimpleStateManager {
         const changes = this.getRecentChanges(key);
 
         if (changes.length === 0) {
-            console.log(`No recent changes${key ? ` for key "${key}"` : ''}`);
+            Logger.info(`No recent changes${key ? ` for key "${key}"` : ''}`);
             return;
         }
 
-        console.log(`Recent state changes${key ? ` for "${key}"` : ''}:`);
+        Logger.info(`Recent state changes${key ? ` for "${key}"` : ''}:`);
         changes.forEach(change => {
             const time = new Date(change.timestamp).toLocaleTimeString();
-            console.log(`  ${time}: ${change.key} = ${change.newValue} (from ${change.oldValue}) [${change.source}]`);
+            Logger.info(`  ${time}: ${change.key} = ${change.newValue} (from ${change.oldValue}) [${change.source}]`);
         });
     }
 

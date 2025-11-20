@@ -1,3 +1,4 @@
+import { Logger } from './ErrorLogger';
 import { Level } from './Level';
 
 export interface LevelDefinition {
@@ -54,7 +55,7 @@ export class GameStateManager {
         if (process.env.NODE_ENV === 'development') {
             this.gameRegistry.events.on('changedata', (parent, key, value) => {
                 if (key === GameStateManager.REGISTRY_KEY) {
-                    console.log(`[GameStateManager] Game state changed`);
+                    Logger.debug(`[GameStateManager] Game state changed`);
                     this.validateGameState(value);
                 }
             });
@@ -335,7 +336,7 @@ export class GameStateManager {
 
         // Log validation errors (only for truly invalid states)
         if (errors.length > 0) {
-            console.error('[GameStateManager] State validation failed:', errors);
+            Logger.error('[GameStateManager] State validation failed:', errors);
             throw new Error(`Invalid game state: ${errors.join(', ')}`);
         }
     }

@@ -8,6 +8,7 @@ import { MainMenu } from './scenes/MainMenu';
 import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
 import { Settings } from './scenes/Settings';
+import { Logger } from './ErrorLogger';
 import { Splash } from './scenes/Splash';
 import { errorLogger } from './ErrorLogger';
 
@@ -51,7 +52,7 @@ const StartGame = (parent: string) => {
 
         // Set up global error handling for the game instance
         game.events.on('destroy', () => {
-            console.log('[Game] Game instance destroyed');
+            Logger.debug('[Game] Game instance destroyed');
         });
 
         // Store game instance globally for error recovery
@@ -65,7 +66,7 @@ const StartGame = (parent: string) => {
             component: 'StartGame',
             action: 'game-initialization'
         });
-        console.error('[StartGame] Failed to initialize game:', error);
+        Logger.error('[StartGame] Failed to initialize game:', error);
         throw error;
     }
 }

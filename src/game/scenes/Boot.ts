@@ -1,4 +1,5 @@
 import { BaseScene } from '../BaseScene';
+import { Logger } from '../ErrorLogger';
 
 export class Boot extends BaseScene
 {
@@ -21,11 +22,11 @@ export class Boot extends BaseScene
     }
 
     public shutdown(): void {
-        console.log('Boot: Starting shutdown cleanup');
+        Logger.debug('Boot: Starting shutdown cleanup');
 
         // Call parent shutdown for base cleanup
         super.shutdown();
 
-        console.log('Boot: Shutdown cleanup completed');
+        Logger.debug('Boot: Shutdown cleanup completed');
     }
 }

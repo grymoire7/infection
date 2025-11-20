@@ -1,4 +1,5 @@
 import { BaseScene } from '../BaseScene';
+import { Logger } from '../ErrorLogger';
 
 export class Preloader extends BaseScene
 {
@@ -84,7 +85,7 @@ export class Preloader extends BaseScene
     }
 
     public shutdown(): void {
-        console.log('Preloader: Starting shutdown cleanup');
+        Logger.debug('Preloader: Starting shutdown cleanup');
 
         // Clean up display objects
         this.safeDestroy(this.background);
@@ -97,6 +98,6 @@ export class Preloader extends BaseScene
         // Call parent shutdown for base cleanup
         super.shutdown();
 
-        console.log('Preloader: Shutdown cleanup completed');
+        Logger.debug('Preloader: Shutdown cleanup completed');
     }
 }

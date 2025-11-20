@@ -1,3 +1,5 @@
+import { Logger } from './ErrorLogger';
+
 export class GameUIManager {
     private scene: Phaser.Scene;
     private levelInfoText: Phaser.GameObjects.Text;
@@ -269,11 +271,11 @@ export class GameUIManager {
      */
     cleanup(): void {
         if (!this.buttonEventHandlers || this.buttonEventHandlers.size === 0) {
-            console.log('[GameUIManager] No event listeners to clean up');
+            Logger.debug('[GameUIManager] No event listeners to clean up');
             return;
         }
 
-        console.log(`[GameUIManager] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
+        Logger.debug(`[GameUIManager] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
 
         // Remove all event listeners that we added
         this.buttonEventHandlers.forEach((handlers, button) => {

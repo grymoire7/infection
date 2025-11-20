@@ -1,3 +1,5 @@
+import { Logger } from './ErrorLogger';
+
 /**
  * Performance Monitor for tracking memory usage and performance metrics
  * Used to validate memory management improvements and detect performance regressions
@@ -22,7 +24,7 @@ export class PerformanceMonitor {
     public startMonitoring(): void {
         this.isMonitoring = true;
         this.measurements = [];
-        console.log('PerformanceMonitor: Started monitoring');
+        Logger.info('PerformanceMonitor: Started monitoring');
     }
 
     /**
@@ -31,7 +33,7 @@ export class PerformanceMonitor {
     public stopMonitoring(): PerformanceReport {
         this.isMonitoring = false;
         const report = this.generateReport();
-        console.log('PerformanceMonitor: Stopped monitoring');
+        Logger.info('PerformanceMonitor: Stopped monitoring');
         return report;
     }
 
@@ -40,7 +42,7 @@ export class PerformanceMonitor {
      */
     public takeSnapshot(label: string): void {
         if (!this.isMonitoring) {
-            console.warn('PerformanceMonitor: Not currently monitoring');
+            Logger.warn('PerformanceMonitor: Not currently monitoring');
             return;
         }
 
@@ -54,7 +56,7 @@ export class PerformanceMonitor {
         };
 
         this.measurements.push(measurement);
-        console.log(`PerformanceMonitor: Snapshot "${label}" - Memory: ${measurement.memory.usedJSHeapSize} bytes`);
+        Logger.info(`PerformanceMonitor: Snapshot "${label}" - Memory: ${measurement.memory.usedJSHeapSize} bytes`);
     }
 
     /**
@@ -74,7 +76,7 @@ export class PerformanceMonitor {
             }
         } catch (error) {
             // Performance API not available or has an error
-            console.warn('PerformanceMonitor: Unable to access memory usage', error);
+            Logger.warn('PerformanceMonitor: Unable to access memory usage', error);
         }
 
         // Fallback for browsers that don't support performance.memory
@@ -193,7 +195,7 @@ export class PerformanceMonitor {
      * This method simulates common scenarios and checks for memory leaks
      */
     public async validateMemoryManagement(): Promise<ValidationResult> {
-        console.log('PerformanceMonitor: Starting memory management validation...');
+        Logger.info('PerformanceMonitor: Starting memory management validation...');
 
         const results: ValidationTest[] = [];
 
@@ -208,8 +210,8 @@ export class PerformanceMonitor {
 
         const allPassed = results.every(result => result.passed);
 
-        console.log('PerformanceMonitor: Memory management validation completed');
-        console.log(`Results: ${results.filter(r => r.passed).length}/${results.length} tests passed`);
+        Logger.info('PerformanceMonitor: Memory management validation completed');
+        Logger.info(`Results: ${results.filter(r => r.passed).length}/${results.length} tests passed`);
 
         return {
             allTestsPassed: allPassed,

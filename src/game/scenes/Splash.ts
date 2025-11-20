@@ -1,6 +1,7 @@
 import { GameObjects } from 'phaser';
 import { EventBus } from '../EventBus';
 import { BaseScene } from '../BaseScene';
+import { Logger } from '../ErrorLogger';
 
 export class Splash extends BaseScene
 {
@@ -17,6 +18,8 @@ export class Splash extends BaseScene
 
     create ()
     {
+        Logger.debug('[Splash] ===== SCENE CREATE START =====');
+        Logger.info('[Splash] Creating splash screen with animations');
         const centerX = this.cameras.main.width / 2;
         const centerY = this.cameras.main.height / 2;
         
@@ -39,6 +42,7 @@ export class Splash extends BaseScene
 
         this.createAnimatedDots();
 
+        Logger.debug('[Splash] ===== SCENE CREATE END =====');
         EventBus.emit('current-scene-ready', this);
     }
     
@@ -129,7 +133,7 @@ export class Splash extends BaseScene
     }
 
     public shutdown(): void {
-        console.log('Splash: Starting shutdown cleanup');
+        Logger.debug('Splash: Starting shutdown cleanup');
 
         // Clean up display objects
         this.safeDestroy(this.background);
@@ -142,6 +146,6 @@ export class Splash extends BaseScene
         // Call parent shutdown for base cleanup
         super.shutdown();
 
-        console.log('Splash: Shutdown cleanup completed');
+        Logger.debug('Splash: Shutdown cleanup completed');
     }
 }

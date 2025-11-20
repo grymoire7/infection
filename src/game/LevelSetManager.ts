@@ -1,3 +1,4 @@
+import { Logger } from './ErrorLogger';
 import { Level } from './Level';
 import { LevelSet } from './LevelSet';
 import { LEVEL_SETS } from './LevelDefinitions';
@@ -57,7 +58,7 @@ export class LevelSetManager {
             return nextLevel;
         } else {
             // Fallback to first level if no next level
-            console.warn('No next level available, returning first level of set');
+            Logger.warn('No next level available, returning first level of set');
             return this.getFirstLevelOfCurrentSet();
         }
     }
@@ -112,7 +113,7 @@ export class LevelSetManager {
             this.gameRegistry.set('currentLevelSet', currentLevelSet);
         }
 
-        console.log('LevelSetManager.getCurrentLevelSet:', currentLevelSet);
+        Logger.debug('LevelSetManager.getCurrentLevelSet:', currentLevelSet);
         return currentLevelSet;
     }
 

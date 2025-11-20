@@ -20,6 +20,13 @@ describe('ErrorLogger', () => {
             value: localStorageMock,
             writable: true
         });
+
+        // Mock console methods to suppress output during tests
+        vi.spyOn(console, 'log').mockImplementation(() => {});
+        vi.spyOn(console, 'debug').mockImplementation(() => {});
+        vi.spyOn(console, 'info').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.spyOn(console, 'error').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -189,7 +196,9 @@ describe('ErrorLogger', () => {
 
     describe('console output', () => {
         it('should output critical errors with console.error', () => {
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            // Clear previous calls
+            console.error.mockClear();
+
             const error = new Error('Critical game error');
 
             errorLogger.logError(error, 'Critical', {
@@ -197,26 +206,24 @@ describe('ErrorLogger', () => {
                 action: 'game-initialization'
             });
 
-            expect(consoleSpy).toHaveBeenCalledWith(
+            expect(console.error).toHaveBeenCalledWith(
                 expect.stringContaining('[CRITICAL] Critical (PhaserGame:game-initialization)'),
                 error
             );
-
-            consoleSpy.mockRestore();
         });
 
         it('should output medium errors with console.warn', () => {
-            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            // Clear previous calls
+            console.warn.mockClear();
+
             const error = new Error('Network error');
 
             errorLogger.logError(error, 'Network issue');
 
-            expect(consoleSpy).toHaveBeenCalledWith(
+            expect(console.warn).toHaveBeenCalledWith(
                 expect.stringContaining('[MEDIUM] Network issue (Unknown:unknown)'),
                 error
             );
-
-            consoleSpy.mockRestore();
         });
     });
 

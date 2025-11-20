@@ -9,6 +9,7 @@ import { SettingsManager } from '../SettingsManager';
 import { VisualDotManager } from '../VisualDotManager';
 import { BoardStateManager } from '../BoardStateManager';
 import { BaseScene } from '../BaseScene';
+import { Logger } from '../ErrorLogger';
 
 type PlayerColor = 'red' | 'blue';
 
@@ -45,7 +46,7 @@ export class Game extends BaseScene {
     }
 
     create(): void {
-        console.log('[Game] ===== SCENE CREATE START =====');
+        Logger.debug('[Game] ===== SCENE CREATE START =====');
         this.initializeCore();
         this.initializeManagers();
         this.initializeUI();
@@ -53,7 +54,7 @@ export class Game extends BaseScene {
         this.loadGameStateOrLevel();
         this.updateUI();
 
-        console.log('[Game] ===== SCENE CREATE END =====');
+        Logger.debug('[Game] ===== SCENE CREATE END =====');
         EventBus.emit('current-scene-ready', this);
     }
 
@@ -95,7 +96,7 @@ export class Game extends BaseScene {
 
         // Priority 1: Handle settings changes (especially level set changes)
         if (settingsDirty) {
-            console.log('Settings changed, handling settings update');
+            Logger.debug('Settings changed, handling settings update');
             this.handleSettingsChange();
             return;
         }
@@ -103,14 +104,14 @@ export class Game extends BaseScene {
         const shouldLoadNextLevel = this.game.registry.get('loadNextLevel') === true;
 
         if (shouldLoadNextLevel) {
-            console.log('Loading next level after level completion');
+            Logger.debug('Loading next level after level completion');
             this.stateManager.clearSavedState(); // Clear old saved state
             this.startNewLevel(); // This will check and consume the loadNextLevel flag
         } else if (this.stateManager.hasSavedState()) {
-            console.log('Resuming saved game');
+            Logger.debug('Resuming saved game');
             this.resumeSavedGame();
         } else {
-            console.log('Starting new level');
+            Logger.debug('Starting new level');
             this.startNewLevel();
         }
     }
@@ -119,11 +120,11 @@ export class Game extends BaseScene {
      * Resume a saved game from registry
      */
     private resumeSavedGame(): void {
-        console.log('[Game] ===== RESUME SAVED GAME START =====');
+        Logger.debug('[Game] ===== RESUME SAVED GAME START =====');
         const savedState = this.stateManager.loadFromRegistry();
-        console.log('[Game] Loaded saved state:', savedState ? 'SUCCESS' : 'FAILED');
+        Logger.debug('[Game] Loaded saved state:', savedState ? 'SUCCESS' : 'FAILED');
         if (!savedState) {
-            console.warn('Failed to load saved state, starting new level');
+            Logger.warn('Failed to load saved state, starting new level');
             this.startNewLevel();
             return;
         }
@@ -131,15 +132,15 @@ export class Game extends BaseScene {
         // If boardState is empty, it means no moves were made yet
         // Load the saved level but initialize it fresh (don't restore empty board state)
         if (!savedState.boardState || savedState.boardState.length === 0) {
-            console.log('[Game] Saved state has empty board (no moves made yet), loading saved level fresh');
+            Logger.debug('[Game] Saved state has empty board (no moves made yet), loading saved level fresh');
             this.loadLevel(savedState.currentLevel);
             return;
         }
 
-        console.log('[Game] Restoring level info and board state...');
-        console.log('[Game] Saved boardState:', JSON.stringify(savedState.boardState, null, 2));
-        console.log('[Game] Saved currentPlayer:', savedState.currentPlayer);
-        console.log('[Game] Saved humanPlayer:', savedState.humanPlayer);
+        Logger.debug('[Game] Restoring level info and board state...');
+        Logger.debug('[Game] Saved boardState:', JSON.stringify(savedState.boardState, null, 2));
+        Logger.debug('[Game] Saved currentPlayer:', savedState.currentPlayer);
+        Logger.debug('[Game] Saved humanPlayer:', savedState.humanPlayer);
 
         // Restore level info and game properties
         this.currentLevel = savedState.currentLevel;
@@ -148,11 +149,11 @@ export class Game extends BaseScene {
         this.humanPlayer = savedState.humanPlayer;
         this.restoreAIFromSavedState(savedState);
 
-        console.log('[Game] Creating grid and visuals...');
+        Logger.debug('[Game] Creating grid and visuals...');
         // Create grid and visuals FIRST
         this.createGrid();
 
-        console.log('[Game] Restoring board state AFTER grid creation...');
+        Logger.debug('[Game] Restoring board state AFTER grid creation...');
         // THEN restore board state to avoid being reset by createGrid()
         this.boardStateManager.setState(savedState.boardState);
 
@@ -160,7 +161,7 @@ export class Game extends BaseScene {
         this.recreateAllVisualDots();
         this.updateAllCellOwnership();
 
-        console.log('[Game] ===== RESUME SAVED GAME END =====');
+        Logger.debug('[Game] ===== RESUME SAVED GAME END =====');
         // Check if game was already over when saved
         this.handleGameOverIfNeeded(savedState);
     }
@@ -177,7 +178,7 @@ export class Game extends BaseScene {
      * Load a specific level and set up the game board
      */
     private loadLevel(level: Level): void {
-        console.log(`Loading level: ${level.getName()}`);
+        Logger.debug(`Loading level: ${level.getName()}`);
         this.currentLevel = level;
 
         this.setLevelProperties(level);
@@ -194,7 +195,7 @@ export class Game extends BaseScene {
         this.blockedCells = level.getBlockedCells();
         
         if (level.getGridSize() > Game.MAX_GRID_SIZE) {
-            console.warn(`Level ${level.getId()} grid size ${level.getGridSize()} exceeds maximum of ${Game.MAX_GRID_SIZE}, clamped`);
+            Logger.warn(`Level ${level.getId()} grid size ${level.getGridSize()} exceeds maximum of ${Game.MAX_GRID_SIZE}, clamped`);
         }
     }
 
@@ -298,9 +299,9 @@ export class Game extends BaseScene {
     }
 
     private getLevelInfoForUI(): { setName: string; levelName: string } {
-        console.log('Updating level info UI');
+        Logger.debug('Updating level info UI');
         const currentLevelSet = this.levelSetManager.getCurrentLevelSet();
-        console.log('Current level set:', currentLevelSet);
+        Logger.debug('Current level set:', currentLevelSet);
 
         const setName = currentLevelSet?.getName() || 'Default Levels';
         
@@ -344,9 +345,9 @@ export class Game extends BaseScene {
         if (!isValid) {
             const cellState = this.boardStateManager.getCellState(row, col);
             if (cellState.isBlocked) {
-                console.log(`Cannot place dot on blocked cell at ${row},${col}`);
+                Logger.debug(`Cannot place dot on blocked cell at ${row},${col}`);
             } else {
-                console.log(`Cell at row ${row}, col ${col} is owned by the other player`);
+                Logger.debug(`Cell at row ${row}, col ${col} is owned by the other player`);
             }
         }
 
@@ -365,7 +366,7 @@ export class Game extends BaseScene {
         this.playPlacementSound();
 
         const cellState = this.boardStateManager.getCellState(row, col);
-        console.log(`${this.currentPlayer} placed dot at row ${row}, col ${col} (${cellState.dotCount}/${cellState.capacity})`);
+        Logger.debug(`${this.currentPlayer} placed dot at row ${row}, col ${col} (${cellState.dotCount}/${cellState.capacity})`);
     }
 
     private updateVisuals(row: number, col: number): void {
@@ -400,7 +401,7 @@ export class Game extends BaseScene {
         const winner = this.boardStateManager.checkWinCondition();
         if (winner) {
             const winnerName = winner.charAt(0).toUpperCase() + winner.slice(1);
-            console.log(`Game Over! ${winnerName} wins!`);
+            Logger.debug(`Game Over! ${winnerName} wins!`);
             this.handleGameOver(winnerName);
             return;
         }
@@ -466,7 +467,7 @@ export class Game extends BaseScene {
                 const winner = this.boardStateManager.checkWinCondition();
                 if (winner) {
                     const winnerName = winner.charAt(0).toUpperCase() + winner.slice(1);
-                    console.log(`Game Over during chain reaction! ${winnerName} wins!`);
+                    Logger.debug(`Game Over during chain reaction! ${winnerName} wins!`);
                     this.handleGameOver(winnerName);
                     return true; // Game ended during explosions
                 }
@@ -490,7 +491,7 @@ export class Game extends BaseScene {
 
     explodeCell(row: number, col: number): void {
         const cellState = this.boardStateManager.getCellState(row, col);
-        console.log(`Cell at ${row},${col} exploding! (${cellState.dotCount} > ${cellState.capacity})`);
+        Logger.debug(`Cell at ${row},${col} exploding! (${cellState.dotCount} > ${cellState.capacity})`);
 
         // Explode through board state manager and get affected cells
         const affectedCells = this.boardStateManager.explodeCell(row, col);
@@ -504,7 +505,7 @@ export class Game extends BaseScene {
             this.updateCellOwnership(cell.row, cell.col);
 
             const adjacentCellState = this.boardStateManager.getCellState(cell.row, cell.col);
-            console.log(`  -> Added dot to ${cell.row},${cell.col} (now ${adjacentCellState.dotCount}/${adjacentCellState.capacity})`);
+            Logger.debug(`  -> Added dot to ${cell.row},${cell.col} (now ${adjacentCellState.dotCount}/${adjacentCellState.capacity})`);
         }
     }
 
@@ -531,7 +532,7 @@ export class Game extends BaseScene {
         this.computerPlayer = new ComputerPlayer('easy', computerColor);
         this.currentPlayer = this.humanPlayer;
 
-        console.log(`Game initialized: Human is ${this.humanPlayer}, Computer is ${computerColor}`);
+        Logger.debug(`Game initialized: Human is ${this.humanPlayer}, Computer is ${computerColor}`);
     }
 
     setAIForLevel(level: Level): void {
@@ -540,7 +541,7 @@ export class Game extends BaseScene {
         const aiDifficulty = level.getAIDifficulty();
         this.computerPlayer.setDifficulty(aiDifficulty);
 
-        console.log(`AI set for level: Computer AI is ${aiDifficulty}`);
+        Logger.debug(`AI set for level: Computer AI is ${aiDifficulty}`);
     }
 
     undoLastMove(): void {
@@ -551,7 +552,7 @@ export class Game extends BaseScene {
         this.updateVisualsAfterUndo();
         this.saveGameState();
 
-        console.log(`Undid move, back to ${this.currentPlayer} player's turn`);
+        Logger.debug(`Undid move, back to ${this.currentPlayer} player's turn`);
     }
 
     private restoreGameState(lastState: any): void {
@@ -578,17 +579,17 @@ export class Game extends BaseScene {
     }
 
     recreateAllVisualDots(): void {
-        console.log('[Game] ===== RECREATE ALL VISUAL DOTS START =====');
+        Logger.debug('[Game] ===== RECREATE ALL VISUAL DOTS START =====');
         const boardState = this.boardStateManager.getState();
-        console.log('[Game] Board state for recreation:', JSON.stringify(boardState, null, 2));
-        console.log('[Game] VisualDotManager exists:', !!this.visualDotManager);
-        console.log('[Game] GridManager exists:', !!this.gridManager);
+        Logger.debug('[Game] Board state for recreation:', JSON.stringify(boardState, null, 2));
+        Logger.debug('[Game] VisualDotManager exists:', !!this.visualDotManager);
+        Logger.debug('[Game] GridManager exists:', !!this.gridManager);
 
         this.visualDotManager.recreateAll(
             boardState,
             (row, col) => this.gridManager.getCellCenter(row, col)
         );
-        console.log('[Game] ===== RECREATE ALL VISUAL DOTS END =====');
+        Logger.debug('[Game] ===== RECREATE ALL VISUAL DOTS END =====');
     }
 
     updateAllCellOwnership(): void {
@@ -675,16 +676,16 @@ export class Game extends BaseScene {
 
         try {
             const move = this.computerPlayer!.findMove(this.boardStateManager.getState(), this.gridSize);
-            console.log(`Computer (${this.computerPlayer!.getColor()}) choosing move: ${move.row}, ${move.col}`);
+            Logger.debug(`Computer (${this.computerPlayer!.getColor()}) choosing move: ${move.row}, ${move.col}`);
 
             if (this.boardStateManager.isValidMove(move.row, move.col, this.currentPlayer)) {
                 await this.placeDot(move.row, move.col, true);
             } else {
-                console.error('Computer attempted invalid move, trying random valid move instead');
+                Logger.error('Computer attempted invalid move, trying random valid move instead');
                 await this.makeRandomValidMove();
             }
         } catch (error) {
-            console.error('Computer player error:', error);
+            Logger.error('Computer player error:', error);
         }
     }
 
@@ -698,7 +699,7 @@ export class Game extends BaseScene {
             const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
             await this.placeDot(randomMove.row, randomMove.col, true);
         } else {
-            console.error('No valid moves available for computer');
+            Logger.error('No valid moves available for computer');
         }
     }
 
@@ -711,27 +712,27 @@ export class Game extends BaseScene {
     }
 
     wake(): void {
-        console.log('[Game] ===== SCENE WAKE START =====');
-        console.log('[Game] Waking up - checking registry state...');
+        Logger.debug('[Game] ===== SCENE WAKE START =====');
+        Logger.debug('[Game] Waking up - checking registry state...');
 
         const settingsDirty = this.game.registry.get('settingsDirty');
-        console.log('[Game] Settings dirty:', settingsDirty);
+        Logger.debug('[Game] Settings dirty:', settingsDirty);
 
         const hasSavedState = this.stateManager.hasSavedState();
-        console.log('[Game] Has saved state:', hasSavedState);
+        Logger.debug('[Game] Has saved state:', hasSavedState);
 
         if (settingsDirty) {
-            console.log('[Game] Handling settings change during wake');
+            Logger.debug('[Game] Handling settings change during wake');
             this.handleSettingsChange();
         } else if (hasSavedState) {
-            console.log('[Game] Waking with saved state - resuming game');
+            Logger.debug('[Game] Waking with saved state - resuming game');
             this.resumeSavedGame();
         } else {
-            console.log('[Game] Waking without saved state - starting new level');
+            Logger.debug('[Game] Waking without saved state - starting new level');
             this.startNewLevel();
         }
 
-        console.log('[Game] ===== SCENE WAKE END =====');
+        Logger.debug('[Game] ===== SCENE WAKE END =====');
         EventBus.emit('current-scene-ready', this);
     }
 
@@ -754,7 +755,7 @@ export class Game extends BaseScene {
         const levelSetChanged = this.levelSetManager.hasLevelSetChanged();
 
         if (levelSetChanged) {
-            console.log('Level set changed, loading new level set and starting from first level');
+            Logger.debug('Level set changed, loading new level set and starting from first level');
             // Clear saved state since we're switching to a different level set
             this.stateManager.clearSavedState();
 
@@ -778,16 +779,16 @@ export class Game extends BaseScene {
             this.computerPlayer = new ComputerPlayer(aiDifficulty, computerColor);
             this.currentPlayer = this.humanPlayer;
 
-            console.log(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty})`);
+            Logger.debug(`Settings reloaded: Human is ${this.humanPlayer}, Computer is ${computerColor} (${aiDifficulty})`);
 
             // After updating settings, restore the saved game if it exists
             if (this.stateManager.hasSavedState()) {
-                console.log('[Game] Restoring saved game after settings change');
+                Logger.debug('[Game] Restoring saved game after settings change');
                 const savedState = this.stateManager.loadFromRegistry();
                 if (savedState) {
                     // If boardState is empty (no moves made yet), just reload the level fresh
                     if (!savedState.boardState || savedState.boardState.length === 0) {
-                        console.log('[Game] Saved state has empty board after settings change, loading level fresh');
+                        Logger.debug('[Game] Saved state has empty board after settings change, loading level fresh');
                         this.loadLevel(savedState.currentLevel);
                         return;
                     }
@@ -805,12 +806,12 @@ export class Game extends BaseScene {
                     this.recreateAllVisualDots();
                     this.updateAllCellOwnership();
                 } else {
-                    console.warn('[Game] Failed to load saved state, starting new level');
+                    Logger.warn('[Game] Failed to load saved state, starting new level');
                     this.startNewLevel();
                 }
             } else {
                 // No saved state, start a new level
-                console.log('[Game] No saved state after settings change, starting new level');
+                Logger.debug('[Game] No saved state after settings change, starting new level');
                 this.startNewLevel();
             }
         }
@@ -820,7 +821,7 @@ export class Game extends BaseScene {
      * Override shutdown to handle complex scene-specific cleanup
      */
     public shutdown(): void {
-        console.log('Game: Starting shutdown cleanup');
+        Logger.debug('Game: Starting shutdown cleanup');
 
         // Clear any pending timers
         this.time.clearPendingEvents();
@@ -862,6 +863,6 @@ export class Game extends BaseScene {
         // Call parent shutdown for base cleanup
         super.shutdown();
 
-        console.log('Game: Shutdown cleanup completed');
+        Logger.debug('Game: Shutdown cleanup completed');
     }
 }

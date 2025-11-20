@@ -155,10 +155,11 @@ describe('BaseScene', () => {
             // Should not throw during shutdown
             expect(() => scene.shutdown()).not.toThrow();
 
-            // Should log the error
+            // Should log the error with Logger format
             expect(consoleSpy).toHaveBeenCalledWith(
-                'TestScene: Error during cleanup task',
-                expect.any(Error)
+                '[ERROR] TestScene: Error during cleanup task',
+                expect.any(Error),
+                ''
             );
 
             consoleSpy.mockRestore();

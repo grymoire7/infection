@@ -2,6 +2,7 @@ import { GameObjects } from 'phaser';
 
 import { EventBus } from '../EventBus';
 import { BaseScene } from '../BaseScene';
+import { Logger } from '../ErrorLogger';
 
 export class MainMenu extends BaseScene
 {
@@ -177,7 +178,7 @@ export class MainMenu extends BaseScene
      * Override shutdown to handle scene-specific cleanup
      */
     public shutdown(): void {
-        console.log('MainMenu: Starting shutdown cleanup');
+        Logger.debug('MainMenu: Starting shutdown cleanup');
 
         // Stop animated dots (existing cleanup logic)
         this.stopAnimatedDots();
@@ -201,7 +202,7 @@ export class MainMenu extends BaseScene
         // Call parent shutdown for base cleanup
         super.shutdown();
 
-        console.log('MainMenu: Shutdown cleanup completed');
+        Logger.debug('MainMenu: Shutdown cleanup completed');
     }
 
     /**
@@ -210,11 +211,11 @@ export class MainMenu extends BaseScene
      */
     private cleanupMenuItemListeners(): void {
         if (!this.menuItemEventHandlers || this.menuItemEventHandlers.size === 0) {
-            console.log('[MainMenu] No menu item event listeners to clean up');
+            Logger.debug('[MainMenu] No menu item event listeners to clean up');
             return;
         }
 
-        console.log(`[MainMenu] Cleaning up ${this.menuItemEventHandlers.size} menu item event listeners`);
+        Logger.debug(`[MainMenu] Cleaning up ${this.menuItemEventHandlers.size} menu item event listeners`);
 
         // Remove all event listeners that we added
         this.menuItemEventHandlers.forEach((handlers, menuItem) => {

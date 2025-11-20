@@ -2,6 +2,7 @@ import { GameObjects } from 'phaser';
 import { EventBus } from '../EventBus';
 import { LevelSetManager } from '../LevelSetManager';
 import { BaseScene } from '../BaseScene';
+import { Logger } from '../ErrorLogger';
 
 export class LevelOver extends BaseScene
 {
@@ -28,7 +29,7 @@ export class LevelOver extends BaseScene
 
     create ()
     {
-        console.log('this.game.registry in LevelOver constructor:', this.game);
+        Logger.debug('this.game.registry in LevelOver constructor:', this.game);
         this.levelSetManager = new LevelSetManager(this.game.registry);
         
         this.camera = this.cameras.main;
@@ -96,13 +97,13 @@ export class LevelOver extends BaseScene
             const nextLevelHandlers = {
                 pointerdown: () => {
                     // Store level progression info to load next level
-                    console.log('LevelOver: Next Level button clicked');
-                    console.log('LevelOver: Current level info in registry:', {
+                    Logger.debug('LevelOver: Next Level button clicked');
+                    Logger.debug('LevelOver: Current level info in registry:', {
                         levelSet: currentLevelSet.getId(),
                         level: currentLevel.getId()
                     });
                     this.game.registry.set('loadNextLevel', true);
-                    console.log('LevelOver: Set loadNextLevel flag to true, starting Game scene');
+                    Logger.debug('LevelOver: Set loadNextLevel flag to true, starting Game scene');
                     this.scene.start('Game');
                 },
                 pointerover: () => {
@@ -187,7 +188,7 @@ export class LevelOver extends BaseScene
     }
 
     public shutdown(): void {
-        console.log('LevelOver: Starting shutdown cleanup');
+        Logger.debug('LevelOver: Starting shutdown cleanup');
 
         // Clean up button event listeners
         this.cleanupButtonListeners();
@@ -204,7 +205,7 @@ export class LevelOver extends BaseScene
         // Call parent shutdown for base cleanup
         super.shutdown();
 
-        console.log('LevelOver: Shutdown cleanup completed');
+        Logger.debug('LevelOver: Shutdown cleanup completed');
     }
 
     /**
@@ -213,11 +214,11 @@ export class LevelOver extends BaseScene
      */
     private cleanupButtonListeners(): void {
         if (!this.buttonEventHandlers || this.buttonEventHandlers.size === 0) {
-            console.log('[LevelOver] No button event listeners to clean up');
+            Logger.debug('[LevelOver] No button event listeners to clean up');
             return;
         }
 
-        console.log(`[LevelOver] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
+        Logger.debug(`[LevelOver] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
 
         // Remove all event listeners that we added
         this.buttonEventHandlers.forEach((handlers, button) => {

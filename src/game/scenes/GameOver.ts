@@ -2,6 +2,7 @@ import { GameObjects } from 'phaser';
 import { EventBus } from '../EventBus';
 import { LevelSetManager } from '../LevelSetManager';
 import { BaseScene } from '../BaseScene';
+import { Logger } from '../ErrorLogger';
 
 export class GameOver extends BaseScene
 {
@@ -175,7 +176,7 @@ export class GameOver extends BaseScene
     }
 
     public shutdown(): void {
-        console.log('GameOver: Starting shutdown cleanup');
+        Logger.debug('GameOver: Starting shutdown cleanup');
 
         // Clean up button event listeners
         this.cleanupButtonListeners();
@@ -191,7 +192,7 @@ export class GameOver extends BaseScene
         // Call parent shutdown for base cleanup
         super.shutdown();
 
-        console.log('GameOver: Shutdown cleanup completed');
+        Logger.debug('GameOver: Shutdown cleanup completed');
     }
 
     /**
@@ -200,11 +201,11 @@ export class GameOver extends BaseScene
      */
     private cleanupButtonListeners(): void {
         if (!this.buttonEventHandlers || this.buttonEventHandlers.size === 0) {
-            console.log('[GameOver] No button event listeners to clean up');
+            Logger.debug('[GameOver] No button event listeners to clean up');
             return;
         }
 
-        console.log(`[GameOver] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
+        Logger.debug(`[GameOver] Cleaning up ${this.buttonEventHandlers.size} button event listeners`);
 
         // Remove all event listeners that we added
         this.buttonEventHandlers.forEach((handlers, button) => {

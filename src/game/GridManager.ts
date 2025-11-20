@@ -1,3 +1,4 @@
+import { Logger } from './ErrorLogger';
 import { CellState } from './GameStateManager';
 
 export class GridManager {
@@ -216,11 +217,11 @@ export class GridManager {
      */
     cleanup(): void {
         if (!this.cellEventHandlers || this.cellEventHandlers.size === 0) {
-            console.log('[GridManager] No event listeners to clean up');
+            Logger.debug('[GridManager] No event listeners to clean up');
             return;
         }
 
-        console.log(`[GridManager] Cleaning up ${this.cellEventHandlers.size} cell event listeners`);
+        Logger.debug(`[GridManager] Cleaning up ${this.cellEventHandlers.size} cell event listeners`);
 
         // Remove all event listeners that we added
         this.cellEventHandlers.forEach((handlers, cell) => {

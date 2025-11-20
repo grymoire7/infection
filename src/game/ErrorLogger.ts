@@ -1,7 +1,22 @@
 /**
- * Centralized error logging system for the game
- * Provides structured error reporting with context preservation
+ * Centralized logging system for the game
+ * Provides structured logging with context preservation and environment filtering
  */
+
+export enum LogLevel {
+    ERROR = 0,
+    WARN = 1,
+    INFO = 2,
+    DEBUG = 3
+}
+
+export interface LogEntry {
+    level: LogLevel;
+    message: string;
+    context?: string;
+    timestamp: number;
+    data?: any;
+}
 
 export interface ErrorContext {
     component?: string;
@@ -26,8 +41,49 @@ export class ErrorLogger {
     private errorHistory: GameError[] = [];
     private maxHistorySize = 50;
     private localStorageKey = 'infection-game-errors';
+    private currentLogLevel: LogLevel;
 
-    private constructor() {}
+    private constructor() {
+        this.currentLogLevel = this.getDefaultLogLevel();
+    }
+
+    /**
+     * Get default log level based on environment
+     */
+    private getDefaultLogLevel(): LogLevel {
+        const nodeEnv = process.env.NODE_ENV;
+        switch (nodeEnv) {
+            case 'production':
+                return LogLevel.WARN;
+            case 'test':
+                return LogLevel.ERROR;
+            default:
+                return LogLevel.DEBUG;
+        }
+    }
+
+    /**
+     * Set the minimum log level for output
+     */
+    static setLevel(level: LogLevel): void {
+        const logger = ErrorLogger.getInstance();
+        logger.currentLogLevel = level;
+    }
+
+    /**
+     * Get current log level
+     */
+    static getLevel(): LogLevel {
+        const logger = ErrorLogger.getInstance();
+        return logger.currentLogLevel;
+    }
+
+    /**
+     * Check if a log level should be output
+     */
+    private shouldLog(level: LogLevel): boolean {
+        return level <= this.currentLogLevel;
+    }
 
     static getInstance(): ErrorLogger {
         if (!ErrorLogger.instance) {
@@ -213,7 +269,89 @@ export class ErrorLogger {
             console.info(`ℹ️ Error is recoverable - game can continue`);
         }
     }
+
+    /**
+     * Static convenience methods for drop-in replacement
+     */
+
+    /**
+     * Log debug message - only shown in development
+     */
+    static debug(message: string, data?: any): void {
+        const logger = ErrorLogger.getInstance();
+        if (logger.shouldLog(LogLevel.DEBUG)) {
+            console.log(`[DEBUG] ${message}`, data || '');
+        }
+    }
+
+    /**
+     * Log info message - shown in development and production
+     */
+    static info(message: string, data?: any): void {
+        const logger = ErrorLogger.getInstance();
+        if (logger.shouldLog(LogLevel.INFO)) {
+            console.info(`[INFO] ${message}`, data || '');
+        }
+    }
+
+    /**
+     * Log warning message - always shown except in test
+     */
+    static warn(message: string, data?: any): void {
+        const logger = ErrorLogger.getInstance();
+        if (logger.shouldLog(LogLevel.WARN)) {
+            console.warn(`[WARN] ${message}`, data || '');
+        }
+    }
+
+    /**
+     * Log error message - always shown
+     */
+    static error(message: string, error?: Error | unknown, data?: any): void {
+        const logger = ErrorLogger.getInstance();
+        if (logger.shouldLog(LogLevel.ERROR)) {
+            console.error(`[ERROR] ${message}`, error || '', data || '');
+        }
+    }
+
+    /**
+     * Component-aware logging with automatic context detection
+     */
+    static debugWithContext(message: string, component?: string, data?: any): void {
+        const logger = ErrorLogger.getInstance();
+        if (logger.shouldLog(LogLevel.DEBUG)) {
+            const context = component ? `[${component}] ` : '';
+            console.log(`[DEBUG] ${context}${message}`, data || '');
+        }
+    }
+
+    static infoWithContext(message: string, component?: string, data?: any): void {
+        const logger = ErrorLogger.getInstance();
+        if (logger.shouldLog(LogLevel.INFO)) {
+            const context = component ? `[${component}] ` : '';
+            console.info(`[INFO] ${context}${message}`, data || '');
+        }
+    }
+
+    static warnWithContext(message: string, component?: string, data?: any): void {
+        const logger = ErrorLogger.getInstance();
+        if (logger.shouldLog(LogLevel.WARN)) {
+            const context = component ? `[${component}] ` : '';
+            console.warn(`[WARN] ${context}${message}`, data || '');
+        }
+    }
+
+    static errorWithContext(message: string, component?: string, error?: Error | unknown, data?: any): void {
+        const logger = ErrorLogger.getInstance();
+        if (logger.shouldLog(LogLevel.ERROR)) {
+            const context = component ? `[${component}] ` : '';
+            console.error(`[ERROR] ${context}${message}`, error || '', data || '');
+        }
+    }
 }
 
 // Export singleton instance
 export const errorLogger = ErrorLogger.getInstance();
+
+// Export Logger alias for convenience
+export const Logger = ErrorLogger;

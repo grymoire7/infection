@@ -1,3 +1,5 @@
+import { Logger } from './ErrorLogger';
+
 export interface GameSettings {
     soundEffectsEnabled: boolean;
     playerColor: 'red' | 'blue';
@@ -21,7 +23,7 @@ export class SettingsManager {
         if (process.env.NODE_ENV === 'development') {
             this.gameRegistry.events.on('changedata', (parent, key, value) => {
                 if (['soundEffectsEnabled', 'playerColor', 'levelSetId'].includes(key)) {
-                    console.log(`[SettingsManager] Setting changed: ${key} = ${value}`);
+                    Logger.debug(`[SettingsManager] Setting changed: ${key} = ${value}`);
                     this.validateSetting(key as keyof GameSettings, value);
                 }
             });
@@ -30,11 +32,11 @@ export class SettingsManager {
         // Only sync with localStorage on first instance creation
         // This prevents multiple instances from causing issues
         if (!this.gameRegistry.get('settingsManagerInitialized')) {
-            console.log('[SettingsManager] First instance - loading settings from localStorage');
+            Logger.debug('[SettingsManager] First instance - loading settings from localStorage');
             this.loadSettings();
             this.gameRegistry.set('settingsManagerInitialized', true);
         } else {
-            console.log('[SettingsManager] Additional instance detected - skipping localStorage sync');
+            Logger.debug('[SettingsManager] Additional instance detected - skipping localStorage sync');
         }
     }
 
@@ -72,9 +74,9 @@ export class SettingsManager {
         // Only mark as dirty if settings actually changed
         if (hasChanges) {
             this.gameRegistry.set('settingsDirty', true);
-            console.log('[SettingsManager] Settings actually changed, marking as dirty');
+            Logger.debug('[SettingsManager] Settings actually changed, marking as dirty');
         } else {
-            console.log('[SettingsManager] Settings unchanged, not marking as dirty');
+            Logger.debug('[SettingsManager] Settings unchanged, not marking as dirty');
         }
     }
 
@@ -86,7 +88,7 @@ export class SettingsManager {
         const colorChanged = oldSettings.playerColor !== newSettings.playerColor;
         const levelSetChanged = oldSettings.levelSetId !== newSettings.levelSetId;
 
-        console.log('[SettingsManager] Settings comparison:', {
+        Logger.debug('[SettingsManager] Settings comparison:', {
             old: oldSettings,
             new: newSettings,
             soundChanged,
@@ -232,7 +234,7 @@ export class SettingsManager {
         }
 
         if (error) {
-            console.error(`[SettingsManager] Validation failed for ${key}:`, error);
+            Logger.error(`[SettingsManager] Validation failed for ${key}:`, error);
             throw new Error(error);
         }
     }
