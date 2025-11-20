@@ -31,8 +31,8 @@ export const LEVELS: Record<string, LevelDefinition> = {
         gridSize: 4,
         blockedCells: []
     },
-    'level-5s-bx': {
-        id: 'level-5s-bx',
+    'level-s5-bx': {
+        id: 'level-s5-bx',
         name: 'Beginner\'s Grid',
         description: 'unused',
         gridSize: 5,
@@ -93,6 +93,76 @@ export const LEVELS: Record<string, LevelDefinition> = {
             { row: 2, col: 0 }, { row: 2, col: 4 },
             { row: 3, col: 2 }, { row: 4, col: 2 }
         ]
+    },
+    'level-s6-bx': {
+        id: 'level-s6-bx',
+        name: 'Chicken Pox',
+        description: 'A clean 6x6 grid',
+        gridSize: 6,
+        blockedCells: []
+    },
+    'level-s6-b112244': {
+        id: 'level-s6-b112244',
+        name: 'Measles',
+        description: 'Diagonal blocked pattern with connectivity',
+        gridSize: 6,
+        blockedCells: [
+            { row: 1, col: 1 }, { row: 1, col: 2 },
+            { row: 2, col: 1 }, { row: 2, col: 2 },
+            { row: 2, col: 4 }, { row: 4, col: 4 }
+        ]
+    },
+    'level-s7-b1224326': {
+        id: 'level-s7-b1224326',
+        name: 'Ringworm',
+        description: 'Cross pattern creates ring-like gameplay',
+        gridSize: 7,
+        blockedCells: [
+            { row: 1, col: 2 }, { row: 1, col: 4 },
+            { row: 2, col: 2 }, { row: 2, col: 4 },
+            { row: 3, col: 2 }, { row: 3, col: 4 },
+            { row: 4, col: 3 }, { row: 4, col: 6 },
+            { row: 6, col: 2 }
+        ]
+    },
+    'level-s7-b1232321234321': {
+        id: 'level-s7-b1232321234321',
+        name: 'Malaria',
+        description: 'Complex diamond pattern with gaps for connectivity',
+        gridSize: 7,
+        blockedCells: [
+            { row: 1, col: 2 }, { row: 1, col: 4 },
+            { row: 2, col: 1 }, { row: 2, col: 5 },
+            { row: 3, col: 2 },
+            { row: 4, col: 1 }, { row: 4, col: 5 },
+            { row: 5, col: 2 }, { row: 5, col: 4 }
+        ]
+    },
+    'level-s8-bx': {
+        id: 'level-s8-bx',
+        name: 'Tetanus',
+        description: 'A spacious 8x8 grid',
+        gridSize: 8,
+        blockedCells: []
+    },
+    'level-s8-b03333633': {
+        id: 'level-s8-b03333633',
+        name: 'Diphtheria',
+        description: 'Plus-shaped obstacle',
+        gridSize: 8,
+        blockedCells: [
+            { row: 0, col: 3 },
+            { row: 3, col: 0 }, { row: 3, col: 1 }, { row: 3, col: 2 }, { row: 3, col: 3 },
+            { row: 3, col: 4 }, { row: 3, col: 5 }, { row: 3, col: 6 },
+            { row: 6, col: 3 }
+        ]
+    },
+    'level-s10-bx': {
+        id: 'level-s10-bx',
+        name: 'Cholera',
+        description: 'Large open battlefield',
+        gridSize: 10,
+        blockedCells: []
     }
 };
 
@@ -136,11 +206,35 @@ export const ADVANCED_LEVEL_SET: LevelSetDefinition = {
     ]
 };
 
-// TOOO: Add DEBUG_LEVEL_SET to LEVEL_SETS when NODE_ENV is development or test
+export const EPIDEMIC_LEVEL_SET: LevelSetDefinition = {
+    id: 'epidemic',
+    name: 'Epidemic Progression',
+    description: 'A journey through increasingly dangerous infections',
+    levelEntries: [
+        { levelId: 'level-s6-bx', aiDifficulty: 'easy' },
+        { levelId: 'level-s6-b112244', aiDifficulty: 'medium' },
+        { levelId: 'level-s7-b1224326', aiDifficulty: 'medium' },
+        { levelId: 'level-s7-b1232321234321', aiDifficulty: 'hard' },
+        { levelId: 'level-s8-bx', aiDifficulty: 'hard' },
+        { levelId: 'level-s8-b03333633', aiDifficulty: 'expert' },
+        { levelId: 'level-s10-bx', aiDifficulty: 'expert' }
+    ]
+};
+
+// Include DEBUG_LEVEL_SET when NODE_ENV is development or test (implemented)
 export const LEVEL_SETS: LevelSetDefinition[] = [
+    DEBUG_LEVEL_SET,
     BASIC_LEVEL_SET,
-    ADVANCED_LEVEL_SET
-];
+    ADVANCED_LEVEL_SET,
+    EPIDEMIC_LEVEL_SET
+].filter(levelSet => {
+    // Always include non-debug level sets
+    if (levelSet.id !== 'debug') return true;
+
+    // Only include debug level set in development or test environments
+    const nodeEnv = import.meta?.env?.MODE || process?.env?.NODE_ENV || 'production';
+    return nodeEnv === 'development' || nodeEnv === 'test';
+});
 
 // Helper function to get a level by ID
 export function getLevelById(levelId: string): LevelDefinition | undefined {
