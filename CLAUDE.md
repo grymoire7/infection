@@ -115,6 +115,8 @@ they exceed capacity, creating chain reactions that can capture opponent cells.
 |---------|-------------|
 | `npm install` | Install dependencies |
 | `npm run dev` | Start dev server at http://localhost:8080 |
+| `npm run prod` | Launch production version locally (builds if needed, starts server at http://localhost:8081, opens browser) |
+| `npm run production` | Same as `npm run prod` (full command name) |
 | `npm run build` | Create production build in `dist/` |
 | `npm run type-check` | Run TypeScript type checking |
 | `npm run dev-nolog` | Dev server without Phaser analytics |

@@ -76,6 +76,9 @@ npm test
 
 # Build for production
 npm run build
+
+# Launch production version locally
+npm run prod
 ```
 
 ## Available Commands
@@ -84,6 +87,7 @@ npm run build
 |---------|-------------|
 | `npm install` | Install project dependencies |
 | `npm run dev` | Launch a development web server |
+| `npm run prod` | Launch production version locally (builds if needed, starts server, opens browser) |
 | `npm run build` | Create a production build in the `dist` folder |
 | `npm run test:live` | Launch interactive memory testing dashboard |
 | `npm run dev-nolog` | Launch a development web server without sending anonymous data to Phaser |
@@ -251,12 +255,24 @@ scene is ready to expose it to Vue.
 
 ## Production Deployment
 
+### Local Testing
+```bash
+# Launch production version locally for testing
+npm run prod
+```
+This builds (if needed), starts a local server, and opens the production version in your browser at `http://localhost:8081`.
+
+### Building for Deployment
 ```bash
 npm run build
 ```
 
 Builds the game into a single bundle in the `dist/` folder. Upload all
 contents of `dist/` to a web server to deploy.
+
+**Key Differences:**
+- **Development** (`npm run dev`): Debug level sets visible, hot reloading, verbose logging
+- **Production** (`npm run prod`): Debug level sets hidden, optimized build, minimal logging
 
 ## Key Technical Decisions
 

@@ -232,8 +232,27 @@ export const LEVEL_SETS: LevelSetDefinition[] = [
     if (levelSet.id !== 'debug') return true;
 
     // Only include debug level set in development or test environments
-    const nodeEnv = import.meta?.env?.MODE || process?.env?.NODE_ENV || 'production';
-    return nodeEnv === 'development' || nodeEnv === 'test';
+    let isDevelopment = false;
+    let isTest = false;
+
+    // Primary method: Use Vite environment variables (when available)
+    if (import.meta?.env) {
+        isDevelopment = import.meta.env.DEV === true;
+        isTest = import.meta.env.MODE === 'test';
+    } else {
+        // Fallback: Detect development server by URL pattern
+        // This handles the case where import.meta.env is not properly injected
+        const currentUrl = import.meta?.url || '';
+
+        // Check if we're running on localhost development server
+        if (currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1')) {
+            isDevelopment = true;
+        }
+    }
+
+    const shouldInclude = isDevelopment || isTest;
+
+    return shouldInclude;
 });
 
 // Helper function to get a level by ID

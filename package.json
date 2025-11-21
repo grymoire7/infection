@@ -25,6 +25,8 @@
         "build": "node log.js build & vite build --config vite/config.prod.mjs",
         "dev-nolog": "vite --config vite/config.dev.mjs",
         "build-nolog": "vite build --config vite/config.prod.mjs",
+        "production": "node scripts/launch-production.js",
+        "prod": "node scripts/launch-production.js",
         "type-check": "npx tsc --noEmit",
         "test": "vitest",
         "test:ui": "vitest --ui",
